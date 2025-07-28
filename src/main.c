@@ -16,7 +16,7 @@ int main()
     GLFWwindow* window;
     if (!initGl(&window) || window == NULL)
     {
-        perror("Failed to initialize OpenGL context");
+        perror("Failed to initialize OpenGL context\n");
         return 1;
     }
 

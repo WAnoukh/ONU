@@ -22,7 +22,7 @@ int initGl(GLFWwindow **window)
     *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
     if (*window == NULL)
     {
-        perror("Failed to create GLFW window");
+        perror("Failed to create GLFW window\n");
         glfwTerminate();
         return 0;
     }
@@ -31,7 +31,7 @@ int initGl(GLFWwindow **window)
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        perror("Failed to initialize GLAD");
+        perror("Failed to initialize GLAD\n");
         return 0;
     }
     return 1;
