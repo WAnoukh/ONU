@@ -3,6 +3,8 @@
 
 struct entity;
 
+void initialize_renderer();
+
 void render_entities(struct entity *entities, int entities_number);
 
 void render_triangle();

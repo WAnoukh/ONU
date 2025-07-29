@@ -20,6 +20,8 @@ int main()
         return 1;
     }
 
+    initialize_renderer();
+
     entity_count = 2;
     entities = (struct entity*)calloc(entity_count, sizeof(struct entity));
     struct entity *player = entities;
