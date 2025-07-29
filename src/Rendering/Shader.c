@@ -3,7 +3,7 @@
 #include "Rendering/Shader.h"
 #include <stdlib.h>
 
-const int MAX_SHADER_LENGTH = 1024;
+const   int MAX_SHADER_LENGTH = 1024;
 
 int load_shader_from_file(const char *path, char** out_shader)
 {
