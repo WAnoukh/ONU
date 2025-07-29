@@ -4,6 +4,7 @@
 #include <math.h>
 #include <cglm/cglm.h>
 
+#include "Entity.h"
 #include "glad/glad.h"
 #include "Rendering/Shader.h"
 
@@ -33,7 +34,7 @@ unsigned int quad_indices[] = {
 
 GLuint quad_EBO = 0, quad_VBO = 0, quad_VAO = 0;
 
-mat4 view;
+mat3 view;
 
 void initialize_quad();
 
@@ -84,9 +85,15 @@ void initialize_quad()
 
 void initialize_camera()
 {
-    float cam_size = 2;
-    float cam_size_2 = cam_size/2;
-    glm_ortho(-cam_size_2, cam_size_2, -cam_size_2, cam_size_2, -1, 1, view);
+    float sx = 1;
+    float sy = 1;
+    float tx = 0;
+    float ty = 0;
+    glm_mat3_identity(view);
+    view[0][0] = sx;
+    view[1][1] = sy;
+    view[2][0] = tx;
+    view[2][1] = ty;
 }
 
 void initialize_triangle()
@@ -107,7 +114,7 @@ void initialize_triangle()
     glBindVertexArray(0);
 }
 
-void draw_quad()
+void draw_quad(vec2 position)
 {
     if (quad_EBO == 0)
     {
@@ -119,7 +126,9 @@ void draw_quad()
     }
 
     glUseProgram(default_shader_program);
-    shader_set_mat4(default_shader_program, "view", view);
+    mat3 newPos;
+    //glm_translate2d_to(view, position, newPos);
+    shader_set_mat3(default_shader_program, "view", view);
     glBindVertexArray(quad_VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
@@ -127,9 +136,10 @@ void draw_quad()
 
 void render_entities(struct entity *entities, int entities_number)
 {
-    draw_quad();
     for (int i = 0; i < entities_number; i++)
     {
+        struct entity e = entities[i];
+        draw_quad(e.pos);
     }
 }
 

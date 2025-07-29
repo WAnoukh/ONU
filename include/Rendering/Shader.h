@@ -17,4 +17,10 @@ static void shader_set_mat4(const GLuint program, const char *loc_name, mat4 mat
     int loc = glGetUniformLocation(program, loc_name);
     glUniformMatrix4fv(loc, 1, GL_FALSE, (GLfloat*)matrice);
 }
+
+static void shader_set_mat3(const GLuint program, const char *loc_name, mat3 matrice)
+{
+    int loc = glGetUniformLocation(program, loc_name);
+    glUniformMatrix3fv(loc, 1, GL_FALSE, (GLfloat*)matrice);
+}
 #endif //SHADER_H

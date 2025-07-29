@@ -29,7 +29,7 @@ int main()
     struct entity *guard = entities+1;
     struct entity ent = *guard;
     guard->type = Guard;
-    guard->y = 10;
+    guard->pos[0] = 2; guard->pos[1] = 3;
 
     while (!glfwWindowShouldClose(window))
     {
