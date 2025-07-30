@@ -22,18 +22,22 @@ void initialize_entities()
     struct entity *player = entities;
     player->type = Player;
     player->color[0] = 1;
+    player->width = 1;
+    player->height = 1.2f;
     struct entity *guard = entities+1;
-    struct entity ent = *guard;
     guard->type = Guard;
     guard->color[1] = 1;
+    guard->width = 1;
+    guard->height = 1;
 }
 
 void update_player()
 {
+    const float player_speed = 4;
     struct entity *player = entities;
     vec2 input;
     get_player_input(input);
-    glm_vec2_scale(input, delta_time, input);
+    glm_vec2_scale(input, player_speed * delta_time, input);
     glm_vec2_add(player->pos, input, player->pos);
 }
 

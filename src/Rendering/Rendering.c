@@ -86,8 +86,9 @@ void initialize_quad()
 
 void initialize_camera()
 {
-    float sx = 1.f / window_get_screen_ratio();
-    float sy = 1;
+    float base_zoom = 0.3f;
+    float sx = base_zoom / window_get_screen_ratio();
+    float sy = base_zoom;
     float tx = 0;
     float ty = 0;
     glm_mat3_identity(view);
@@ -130,6 +131,7 @@ void draw_entity(struct entity e)
     glUseProgram(default_shader_program);
     mat3 result;
     glm_mat3_mul(view, e.transform, result);
+
     shader_set_mat3(default_shader_program, "view", result);
     shader_set_vec3(default_shader_program, "color", e.color);
     draw_quad(e.transform);
