@@ -72,12 +72,16 @@ GLuint create_shader_program(const char *vertex_shader_path, const char *fragmen
     load_shader_from_file(fragment_shader_path, &fragment_source);
 
     GLuint vertex_shader = compile_shader(vertex_source, GL_VERTEX_SHADER);
+    free(vertex_source);
+    
+    GLuint fragment_shader = compile_shader(fragment_source, GL_FRAGMENT_SHADER);
+    free(fragment_source);
+
     if (vertex_shader == 0)
     {
         perror("Vertex shader compilation failed\n");
         return 0;
     }
-    GLuint fragment_shader = compile_shader(fragment_source, GL_FRAGMENT_SHADER);
     if (fragment_shader == 0)
     {
         perror("Fragment shader compilation failed\n");
