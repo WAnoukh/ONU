@@ -7,7 +7,6 @@
 #include "Window/Window.h"
 #include "Entity.h"
 #include "Rendering/Rendering.h"
-
 struct entity *entities;
 int entity_count;
 

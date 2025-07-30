@@ -39,8 +39,6 @@ mat3 view;
 
 void initialize_quad();
 
-void initialize_camera();
-
 void initialize_default_shader_program();
 
 void initialize_triangle();
@@ -131,7 +129,6 @@ void draw_entity(struct entity e)
     glUseProgram(default_shader_program);
     mat3 result;
     glm_mat3_mul(view, e.transform, result);
-
     shader_set_mat3(default_shader_program, "view", result);
     shader_set_vec3(default_shader_program, "color", e.color);
     draw_quad(e.transform);
