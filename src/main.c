@@ -28,9 +28,18 @@ void initialize_entities()
     guard->color[1] = 1;
 }
 
+void update_player()
+{
+    struct entity *player = entities;
+    vec2 input;
+    get_player_input(input);
+    glm_vec2_scale(input, delta_time, input);
+    glm_vec2_add(player->pos, input, player->pos);
+}
+
 void update_entities()
 {
-    entities[0].pos[0] = sinf((float)new_time);
+    entities[1].pos[0] = sinf((float)new_time);
 }
 
 int main()
@@ -43,11 +52,10 @@ int main()
     }
 
     initialize_renderer();
-    last_time = glfwGetTime();
-
     initialize_entities();
+    initialize_input(window);
 
-    int acc = 0;
+    last_time = glfwGetTime();
 
     while (!glfwWindowShouldClose(window))
     {
@@ -59,11 +67,10 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        update_player();
         update_entities();
-        //render_triangle();
         render_entities(entities, entity_count);
 
-        acc++;
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
