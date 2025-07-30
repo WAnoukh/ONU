@@ -11,6 +11,8 @@
 struct entity *entities;
 int entity_count;
 
+double last_time;
+
 int main()
 {
     GLFWwindow* window;
@@ -21,19 +23,28 @@ int main()
     }
 
     initialize_renderer();
+    last_time = glfwGetTime();
+
 
     entity_count = 2;
     entities = (struct entity*)calloc(entity_count, sizeof(struct entity));
     struct entity *player = entities;
     player->type = Player;
+    player->color[0] = 1;
     struct entity *guard = entities+1;
     struct entity ent = *guard;
     guard->type = Guard;
-    guard->pos[0] = 2; guard->pos[1] = 3;
+    guard->pos[0] = 0.5; guard->pos[1] = 0;
+    guard->color[1] = 1;
+
+    int acc = 0;
 
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
+        double new_time = glfwGetTime();
+        float delta_time = (float)(new_time - last_time);
+        last_time = new_time;
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -41,6 +52,8 @@ int main()
         //render_triangle();
         render_entities(entities, entity_count);
 
+        guard->pos[0] = sinf((float)new_time);
+        acc++;
         glfwSwapBuffers(window);
         glfwPollEvents();
     }

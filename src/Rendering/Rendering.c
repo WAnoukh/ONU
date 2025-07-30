@@ -7,6 +7,7 @@
 #include "Entity.h"
 #include "glad/glad.h"
 #include "Rendering/Shader.h"
+#include "Window/Window.h"
 
 GLuint default_shader_program;
 
@@ -85,7 +86,7 @@ void initialize_quad()
 
 void initialize_camera()
 {
-    float sx = 1;
+    float sx = 1.f / window_get_screen_ratio();
     float sy = 1;
     float tx = 0;
     float ty = 0;
@@ -114,23 +115,24 @@ void initialize_triangle()
     glBindVertexArray(0);
 }
 
-void draw_quad(vec2 position)
+void draw_quad()
 {
     if (quad_EBO == 0)
     {
         initialize_quad();
     }
-    if (default_shader_program == 0)
-    {
-        initialize_default_shader_program();
-    }
-
-    glUseProgram(default_shader_program);
-    mat3 newPos;
-    //glm_translate2d_to(view, position, newPos);
-    shader_set_mat3(default_shader_program, "view", view);
     glBindVertexArray(quad_VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+
+void draw_entity(struct entity e)
+{
+    glUseProgram(default_shader_program);
+    mat3 result;
+    glm_mat3_mul(view, e.transform, result);
+    shader_set_mat3(default_shader_program, "view", result);
+    shader_set_vec3(default_shader_program, "color", e.color);
+    draw_quad(e.transform);
 }
 
 
@@ -139,7 +141,8 @@ void render_entities(struct entity *entities, int entities_number)
     for (int i = 0; i < entities_number; i++)
     {
         struct entity e = entities[i];
-        draw_quad(e.pos);
+        entity_compute_transform(entities + i);
+        draw_entity(e);
     }
 }
 

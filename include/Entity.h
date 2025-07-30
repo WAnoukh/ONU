@@ -12,14 +12,15 @@ enum entity_type
 struct entity
 {
     enum entity_type type;
-    CGLM_ALIGN_MAT mat4 model;
+    mat3 transform;
+    vec3 color;
     vec2 pos;
 };
 
-static void entity_compute_model(struct entity *entity)
+static void entity_compute_transform(struct entity *entity)
 {
     if (entity == NULL) return;
-    glm_mat4_identity(entity->model);
-    glm_translate2d(entity->model, entity->pos);
+    glm_mat3_identity(entity->transform);
+    glm_translate2d(entity->transform, entity->pos);
 }
 #endif //ENTITY_H

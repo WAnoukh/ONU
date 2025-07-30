@@ -2,14 +2,19 @@
 #include <stdio.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "Rendering/Rendering.h"
+
+const int SCR_WIDTH = 800;
+const int SCR_HEIGHT = 600;
+
+float framebuffer_ratio = (float)SCR_WIDTH/(float)SCR_HEIGHT;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
+    framebuffer_ratio = (float)width/(float)height;
+    initialize_camera();
 }
-
-const int SCR_WIDTH = 800;
-const int SCR_HEIGHT = 600;
 
 int initGl(GLFWwindow **window)
 {
@@ -35,4 +40,9 @@ int initGl(GLFWwindow **window)
         return 0;
     }
     return 1;
+}
+
+float window_get_screen_ratio()
+{
+    return framebuffer_ratio;
 }
