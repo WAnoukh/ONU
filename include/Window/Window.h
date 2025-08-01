@@ -8,6 +8,8 @@ typedef struct GLFWwindow GLFWwindow;
 
 int initGl(GLFWwindow **window);
 
+double get_time();
+
 float window_get_screen_ratio();
 
 #endif //WINDOW_H

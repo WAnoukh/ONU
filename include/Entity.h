@@ -19,15 +19,11 @@ struct entity
     float height;
 };
 
-static void entity_compute_transform(struct entity *entity)
-{
-    if (entity == NULL) return;
-    glm_mat3_identity(entity->transform);
-    glm_translate2d(entity->transform, entity->pos);
-    mat3 scale;
-    glm_mat3_identity(scale);
-    scale[0][0] = entity->width;
-    scale[1][1] = entity->height;
-    glm_mat3_mul(scale, entity->transform, entity->transform);
-}
+void initialize_entities();
+
+void update_entities(const float delta_time);
+
+void entity_compute_transform(struct entity *entity);
+
+void render_entities();
 #endif //ENTITY_H

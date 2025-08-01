@@ -35,6 +35,6 @@ void get_player_input(vec2 out_input)
 void scroll(float x_offset, float y_offset)
 {
     float zoom = get_camera_zoom();
-    zoom += 0.1f * zoom * y_offset;
+    zoom += 0.2f * zoom * y_offset;
     set_camera_zoom(zoom);
 }

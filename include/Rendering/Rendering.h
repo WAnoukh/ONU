@@ -11,7 +11,7 @@ float get_camera_zoom();
 
 void compute_camera_view();
 
-void render_entities(struct entity *entities, int entities_number);
+void draw_entity(struct entity e);
 
 void render_triangle();
 

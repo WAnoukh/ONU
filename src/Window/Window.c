@@ -49,6 +49,11 @@ int initGl(GLFWwindow **window)
     return 1;
 }
 
+double get_time()
+{
+   return glfwGetTime();
+}
+
 float window_get_screen_ratio()
 {
     return framebuffer_ratio;

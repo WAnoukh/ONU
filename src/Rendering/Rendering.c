@@ -99,9 +99,10 @@ void compute_camera_view()
 
 void set_camera_zoom(float in_zoom)
 {
+    const float max = 1.5;
+    const float min = 0.1;
     zoom = in_zoom;
-    if (zoom > 2) zoom = 2;
-    if (zoom < 0.1f) zoom = 0.1f;
+    zoom = glm_clamp(zoom, min, max);
     compute_camera_view();
 }
 
@@ -146,17 +147,6 @@ void draw_entity(struct entity e)
     shader_set_mat3(default_shader_program, "view", result);
     shader_set_vec3(default_shader_program, "color", e.color);
     draw_quad(e.transform);
-}
-
-
-void render_entities(struct entity *entities, int entities_number)
-{
-    for (int i = 0; i < entities_number; i++)
-    {
-        struct entity e = entities[i];
-        entity_compute_transform(entities + i);
-        draw_entity(e);
-    }
 }
 
 void render_triangle()
