@@ -3,7 +3,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "Window/Input.h"
+#include "../include/Window/Input.h"
 #include "Window/Window.h"
 #include "Entity.h"
 #include "Rendering/Rendering.h"

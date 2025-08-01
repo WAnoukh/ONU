@@ -37,6 +37,8 @@ GLuint quad_EBO = 0, quad_VBO = 0, quad_VAO = 0;
 
 mat3 view;
 
+float zoom = 0.2;
+
 void initialize_quad();
 
 void initialize_default_shader_program();
@@ -47,7 +49,7 @@ void initialize_renderer()
 {
     initialize_default_shader_program();
     initialize_quad();
-    initialize_camera();
+    compute_camera_view();
     initialize_triangle();
 }
 
@@ -82,11 +84,10 @@ void initialize_quad()
     glBindVertexArray(0);
 }
 
-void initialize_camera()
+void compute_camera_view()
 {
-    float base_zoom = 0.3f;
-    float sx = base_zoom / window_get_screen_ratio();
-    float sy = base_zoom;
+    float sx = zoom / window_get_screen_ratio();
+    float sy = zoom;
     float tx = 0;
     float ty = 0;
     glm_mat3_identity(view);
@@ -94,6 +95,19 @@ void initialize_camera()
     view[1][1] = sy;
     view[2][0] = tx;
     view[2][1] = ty;
+}
+
+void set_camera_zoom(float in_zoom)
+{
+    zoom = in_zoom;
+    if (zoom > 2) zoom = 2;
+    if (zoom < 0.1f) zoom = 0.1f;
+    compute_camera_view();
+}
+
+float get_camera_zoom()
+{
+    return zoom;
 }
 
 void initialize_triangle()

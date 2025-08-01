@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "Rendering/Rendering.h"
+#include "Window/Input.h"
 
 const int SCR_WIDTH = 800;
 const int SCR_HEIGHT = 600;
@@ -13,7 +14,12 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
     framebuffer_ratio = (float)width/(float)height;
-    initialize_camera();
+    compute_camera_view();
+}
+
+void scroll_callback(GLFWwindow* window, double x_offset, double y_offset)
+{
+    scroll((float)x_offset, (float)y_offset);
 }
 
 int initGl(GLFWwindow **window)
@@ -33,6 +39,7 @@ int initGl(GLFWwindow **window)
     }
     glfwMakeContextCurrent(*window);
     glfwSetFramebufferSizeCallback(*window, framebuffer_size_callback);
+    glfwSetScrollCallback(*window, scroll_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {

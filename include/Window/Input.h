@@ -11,4 +11,6 @@ void initialize_input(GLFWwindow *in_window);
 int key_pressed(int key);
 
 void get_player_input(vec2 out_input);
+
+void scroll(float x_offset, float y_offset);
 #endif //INPUT_H
