@@ -5,7 +5,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "Rendering/Rendering.h"
+#include "Rendering/rendering.h"
 
 GLFWwindow *window;
 

@@ -1,6 +1,6 @@
-﻿#include "Entity.h"
+﻿#include "entity.h"
 
-#include "Rendering/Rendering.h"
+#include "Rendering/rendering.h"
 #include "Window/Input.h"
 
 struct entity *entities;

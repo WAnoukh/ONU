@@ -1,13 +1,13 @@
-﻿#include "Rendering/Rendering.h"
+﻿#include "Rendering/rendering.h"
 
 #include <stdlib.h>
 #include <math.h>
 #include <cglm/cglm.h>
 
-#include "Entity.h"
+#include "entity.h"
 #include "glad/glad.h"
-#include "Rendering/Shader.h"
-#include "Window/Window.h"
+#include "Rendering/shader.h"
+#include "Window/window.h"
 
 GLuint default_shader_program;
 

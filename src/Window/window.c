@@ -1,8 +1,8 @@
-﻿#include "Window/Window.h"
+﻿#include "Window/window.h"
 #include <stdio.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "Rendering/Rendering.h"
+#include "Rendering/rendering.h"
 #include "Window/Input.h"
 
 const int SCR_WIDTH = 800;

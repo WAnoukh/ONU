@@ -2,7 +2,7 @@
 #define INPUT_H
 #include <cglm/ivec2.h>
 
-#include "Window/Window.h"
+#include "Window/window.h"
 
 void processInput(GLFWwindow *window);
 

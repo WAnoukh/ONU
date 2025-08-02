@@ -1,6 +1,6 @@
 ﻿#include <stdio.h>
 
-#include "Rendering/Shader.h"
+#include "Rendering/shader.h"
 #include <stdlib.h>
 
 const   int MAX_SHADER_LENGTH = 1024;

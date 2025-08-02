@@ -3,10 +3,10 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "Entity.h"
+#include "entity.h"
 #include "Window/Input.h"
-#include "Window/Window.h"
-#include "Rendering/Rendering.h"
+#include "Window/window.h"
+#include "Rendering/rendering.h"
 
 double last_time;
 double new_time;
