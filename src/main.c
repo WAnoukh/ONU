@@ -1,9 +1,9 @@
 ﻿#include <stdio.h>
-#include <stdlib.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include "entity.h"
+#include "tilemap.h"
 #include "Window/Input.h"
 #include "Window/window.h"
 #include "Rendering/rendering.h"
@@ -29,7 +29,7 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
-        processInput(window);
+        process_input(window);
         new_time = get_time();
         delta_time = (float)(new_time - last_time);
         last_time = new_time;
@@ -39,6 +39,7 @@ int main()
 
         update_entities(delta_time);
         render_entities();
+        render_main_tilemap();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

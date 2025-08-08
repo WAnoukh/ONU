@@ -4,7 +4,8 @@
 #include <math.h>
 #include <cglm/cglm.h>
 
-#include "entity.h"
+#include "Entity.h"
+#include "tilemap.h"
 #include "glad/glad.h"
 #include "Rendering/shader.h"
 #include "Window/window.h"
@@ -37,7 +38,8 @@ GLuint quad_EBO = 0, quad_VBO = 0, quad_VAO = 0;
 
 mat3 view;
 
-float zoom = 0.2;
+float zoom = 0.2f;
+vec2 pan;
 
 void initialize_quad();
 
@@ -55,7 +57,7 @@ void initialize_renderer()
 
 void initialize_default_shader_program()
 {
-    default_shader_program = create_shader_program("../shader/generic/default.vert", "../shader/generic/default.frag");
+    default_shader_program = create_shader_program("shader/generic/default.vert", "shader/generic/default.frag");
     if (!default_shader_program)
     {
         exit(1);
@@ -87,9 +89,9 @@ void initialize_quad()
 void compute_camera_view()
 {
     float sx = zoom / window_get_screen_ratio();
-    float sy = zoom;
-    float tx = 0;
-    float ty = 0;
+    float sy = -zoom;
+    float tx = pan[0];
+    float ty = pan[1];
     glm_mat3_identity(view);
     view[0][0] = sx;
     view[1][1] = sy;
@@ -99,8 +101,8 @@ void compute_camera_view()
 
 void set_camera_zoom(float in_zoom)
 {
-    const float max = 1.5;
-    const float min = 0.1;
+    const float max = 1.5f;
+    const float min = 0.1f;
     zoom = in_zoom;
     zoom = glm_clamp(zoom, min, max);
     compute_camera_view();
@@ -109,6 +111,13 @@ void set_camera_zoom(float in_zoom)
 float get_camera_zoom()
 {
     return zoom;
+}
+
+void pan_camera(float x_offset, float y_offset)
+{
+    pan[0] += x_offset;
+    pan[1] += y_offset;
+    compute_camera_view();
 }
 
 void initialize_triangle()
@@ -139,14 +148,25 @@ void draw_quad()
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
-void draw_entity(struct entity e)
+void draw_transformed_quad(mat3 transform, vec3 color)
+{
+    glUseProgram(default_shader_program);
+    mat3 result;
+    glm_mat3_mul(view, transform, result);
+    //glm_mat3_mul(transform, view, result);
+    shader_set_mat3(default_shader_program, "view", result);
+    shader_set_vec3(default_shader_program, "color", color);
+    draw_quad();
+}
+
+void draw_entity(struct Entity e)
 {
     glUseProgram(default_shader_program);
     mat3 result;
     glm_mat3_mul(view, e.transform, result);
     shader_set_mat3(default_shader_program, "view", result);
     shader_set_vec3(default_shader_program, "color", e.color);
-    draw_quad(e.transform);
+    draw_quad();
 }
 
 void render_triangle()

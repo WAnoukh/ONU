@@ -22,6 +22,7 @@ void scroll_callback(GLFWwindow* window, double x_offset, double y_offset)
     scroll((float)x_offset, (float)y_offset);
 }
 
+
 int initGl(GLFWwindow **window)
 {
     glfwInit();
