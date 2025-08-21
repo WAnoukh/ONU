@@ -3,6 +3,7 @@
 #include "entity.h"
 #include "Tilemap.h"
 #include "Rendering/rendering.h"
+
 #define TILEMAP_SIZE 10
 
 struct Tile default_grid[TILEMAP_SIZE*TILEMAP_SIZE] = {
