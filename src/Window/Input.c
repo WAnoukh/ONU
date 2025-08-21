@@ -1,11 +1,9 @@
-﻿#include "Window/Input.h"
-
-#include <stdio.h>
-#include <cglm/vec2.h>
+﻿#include <cglm/vec2.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "Rendering/rendering.h"
+#include "window/input.h"
+#include "rendering/rendering.h"
 
 GLFWwindow *window;
 

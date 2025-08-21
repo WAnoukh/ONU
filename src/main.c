@@ -4,9 +4,9 @@
 
 #include "entity.h"
 #include "tilemap.h"
-#include "Window/Input.h"
-#include "Window/window.h"
-#include "Rendering/rendering.h"
+#include "window/input.h"
+#include "window/window.h"
+#include "rendering/rendering.h"
 
 double last_time;
 double new_time;

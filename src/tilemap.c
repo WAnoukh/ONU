@@ -1,8 +1,8 @@
 ﻿#include <cglm/vec3.h>
 
 #include "entity.h"
-#include "Tilemap.h"
-#include "Rendering/rendering.h"
+#include "tilemap.h"
+#include "rendering/rendering.h"
 
 #define TILEMAP_SIZE 10
 
