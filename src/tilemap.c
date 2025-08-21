@@ -7,7 +7,7 @@
 
 struct Tile default_grid[TILEMAP_SIZE*TILEMAP_SIZE] = {
     SOLID, SOLID, SOLID, SOLID, SOLID, SOLID, SOLID, SOLID, SOLID, SOLID,
-    SOLID, NONE, NONE, NONE, NONE, NONE, NONE, NONE, SOLID, SOLID,
+    SOLID, NONE, NONE, SOLID, NONE, NONE, NONE, NONE, SOLID, SOLID,
     SOLID, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, SOLID,
     SOLID, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, SOLID,
     SOLID, NONE, NONE, SOLID, NONE, NONE, NONE, NONE, NONE, SOLID,
@@ -35,7 +35,7 @@ TileMap get_default_tilemap()
 void render_tilemap(const TileMap tilemap, vec2 pos, const float size)
 {
     int x = 0;
-    int y = 0;
+    int y = (int)tilemap.height;
     const float tilemap_width_2 = (float)tilemap.width * size/2;
     const float tilemap_height_2 = (float)tilemap.height * size/2;
     for (int i = 0; i < tilemap.height * tilemap.width; ++i)
@@ -55,7 +55,7 @@ void render_tilemap(const TileMap tilemap, vec2 pos, const float size)
         if (x>=tilemap.width)
         {
             x=0;
-            y++;
+            --y;
         }
     }
 }
@@ -63,5 +63,5 @@ void render_tilemap(const TileMap tilemap, vec2 pos, const float size)
 void render_main_tilemap()
 {
     vec2 pos = {1.f,1.f};
-    render_tilemap(get_default_tilemap(), pos, 0.2f);
+    render_tilemap(get_default_tilemap(), pos, 1.f);
 }

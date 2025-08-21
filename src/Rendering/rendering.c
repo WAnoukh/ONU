@@ -1,11 +1,9 @@
 ﻿#include "Rendering/rendering.h"
 
 #include <stdlib.h>
-#include <math.h>
 #include <cglm/cglm.h>
 
 #include "Entity.h"
-#include "tilemap.h"
 #include "glad/glad.h"
 #include "Rendering/shader.h"
 #include "Window/window.h"
@@ -89,7 +87,7 @@ void initialize_quad()
 void compute_camera_view()
 {
     float sx = zoom / window_get_screen_ratio();
-    float sy = -zoom;
+    float sy = zoom;
     float tx = pan[0];
     float ty = pan[1];
     glm_mat3_identity(view);

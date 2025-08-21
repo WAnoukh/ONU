@@ -38,8 +38,8 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         update_entities(delta_time);
-        render_entities();
         render_main_tilemap();
+        render_entities();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

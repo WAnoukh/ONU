@@ -2,6 +2,7 @@
 
 #include "Rendering/rendering.h"
 #include "Window/Input.h"
+#include <stdio.h>
 
 struct Entity *entities;
 int entity_count;
