@@ -4,18 +4,37 @@
 
 #include "window/window.h"
 
-void process_input(GLFWwindow *window);
+enum PlayerAction
+{
+    PA_NONE,
+    PA_UP,
+    PA_DOWN,
+    PA_LEFT,
+    PA_RIGHT,
+    PA_UNDO,
+    PA_COUNT,
+};
 
-void initialize_input(GLFWwindow *in_window);
+void i_process(GLFWwindow *window);
 
-int key_pressed(int key);
+void i_initialize(GLFWwindow *in_window);
 
-int mouse_pressed(int button);
+int i_key_pressed(int key);
 
-void get_player_input(vec2 out_input);
+int i_key_down(int key);
+
+void register_key_state(int key, int action);
+
+enum PlayerAction get_player_input();
 
 void scroll(float x_offset, float y_offset);
 
 void mouse_move(float x, float y);
+
+void i_clear_pressed();
+
+enum PlayerAction i_get_current_player_action();
+
+int i_player_action_just_changed();
 
 #endif //INPUT_H

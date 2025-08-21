@@ -22,6 +22,10 @@ void scroll_callback(GLFWwindow* window, double x_offset, double y_offset)
     scroll((float)x_offset, (float)y_offset);
 }
 
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int opt)
+{
+    register_key_state(key, action);
+}
 
 int initGl(GLFWwindow **window)
 {
@@ -41,6 +45,7 @@ int initGl(GLFWwindow **window)
     glfwMakeContextCurrent(*window);
     glfwSetFramebufferSizeCallback(*window, framebuffer_size_callback);
     glfwSetScrollCallback(*window, scroll_callback);
+    glfwSetKeyCallback(*window, key_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {

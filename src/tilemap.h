@@ -4,8 +4,8 @@
 
 enum Solidity
 {
-   NONE,
-   SOLID,
+   TILE_NONE,
+   TILE_SOLID,
 };
 
 struct Tile
@@ -13,14 +13,7 @@ struct Tile
    enum Solidity solidity;
 };
 
-typedef struct
-{
-   struct Tile* grid;
-   unsigned int height;
-   unsigned int width;
-} TileMap;
+typedef struct Tile* TileMap;
 
-void render_tilemap(TileMap tilemap, vec2 pos, float size);
-
-void render_main_tilemap();
+void render_tilemap(TileMap tilemap, int tm_width, int tm_height, vec2 pos, float size);
 #endif

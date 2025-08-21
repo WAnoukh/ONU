@@ -1,68 +1,39 @@
 ﻿#include <cglm/vec3.h>
 
-#include "entity.h"
 #include "tilemap.h"
 #include "rendering/rendering.h"
+#include "transform.h"
 
-#define TILEMAP_SIZE 10
-
-struct Tile default_grid[TILEMAP_SIZE*TILEMAP_SIZE] = {
-    SOLID, SOLID, SOLID, SOLID, SOLID, SOLID, SOLID, SOLID, SOLID, SOLID,
-    SOLID, NONE, NONE, SOLID, NONE, NONE, NONE, NONE, SOLID, SOLID,
-    SOLID, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, SOLID,
-    SOLID, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, SOLID,
-    SOLID, NONE, NONE, SOLID, NONE, NONE, NONE, NONE, NONE, SOLID,
-    SOLID, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, SOLID,
-    SOLID, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, SOLID,
-    SOLID, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, SOLID,
-    SOLID, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, SOLID,
-    SOLID, SOLID, SOLID, SOLID, SOLID, SOLID, SOLID, SOLID, SOLID, SOLID,
-};
 
 vec3 tile_color[2] = {
     {1.f,1.f,1.f},
     {0.1f,0.5f,0.3f}
 };
 
-TileMap get_default_tilemap()
-{
-    TileMap tilemap;
-    tilemap.grid = default_grid;
-    tilemap.height = TILEMAP_SIZE;
-    tilemap.width = TILEMAP_SIZE;
-    return tilemap;
-}
-
-void render_tilemap(const TileMap tilemap, vec2 pos, const float size)
+void render_tilemap(TileMap tilemap, int tm_width, int tm_height, vec2 pos, float size)
 {
     int x = 0;
-    int y = (int)tilemap.height;
-    const float tilemap_width_2 = (float)tilemap.width * size/2;
-    const float tilemap_height_2 = (float)tilemap.height * size/2;
-    for (int i = 0; i < tilemap.height * tilemap.width; ++i)
+    int y = (int)tm_height;
+    const float tm_width_2 = (float)tm_width * size/2;
+    const float tm_height_2 = (float)tm_height * size/2;
+    for (int i = 0; i < tm_height * tm_width; ++i)
     {
-        const enum Solidity solidity= tilemap.grid[i].solidity;
+        const enum Solidity solidity= tilemap[i].solidity;
         vec3 *color =   (vec3*)tile_color[solidity];
 
         mat3 transform;
         vec2 size_vec = {size, size};
         vec2 pos_offset;
-        pos_offset[0] = (float)x * size - tilemap_width_2;
-        pos_offset[1] = (float)y * size - tilemap_height_2;
+        pos_offset[0] = (float)x * size - tm_width_2;
+        pos_offset[1] = (float)y * size - tm_height_2;
         glm_vec2_add(pos, pos_offset, pos_offset);
         compute_transform(transform, pos_offset, size_vec);
         draw_transformed_quad(transform, *color);
         ++x;
-        if (x>=tilemap.width)
+        if (x>=tm_width)
         {
             x=0;
             --y;
         }
     }
-}
-
-void render_main_tilemap()
-{
-    vec2 pos = {1.f,1.f};
-    render_tilemap(get_default_tilemap(), pos, 1.f);
 }

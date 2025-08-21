@@ -2,7 +2,6 @@
 #include <cglm/cglm.h>
 
 #include "glad/glad.h"
-#include "entity.h"
 #include "rendering/shader.h"
 #include "window/window.h"
 #include "rendering/rendering.h"
@@ -153,16 +152,6 @@ void draw_transformed_quad(mat3 transform, vec3 color)
     //glm_mat3_mul(transform, view, result);
     shader_set_mat3(default_shader_program, "view", result);
     shader_set_vec3(default_shader_program, "color", color);
-    draw_quad();
-}
-
-void draw_entity(struct Entity e)
-{
-    glUseProgram(default_shader_program);
-    mat3 result;
-    glm_mat3_mul(view, e.transform, result);
-    shader_set_mat3(default_shader_program, "view", result);
-    shader_set_vec3(default_shader_program, "color", e.color);
     draw_quad();
 }
 
