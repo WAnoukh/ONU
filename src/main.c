@@ -21,8 +21,8 @@ float last_action_time = 0.f;
 void request_new_turn(enum PlayerAction action)
 {
     print_level(main_level);
-    ivec2 player_pos;
-    if(!get_player_position_in_level(main_level, player_pos))
+    struct Entity *player =get_player(&main_level);
+    if(player == NULL)
     {
         perror("Player not found in that level.");
         return;
@@ -48,18 +48,20 @@ void request_new_turn(enum PlayerAction action)
         player_movement[0] = 1;
     }
 
+    ivec2 new_pos;
+    glm_ivec2_add(player->position, player_movement, new_pos);
 
-    ivec2 player_new_pos;
-    glm_ivec2_add(player_pos, player_movement, player_new_pos);
-
-    if(main_level.tilemap[compute_index_from_position(main_level, player_new_pos)].solidity != TILE_SOLID)
+    if(main_level.tilemap[compute_index_from_position(main_level, new_pos)].type != TILE_WALL)
+    {
+        glm_ivec2_copy(new_pos, player->position);
+    }
+    //TODO : Adapt this to the new entity system
+    /*
+    if(main_level.tilemap[compute_index_from_position(main_level, player_new_pos)].)
     {
         move_entity(main_level, player_pos, player_new_pos);
     }
-
-
-    glm_ivec2_print(player_new_pos, stdout);
-    print_level(main_level);
+    */
 }
 
 void request_new_turn_if_needed()

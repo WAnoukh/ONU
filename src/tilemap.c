@@ -7,7 +7,7 @@
 
 vec3 tile_color[2] = {
     {1.f,1.f,1.f},
-    {0.1f,0.5f,0.3f}
+    {0.1f,0.5f,0.3f},
 };
 
 void render_tilemap(TileMap tilemap, int tm_width, int tm_height, vec2 pos, float size)
@@ -18,8 +18,8 @@ void render_tilemap(TileMap tilemap, int tm_width, int tm_height, vec2 pos, floa
     const float tm_height_2 = (float)tm_height * size/2;
     for (int i = 0; i < tm_height * tm_width; ++i)
     {
-        const enum Solidity solidity= tilemap[i].solidity;
-        vec3 *color =   (vec3*)tile_color[solidity];
+        const enum TileType type = tilemap[i].type;
+        vec3 *color =   (vec3*)tile_color[type];
 
         mat3 transform;
         vec2 size_vec = {size, size};

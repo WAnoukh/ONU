@@ -2,15 +2,15 @@
 #define TILEMAP_H
 #include <cglm/ivec2.h>
 
-enum Solidity
+enum TileType
 {
-   TILE_NONE,
-   TILE_SOLID,
+    TILE_EMPTY,
+    TILE_WALL,
 };
 
 struct Tile
 {
-   enum Solidity solidity;
+   enum TileType type;
 };
 
 typedef struct Tile* TileMap;
