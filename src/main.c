@@ -2,7 +2,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "cglm/io.h"
 #include "cglm/ivec2.h"
 #include "level.h"
 #include "window/input.h"
@@ -20,7 +19,7 @@ float last_action_time = 0.f;
 
 void request_new_turn(enum PlayerAction action)
 {
-    print_level(main_level);
+    print_level(&main_level);
     struct Entity *player =get_player(&main_level);
     if(player == NULL)
     {
@@ -51,17 +50,11 @@ void request_new_turn(enum PlayerAction action)
     ivec2 new_pos;
     glm_ivec2_add(player->position, player_movement, new_pos);
 
-    if(main_level.tilemap[compute_index_from_position(main_level, new_pos)].type != TILE_WALL)
+    if(!is_tilemap_solid_at(&main_level, new_pos))
     {
-        glm_ivec2_copy(new_pos, player->position);
+        //glm_ivec2_copy(new_pos, player->position);
+        push_entity(&main_level, player, player_movement);
     }
-    //TODO : Adapt this to the new entity system
-    /*
-    if(main_level.tilemap[compute_index_from_position(main_level, player_new_pos)].)
-    {
-        move_entity(main_level, player_pos, player_new_pos);
-    }
-    */
 }
 
 void request_new_turn_if_needed()
@@ -115,7 +108,7 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        render_level(main_level);
+        render_level(&main_level);
 
         glfwSwapBuffers(window);
         i_clear_pressed();
