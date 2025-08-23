@@ -138,7 +138,7 @@ void scroll(float x_offset, float y_offset)
 
 int player_action_binds[] = 
 {
-    GLFW_KEY_UNKNOWN, GLFW_KEY_W, GLFW_KEY_S, GLFW_KEY_A, GLFW_KEY_D, GLFW_KEY_U, GLFW_KEY_UNKNOWN 
+    GLFW_KEY_UNKNOWN, GLFW_KEY_W, GLFW_KEY_S, GLFW_KEY_A, GLFW_KEY_D, GLFW_KEY_R, GLFW_KEY_UNKNOWN 
 };
 
 void process_player_action()

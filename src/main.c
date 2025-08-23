@@ -8,7 +8,12 @@
 #include "window/window.h"
 #include "rendering/rendering.h"
 
+#define HISTORY_SIZE 100
+
 struct Level main_level;
+
+struct Level history[HISTORY_SIZE];
+int history_size = 0;
 
 double last_time;
 double new_time;
@@ -16,6 +21,31 @@ float delta_time;
 
 float time_between_input = 0.3f;
 float last_action_time = 0.f;
+
+int history_register(struct Level *level)
+{
+    if(history_size >= HISTORY_SIZE) {
+        perror("History full");
+        return 0;
+    }
+    history[history_size++] = *level;
+    return 1;
+}
+
+int history_empty()
+{
+    return history_size <= 0;
+}
+
+struct Level history_pop()
+{
+   if(history_size <= 0) 
+   {
+        perror("Trying to pop an empty history\n");
+        exit(1);
+   }
+   return history[--history_size];
+}
 
 void request_new_turn(enum PlayerAction action)
 {
@@ -26,6 +56,17 @@ void request_new_turn(enum PlayerAction action)
         perror("Player not found in that level.");
         return;
     }
+
+    if(action == PA_UNDO)
+    {
+        if(!history_empty())
+        {
+           main_level = history_pop(); 
+        }
+        return;
+    }
+
+    history_register(&main_level);
 
     ivec2 player_movement;
     player_movement[0] = 0;
@@ -52,7 +93,6 @@ void request_new_turn(enum PlayerAction action)
 
     if(!is_tilemap_solid_at(&main_level, new_pos))
     {
-        //glm_ivec2_copy(new_pos, player->position);
         push_entity(&main_level, player, player_movement);
     }
 }

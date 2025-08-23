@@ -191,6 +191,7 @@ int try_push_entity(struct Level *level, struct Entity *entity, ivec2 offset)
 
 void push_entity(struct Level *level, struct Entity *entity, ivec2 offset)
 {
+    if(glm_ivec2_eq(offset, 0)) return;
     if(entity->solidity != SOLIDITY_MOVABLE)
     {
         perror("Moving a non movable entity\n");
