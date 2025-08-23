@@ -55,7 +55,6 @@ void render_level(struct Level level)
 
 void compute_position_from_index(struct Level level, int index, ivec2 out_position)
 {
-    printf("computing pos from index : %d\n", index);
     out_position[1] = index / level.height;
     out_position[0] = index - out_position[1]* level.width;
     glm_ivec2_print(out_position, stdout);
@@ -99,13 +98,11 @@ void print_level(struct Level level)
 
 int get_player_position_in_level(struct Level level, ivec2 out_position)
 {
-    printf("Searching player \n");
     int total = level.width * level.height;
     for(int i = 0 ; i < total ; ++i)
     {
         if(level.entities[i].entity_type == ENTITY_PLAYER)
         {
-            printf("Player found in %d \n", i);
             compute_position_from_index(level, i, out_position);
             glm_ivec2_print(out_position, stdout);
             return 1;
@@ -116,10 +113,8 @@ int get_player_position_in_level(struct Level level, ivec2 out_position)
 
 void move_entity(struct Level level, ivec2 from, ivec2 to)
 {
-    printf("Moving entity from \n");
     glm_ivec2_print(from, stdout);
     int from_index = compute_index_from_position(level, from);
-    printf("translating into index : %d\n", from_index);
     int to_index = compute_index_from_position(level, to);
     level.entities[to_index] = level.entities[from_index];
     level.entities[from_index] = (struct EntityCell){ENTITY_NONE};

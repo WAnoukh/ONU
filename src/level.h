@@ -20,5 +20,7 @@ void print_level(struct Level level);
 
 int get_player_position_in_level(struct Level level, ivec2 out_position);
 
+int compute_index_from_position(struct Level level, ivec2 position);
+    
 void move_entity(struct Level level, ivec2 from, ivec2 to);
 #endif // LEVEL_H

@@ -15,12 +15,11 @@ double last_time;
 double new_time;
 float delta_time;
 
-float time_between_input = 0.5f;
+float time_between_input = 0.3f;
 float last_action_time = 0.f;
 
 void request_new_turn(enum PlayerAction action)
 {
-    printf("New Action !! %d\n", action);
     print_level(main_level);
     ivec2 player_pos;
     if(!get_player_position_in_level(main_level, player_pos))
@@ -52,7 +51,13 @@ void request_new_turn(enum PlayerAction action)
 
     ivec2 player_new_pos;
     glm_ivec2_add(player_pos, player_movement, player_new_pos);
-    move_entity(main_level, player_pos, player_new_pos);
+
+    if(main_level.tilemap[compute_index_from_position(main_level, player_new_pos)].solidity != TILE_SOLID)
+    {
+        move_entity(main_level, player_pos, player_new_pos);
+    }
+
+
     glm_ivec2_print(player_new_pos, stdout);
     print_level(main_level);
 }
