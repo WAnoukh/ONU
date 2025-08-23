@@ -2,10 +2,14 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "cglm/io.h"
+#include "cglm/ivec2.h"
 #include "level.h"
 #include "window/input.h"
 #include "window/window.h"
 #include "rendering/rendering.h"
+
+struct Level main_level;
 
 double last_time;
 double new_time;
@@ -17,6 +21,40 @@ float last_action_time = 0.f;
 void request_new_turn(enum PlayerAction action)
 {
     printf("New Action !! %d\n", action);
+    print_level(main_level);
+    ivec2 player_pos;
+    if(!get_player_position_in_level(main_level, player_pos))
+    {
+        perror("Player not found in that level.");
+        return;
+    }
+
+    ivec2 player_movement;
+    player_movement[0] = 0;
+    player_movement[1] = 0;
+    if(action == PA_UP)
+    {
+       player_movement[1] = -1; 
+    }
+    else if (action == PA_DOWN)
+    {
+        player_movement[1] = 1;
+    }
+    else if (action == PA_LEFT)
+    {
+        player_movement[0] = -1;
+    }
+    else if (action == PA_RIGHT)
+    {
+        player_movement[0] = 1;
+    }
+
+
+    ivec2 player_new_pos;
+    glm_ivec2_add(player_pos, player_movement, player_new_pos);
+    move_entity(main_level, player_pos, player_new_pos);
+    glm_ivec2_print(player_new_pos, stdout);
+    print_level(main_level);
 }
 
 void request_new_turn_if_needed()
@@ -37,7 +75,7 @@ void request_new_turn_if_needed()
     {
         return; 
     }
-    
+
     last_action_time = new_time_f;
     request_new_turn(player_action);
 }
@@ -53,11 +91,11 @@ int main()
 
     initialize_renderer();
     i_initialize(window);
-
+ 
+    main_level = get_default_level();
     last_time = glfwGetTime();
 
-    struct Level main_level = get_default_level();
-    
+
     while (!glfwWindowShouldClose(window))
     {
         new_time = get_time();
