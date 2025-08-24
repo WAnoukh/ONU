@@ -8,7 +8,7 @@
 #include "window/window.h"
 #include "rendering/rendering.h"
 
-#define HISTORY_SIZE 100
+#define HISTORY_SIZE 1000
 
 struct Level main_level;
 
@@ -73,7 +73,7 @@ void request_new_turn(enum PlayerAction action)
     player_movement[1] = 0;
     if(action == PA_UP)
     {
-       player_movement[1] = -1; 
+       player_movement[1] = -1;
     }
     else if (action == PA_DOWN)
     {
@@ -120,6 +120,19 @@ void request_new_turn_if_needed()
     request_new_turn(player_action);
 }
 
+void update_key_blocks()
+{
+    for(int i = 0; i < main_level.key_block_data_count; ++i)
+    {
+        struct KeyBlockData *key_data = main_level.key_block_data+i;
+        key_data->is_pressed = i_key_down(key_data->key);
+        if(key_data->is_pressed)
+        {
+            printf("Nice \n");
+        }
+    }
+}
+
 int main()
 {
     GLFWwindow* window;
@@ -132,7 +145,7 @@ int main()
     initialize_renderer();
     i_initialize(window);
  
-    main_level = get_default_level();
+    get_default_level(&main_level);
     last_time = glfwGetTime();
 
 
@@ -143,6 +156,7 @@ int main()
         last_time = new_time;
 
         i_process(window);
+        update_key_blocks();
         request_new_turn_if_needed();
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);

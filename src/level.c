@@ -1,4 +1,5 @@
 #include "level.h"
+#include "GLFW/glfw3.h"
 #include "cglm/io.h"
 #include "cglm/ivec2.h"
 #include "cglm/vec2.h"
@@ -24,25 +25,25 @@ struct Tile default_grid[DEFAULT_LEVEL_GRID_SIZE] =
     TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL,
 };
 
-struct Level get_default_level()
+void get_default_level(struct Level *level)
 {
-    struct Level level;
-    level.tilemap = default_grid;
-    level.entities[0] = (struct Entity){
+    level->tilemap = default_grid;
+    level->entities[0] = (struct Entity){
         ENTITY_PLAYER,
         SOLIDITY_MOVABLE,
         {8,8},
         NULL
     };
-    level.entities[1] = create_box_at(7,7);
-    level.entities[2] = create_box_at(3,7);
-    level.entity_count = 3;
-    level.height = DEFAULT_LEVEL_SIZE;
-    level.width = DEFAULT_LEVEL_SIZE;
-    return level;
+    level->entities[1] = create_movable_at(7,7,ENTITY_BOX);
+    level->entities[2] = create_key_block_at(2, 7, GLFW_KEY_F, level->key_block_data);
+    level->entity_count = 3;
+    level->key_block_data_count = 1;
+    level->height = DEFAULT_LEVEL_SIZE;
+    level->width = DEFAULT_LEVEL_SIZE;
 }
 
-vec3 player_color = {0.5f,0.1f,0.3f};
+vec3 key_block_activated_color = {203.f, 214.f, 0.f};
+vec3 entities_color[] = {{0.f,0.f,0.f}, {0.f,0.f,0.f},{0.5f,0.1f,0.3f},{0.2f,0.2f,0.2f},{0.1f,0.6f,0.6f},{0.f,0.f,0.f}};
 
 void render_entities(struct Level *level, vec2 pos, float size)
 {
@@ -51,6 +52,23 @@ void render_entities(struct Level *level, vec2 pos, float size)
     for(int i = 0; i < level->entity_count; ++i)
     {
         struct Entity ent = level->entities[i];
+        
+        vec3 color;
+        glm_vec3_copy(entities_color[(int)ent.type], color);
+        if(ent.type == ENTITY_KEY)
+        {
+            struct KeyBlockData *key_block_data = (struct KeyBlockData*)ent.data;
+            if(key_block_data == NULL)
+            {
+                perror("This ENTITY_KEY doesn't have KeyBlockData.");
+                exit(1);
+            }
+            if(key_block_data->is_pressed)
+            {
+                glm_vec3_copy(key_block_activated_color, color);
+            }
+        }
+
         mat3 transform;
         vec2 size_vec = {size, size};
         vec2 pos_offset;
@@ -58,7 +76,7 @@ void render_entities(struct Level *level, vec2 pos, float size)
         pos_offset[1] = (float)(level->height-ent.position[1]) * size - height_2;
         glm_vec2_add(pos, pos_offset, pos_offset);
         compute_transform(transform, pos_offset, size_vec);
-        draw_transformed_quad(transform, player_color);
+        draw_transformed_quad(transform, color);
     }
 }
 
