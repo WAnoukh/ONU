@@ -122,13 +122,21 @@ void request_new_turn_if_needed()
 
 void update_key_blocks()
 {
-    for(int i = 0; i < main_level.key_block_data_count; ++i)
+    for(int i = 0; i < main_level.entity_count; ++i)
     {
-        struct KeyBlockData *key_data = main_level.key_block_data+i;
+        struct Entity *ent = main_level.entities+i;
+        if(ent->type != ENTITY_KEY) continue;
+
+        struct KeyBlockData *key_data = ent->data;
         key_data->is_pressed = i_key_down(key_data->key);
-        if(key_data->is_pressed)
+        if(i_key_pressed(key_data->key))
         {
-            printf("Nice \n");
+            struct Entity *slot = get_slot_at(&main_level, ent->position);
+            if(slot != NULL)
+            {
+                struct SlotData *slot_data = slot->data;
+                request_new_turn(slot_data->action);
+            }
         }
     }
 }

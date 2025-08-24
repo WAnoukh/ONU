@@ -2,6 +2,7 @@
 #define LEVEL_H
 
 #include "tilemap.h"
+#include "window/input.h"
 
 enum EntityType
 {
@@ -34,13 +35,20 @@ struct KeyBlockData
     int is_pressed;
 };
 
+struct SlotData
+{
+    enum PlayerAction action;
+};
+
 struct Level 
 {
     TileMap tilemap;
     struct Entity entities[100];
     struct KeyBlockData key_block_data[10];
+    struct SlotData slot_data[10];
     int entity_count;
     int key_block_data_count;
+    int slot_data_count;
     int width;
     int height;
 };
@@ -52,6 +60,8 @@ void render_level(struct Level *level);
 void print_level(struct Level *level);
 
 int get_player_position_in_level(struct Level *level, ivec2 out_position);
+
+struct Entity *get_slot_at(struct Level *level, ivec2 at);
 
 int compute_index_from_position(struct Level *level, ivec2 position);
 
@@ -80,6 +90,19 @@ static inline struct Entity create_key_block_at(int x, int y, int key, struct Ke
     return (struct Entity){
         ENTITY_KEY,
         SOLIDITY_MOVABLE,
+        {x, y},
+        (void*)out_data,
+    };
+}
+
+static inline struct Entity create_slot_at(int x, int y, enum PlayerAction action, struct SlotData *out_data)
+{
+    *out_data = (struct SlotData){
+        action,
+    };
+    return (struct Entity){
+        ENTITY_SLOT,
+        SOLIDITY_NONE,
         {x, y},
         (void*)out_data,
     };

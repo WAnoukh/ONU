@@ -6,6 +6,7 @@
 #include "rendering/rendering.h"
 #include "tilemap.h"
 #include "transform.h"
+#include "window/input.h"
 #include <stdio.h>
 
 #define DEFAULT_LEVEL_SIZE 10
@@ -13,37 +14,39 @@
 
 struct Tile default_grid[DEFAULT_LEVEL_GRID_SIZE] = 
 {
-    TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL,
-    TILE_WALL, TILE_EMPTY, TILE_EMPTY, TILE_WALL, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_WALL, TILE_WALL,
-    TILE_WALL, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_WALL,
-    TILE_WALL, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_WALL,
-    TILE_WALL, TILE_EMPTY, TILE_EMPTY, TILE_WALL, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_WALL,
-    TILE_WALL, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_WALL,
-    TILE_WALL, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_WALL,
-    TILE_WALL, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_WALL,
-    TILE_WALL, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_EMPTY, TILE_WALL,
-    TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL, TILE_WALL,
+    {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL},
+    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL}, {TILE_WALL},
+    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL},
+    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL},
+    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL},
+    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL},
+    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL},
+    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL},
+    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL},
+    {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL},
 };
 
 void get_default_level(struct Level *level)
 {
     level->tilemap = default_grid;
-    level->entities[0] = (struct Entity){
+    level->entities[1] = (struct Entity){
         ENTITY_PLAYER,
         SOLIDITY_MOVABLE,
         {8,8},
         NULL
     };
-    level->entities[1] = create_movable_at(7,7,ENTITY_BOX);
+    level->entities[0] = create_slot_at(2, 5, PA_UNDO, level->slot_data);
     level->entities[2] = create_key_block_at(2, 7, GLFW_KEY_F, level->key_block_data);
-    level->entity_count = 3;
+    level->entities[3] = create_movable_at(7,7,ENTITY_BOX);
+    level->entity_count = 4;
     level->key_block_data_count = 1;
+    level->slot_data_count = 1;
     level->height = DEFAULT_LEVEL_SIZE;
     level->width = DEFAULT_LEVEL_SIZE;
 }
 
 vec3 key_block_activated_color = {203.f, 214.f, 0.f};
-vec3 entities_color[] = {{0.f,0.f,0.f}, {0.f,0.f,0.f},{0.5f,0.1f,0.3f},{0.2f,0.2f,0.2f},{0.1f,0.6f,0.6f},{0.f,0.f,0.f}};
+vec3 entities_color[] = {{0.f,0.f,0.f}, {0.f,0.f,0.f},{0.5f,0.1f,0.3f},{0.2f,0.2f,0.2f},{0.1f,0.6f,0.6f},{0.9f,0.9f,0.9f}};
 
 void render_entities(struct Level *level, vec2 pos, float size)
 {
@@ -148,7 +151,32 @@ struct Entity *get_entity_at(struct Level *level, ivec2 at)
 {
     for(int i = 0 ; i < level->entity_count ; ++i)
     {
-        ivec2 ent_pos;
+        if(glm_ivec2_eqv(level->entities[i].position, at))
+        {
+            return level->entities + i;
+        }
+    }
+    return NULL;
+}
+
+struct Entity *get_solid_entity_at(struct Level *level, ivec2 at)
+{
+    for(int i = 0 ; i < level->entity_count ; ++i)
+    {
+        if(level->entities[i].solidity == SOLIDITY_NONE) continue;
+        if(glm_ivec2_eqv(level->entities[i].position, at))
+        {
+            return level->entities + i;
+        }
+    }
+    return NULL;
+}
+
+struct Entity *get_slot_at(struct Level *level, ivec2 at)
+{
+    for(int i = 0 ; i < level->entity_count ; ++i)
+    {
+        if(level->entities[i].type != ENTITY_SLOT) continue;
         if(glm_ivec2_eqv(level->entities[i].position, at))
         {
             return level->entities + i;
@@ -171,7 +199,6 @@ struct Entity *get_player(struct Level *level)
 
 int get_player_position_in_level(struct Level *level, ivec2 out_position)
 {
-    int total = level->width * level->height;
     for(int i = 0 ; i < level->entity_count ; ++i)
     {
         if(level->entities[i].type == ENTITY_PLAYER)
@@ -192,10 +219,9 @@ int try_push_entity(struct Level *level, struct Entity *entity, ivec2 offset)
     {
         return 0;
     }
-    struct Entity *obstacle = get_entity_at(level, target_pos);
+    struct Entity *obstacle = get_solid_entity_at(level, target_pos);
     if(obstacle == NULL)
     {
-        //|| (obstacle->solidity == SOLIDITY_MOVABLE && try_push_entity(level, obstacle, offset))
         glm_ivec2_copy(target_pos, entity->position);
         return 1;
     }
