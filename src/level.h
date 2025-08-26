@@ -12,6 +12,7 @@ enum EntityType
     ENTITY_BOX,
     ENTITY_KEY,
     ENTITY_SLOT,
+    ENTITY_DOOR,
 };
 
 enum Solidity 
@@ -40,6 +41,11 @@ struct SlotData
     enum PlayerAction action;
 };
 
+struct DoorData
+{
+    int is_opened;
+};
+
 struct Level 
 {
     TileMap tilemap;
@@ -49,6 +55,8 @@ struct Level
     int entity_count;
     int key_block_data_count;
     int slot_data_count;
+    int is_door_opened;
+    int is_door_reached;
     int width;
     int height;
 };
@@ -105,6 +113,16 @@ static inline struct Entity create_slot_at(int x, int y, enum PlayerAction actio
         SOLIDITY_NONE,
         {x, y},
         (void*)out_data,
+    };
+}
+
+static inline struct Entity create_door_at(int x, int y)
+{
+    return (struct Entity){
+        ENTITY_DOOR,
+        SOLIDITY_NONE,
+        {x, y},
+        NULL
     };
 }
 #endif // LEVEL_H

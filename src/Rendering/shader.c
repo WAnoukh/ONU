@@ -20,12 +20,10 @@ int load_shader_from_file(const char *path, char** out_shader)
 
     char *cur = *out_shader;
     int read_char;
-    int i = 0;
     do
     {
         read_char = fgetc(file);
         *cur++ = (char)read_char;
-        i++;
     }while (read_char != EOF && cur < *out_shader + MAX_SHADER_LENGTH - 1);
     *(cur-1) = '\0';
     return 1;

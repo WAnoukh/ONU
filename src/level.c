@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "level.h"
 #include "GLFW/glfw3.h"
 #include "cglm/io.h"
@@ -7,7 +9,7 @@
 #include "tilemap.h"
 #include "transform.h"
 #include "window/input.h"
-#include <stdio.h>
+#include "texture.h"
 
 #define DEFAULT_LEVEL_SIZE 10
 #define DEFAULT_LEVEL_GRID_SIZE DEFAULT_LEVEL_SIZE * DEFAULT_LEVEL_SIZE
@@ -35,18 +37,21 @@ void get_default_level(struct Level *level)
         {8,8},
         NULL
     };
-    level->entities[0] = create_slot_at(2, 5, PA_UNDO, level->slot_data);
+    level->entities[0] = create_slot_at(2, 5, PA_DOOR_OPEN, level->slot_data);
     level->entities[2] = create_key_block_at(2, 7, GLFW_KEY_F, level->key_block_data);
     level->entities[3] = create_movable_at(7,7,ENTITY_BOX);
-    level->entity_count = 4;
+    level->entities[4] = create_door_at(2,0);
+    level->entity_count = 5;
     level->key_block_data_count = 1;
     level->slot_data_count = 1;
+    level->is_door_opened = 0;
     level->height = DEFAULT_LEVEL_SIZE;
     level->width = DEFAULT_LEVEL_SIZE;
 }
 
-vec3 key_block_activated_color = {203.f, 214.f, 0.f};
-vec3 entities_color[] = {{0.f,0.f,0.f}, {0.f,0.f,0.f},{0.5f,0.1f,0.3f},{0.2f,0.2f,0.2f},{0.1f,0.6f,0.6f},{0.9f,0.9f,0.9f}};
+vec3 color_key_block_activated = {203.f, 214.f, 0.f};
+vec3 color_door_open = {0.f,1.f,0.f};
+vec3 entities_color[] = {{0.f,0.f,0.f}, {0.f,0.f,0.f},{0.5f,0.1f,0.3f},{0.2f,0.2f,0.2f},{0.1f,0.6f,0.6f},{0.9f,0.9f,0.9f},{0.f,0.f,0.f}};
 
 void render_entities(struct Level *level, vec2 pos, float size)
 {
@@ -68,8 +73,27 @@ void render_entities(struct Level *level, vec2 pos, float size)
             }
             if(key_block_data->is_pressed)
             {
-                glm_vec3_copy(key_block_activated_color, color);
+                glm_vec3_copy(color_key_block_activated, color);
             }
+        }else if(ent.type == ENTITY_DOOR)
+        {
+            if(level->is_door_opened)
+            {
+                glm_vec3_copy(color_door_open, color);
+            }
+        }
+        unsigned int program;
+        switch (ent.type)
+        {
+            case ENTITY_SLOT:
+                program = shaders_use_sprite(get_texture_slot());
+                break;
+            case ENTITY_KEY:
+                program = shaders_use_sprite(get_texture_key());
+                break;
+            default:
+                program = shaders_use_default();
+                break;
         }
 
         mat3 transform;
@@ -79,7 +103,7 @@ void render_entities(struct Level *level, vec2 pos, float size)
         pos_offset[1] = (float)(level->height-ent.position[1]) * size - height_2;
         glm_vec2_add(pos, pos_offset, pos_offset);
         compute_transform(transform, pos_offset, size_vec);
-        draw_transformed_quad(transform, color);
+        draw_transformed_quad(program, transform, color);
     }
 }
 
@@ -215,12 +239,18 @@ int try_push_entity(struct Level *level, struct Entity *entity, ivec2 offset)
     ivec2 target_pos;
     glm_ivec2_add(entity->position, offset, target_pos);
 
+    struct Entity *obstacle = get_entity_at(level, target_pos);
+    if(entity->type == ENTITY_PLAYER && obstacle != NULL && obstacle->type == ENTITY_DOOR && level->is_door_opened)
+    {
+        glm_ivec2_copy(target_pos, entity->position);
+        level->is_door_reached = 1;
+        return 1;
+    }
     if(is_tilemap_solid_at(level, target_pos))
     {
         return 0;
     }
-    struct Entity *obstacle = get_solid_entity_at(level, target_pos);
-    if(obstacle == NULL)
+    if(obstacle == NULL || obstacle->solidity == SOLIDITY_NONE)
     {
         glm_ivec2_copy(target_pos, entity->position);
         return 1;

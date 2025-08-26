@@ -6,6 +6,10 @@ struct Entity;
 
 void initialize_renderer();
 
+unsigned int shaders_use_default();
+
+unsigned int shaders_use_sprite(unsigned int texture);
+
 void set_camera_zoom(float zoom);
 
 float get_camera_zoom();
@@ -14,7 +18,7 @@ void pan_camera(float x_offset, float y_offset);
 
 void compute_camera_view();
 
-void draw_transformed_quad(mat3 transform, vec3 color);
+void draw_transformed_quad(unsigned int program, mat3 transform, vec3 color);
 
 void draw_entity(struct Entity e);
 

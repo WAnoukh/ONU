@@ -16,6 +16,7 @@ void render_tilemap(TileMap tilemap, int tm_width, int tm_height, vec2 pos, floa
     int y = (int)tm_height;
     const float tm_width_2 = (float)tm_width * size/2;
     const float tm_height_2 = (float)tm_height * size/2;
+    unsigned int program = shaders_use_default();
     for (int i = 0; i < tm_height * tm_width; ++i)
     {
         const enum TileType type = tilemap[i].type;
@@ -28,7 +29,7 @@ void render_tilemap(TileMap tilemap, int tm_width, int tm_height, vec2 pos, floa
         pos_offset[1] = (float)y * size - tm_height_2;
         glm_vec2_add(pos, pos_offset, pos_offset);
         compute_transform(transform, pos_offset, size_vec);
-        draw_transformed_quad(transform, *color);
+        draw_transformed_quad(program, transform, *color);
         ++x;
         if (x>=tm_width)
         {

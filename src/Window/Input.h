@@ -12,6 +12,7 @@ enum PlayerAction
     PA_LEFT,
     PA_RIGHT,
     PA_UNDO,
+    PA_DOOR_OPEN,
     PA_COUNT,
 };
 

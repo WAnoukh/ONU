@@ -5,8 +5,26 @@
 #include "rendering/shader.h"
 #include "window/window.h"
 #include "rendering/rendering.h"
+#define GLCheckError() GLCheckErrorImpl(__FILE__, __LINE__)
 
-GLuint default_shader_program;
+static void GLCheckErrorImpl(const char* file, int line) {
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        const char* error;
+        switch (err) {
+            case GL_INVALID_ENUM:                  error = "GL_INVALID_ENUM"; break;
+            case GL_INVALID_VALUE:                 error = "GL_INVALID_VALUE"; break;
+            case GL_INVALID_OPERATION:             error = "GL_INVALID_OPERATION"; break;
+            case GL_STACK_OVERFLOW:                error = "GL_STACK_OVERFLOW"; break;
+            case GL_STACK_UNDERFLOW:               error = "GL_STACK_UNDERFLOW"; break;
+            case GL_OUT_OF_MEMORY:                 error = "GL_OUT_OF_MEMORY"; break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION: error = "GL_INVALID_FRAMEBUFFER_OPERATION"; break;
+            default:                               error = "Unknown Error"; break;
+        }
+        fprintf(stderr, "OpenGL error (%s) in %s:%d\n", error, file, line);
+    }
+}
+GLuint shader_program_default, shader_program_sprite;
 
 unsigned int triangle_VBO = 0;
 unsigned int triangle_VAO = 0;
@@ -18,10 +36,11 @@ float triangle_vertices[] = {
 };
 
 float quad_vertices[] = {
-    0.5f, 0.5f, 0.0f, // top right
-    0.5f, -0.5f, 0.0f, // bottom right
-    -0.5f, -0.5f, 0.0f, // bottom left
-    -0.5f, 0.5f, 0.0f // top left
+     // positions          //texture coords
+     0.5f,  0.5f,  0.0f,   1.0f, 1.0f, 
+     0.5f, -0.5f,  0.0f,   1.0f, 0.0f,
+    -0.5f, -0.5f,  0.0f,   0.0f, 0.0f,
+    -0.5f,  0.5f,  0.0f,   0.0f, 1.0f
 };
 
 unsigned int quad_indices[] = {
@@ -53,11 +72,31 @@ void initialize_renderer()
 
 void initialize_default_shader_program()
 {
-    default_shader_program = create_shader_program("shader/generic/default.vert", "shader/generic/default.frag");
-    if (!default_shader_program)
+    shader_program_default = create_shader_program("resources/shader/generic/default.vert", "resources/shader/generic/default.frag");
+    if (!shader_program_default)
     {
         exit(1);
     }
+    shader_program_sprite = create_shader_program("resources/shader/generic/sprite.vert","resources/shader/generic/sprite.frag");
+    if(!shader_program_sprite)
+    {
+        exit(1);
+    }
+}
+
+unsigned int shaders_use_default()
+{
+    glUseProgram(shader_program_default);
+    return shader_program_default;
+}
+ 
+unsigned int shaders_use_sprite(unsigned int texture)
+{
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glUseProgram(shader_program_sprite);
+    shader_set_int(shader_program_sprite, "texture", 0);
+    return shader_program_sprite;
 }
 
 void initialize_quad()
@@ -74,8 +113,11 @@ void initialize_quad()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad_EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad_indices), quad_indices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
     glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -144,14 +186,13 @@ void draw_quad()
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
-void draw_transformed_quad(mat3 transform, vec3 color)
+void draw_transformed_quad(unsigned int program, mat3 transform, vec3 color)
 {
-    glUseProgram(default_shader_program);
     mat3 result;
     glm_mat3_mul(view, transform, result);
     //glm_mat3_mul(transform, view, result);
-    shader_set_mat3(default_shader_program, "view", result);
-    shader_set_vec3(default_shader_program, "color", color);
+    shader_set_mat3(program, "view", result);
+    shader_set_vec3(program, "color", color);
     draw_quad();
 }
 
@@ -162,12 +203,12 @@ void render_triangle()
         initialize_triangle();
     }
 
-    if (default_shader_program == 0)
+    if (shader_program_default == 0)
     {
         initialize_default_shader_program();
     }
 
-    glUseProgram(default_shader_program);
+    glUseProgram(shader_program_default);
     glBindVertexArray(triangle_VAO);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 }

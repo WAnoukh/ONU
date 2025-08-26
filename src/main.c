@@ -4,12 +4,14 @@
 
 #include "cglm/ivec2.h"
 #include "level.h"
+#include "texture.h"
 #include "window/input.h"
 #include "window/window.h"
 #include "rendering/rendering.h"
 
 #define HISTORY_SIZE 1000
 
+struct Level start_level;
 struct Level main_level;
 
 struct Level history[HISTORY_SIZE];
@@ -65,6 +67,10 @@ void request_new_turn(enum PlayerAction action)
         }
         return;
     }
+    if(action == PA_DOOR_OPEN)
+    {
+        main_level.is_door_opened = 1;
+    }
 
     history_register(&main_level);
 
@@ -91,10 +97,7 @@ void request_new_turn(enum PlayerAction action)
     ivec2 new_pos;
     glm_ivec2_add(player->position, player_movement, new_pos);
 
-    if(!is_tilemap_solid_at(&main_level, new_pos))
-    {
-        push_entity(&main_level, player, player_movement);
-    }
+    push_entity(&main_level, player, player_movement);
 }
 
 void request_new_turn_if_needed()
@@ -152,13 +155,19 @@ int main()
 
     initialize_renderer();
     i_initialize(window);
+    load_default_images(); 
  
-    get_default_level(&main_level);
+    get_default_level(&start_level);
+    main_level = start_level;
     last_time = glfwGetTime();
 
 
     while (!glfwWindowShouldClose(window))
     {
+        GLenum err;
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            printf("OpenGL error: 0x%X\n", err);
+        }
         new_time = get_time();
         delta_time = (float)(new_time - last_time);
         last_time = new_time;
@@ -166,6 +175,11 @@ int main()
         i_process(window);
         update_key_blocks();
         request_new_turn_if_needed();
+
+        if(main_level.is_door_reached)
+        {
+           main_level = start_level; 
+        }
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
