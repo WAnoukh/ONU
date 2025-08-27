@@ -6,6 +6,7 @@ enum TileType
 {
     TILE_EMPTY,
     TILE_WALL,
+    TILE_COUNT,
 };
 
 struct Tile

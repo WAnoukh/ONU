@@ -123,6 +123,7 @@ int main()
         return 1;
     }
 
+    const char* level_path="resources/level/test.level";
 
     initialize_renderer();
     i_initialize(window);
@@ -131,6 +132,11 @@ int main()
     struct Game game;
 
     get_default_level(&game.level_start);
+    struct Level loaded_level;
+    if(deserialize_level(&loaded_level, level_path))
+    {
+        game.level_start = loaded_level;
+    }
     load_level(&game, game.level_start);
 
     last_time = glfwGetTime();
@@ -164,7 +170,7 @@ int main()
         glfwPollEvents();
     }
 
-    serialize_level(game.level, "resources/level/test.level");
+    //serialize_level(game.level, level_path);
 
     glfwTerminate();
     return 0;

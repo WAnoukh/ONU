@@ -49,7 +49,7 @@ struct Entity
 struct Level 
 {
     TileMap tilemap;
-    struct Entity entities[100];
+    struct Entity entities[20];
     struct KeyBlockData key_block_data[10];
     struct SlotData slot_data[10];
     int entity_count;
