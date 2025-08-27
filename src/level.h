@@ -27,7 +27,7 @@ struct Entity
     enum EntityType type;
     enum Solidity solidity;
     ivec2 position;
-    void* data;
+    int data_index;
 };
 
 struct KeyBlockData
@@ -79,50 +79,50 @@ struct Entity *get_player(struct Level *level);
     
 void push_entity(struct Level *level, struct Entity *entity, ivec2 offset);
 
-static inline struct Entity create_movable_at(int x, int y, enum EntityType type)
+static inline void create_movable_at(struct Level *level, int x, int y, enum EntityType type)
 {
-    return (struct Entity){
+    level->entities[level->entity_count++] = (struct Entity){
         type,
         SOLIDITY_MOVABLE,
         {x, y},
-        NULL
+        -1,
     };
 }
 
-static inline struct Entity create_key_block_at(int x, int y, int key, struct KeyBlockData *out_data)
+static inline void create_key_block_at(struct Level *level, int x, int y, int key)
 {
-    *out_data = (struct KeyBlockData){
-        key,
-        0,
-    };
-    return (struct Entity){
+    level->entities[level->entity_count++] = (struct Entity){
         ENTITY_KEY,
         SOLIDITY_MOVABLE,
         {x, y},
-        (void*)out_data,
+        level->key_block_data_count,
+    };
+    level->key_block_data[level->key_block_data_count++] = (struct KeyBlockData){
+        key,
+        0,
     };
 }
 
-static inline struct Entity create_slot_at(int x, int y, enum PlayerAction action, struct SlotData *out_data)
+static inline void create_slot_at(struct Level *level, int x, int y, enum PlayerAction action)
 {
-    *out_data = (struct SlotData){
-        action,
-    };
-    return (struct Entity){
+    level->entities[level->entity_count++] = (struct Entity){
         ENTITY_SLOT,
         SOLIDITY_NONE,
         {x, y},
-        (void*)out_data,
+        level->slot_data_count,
+    };
+    level->slot_data[level->slot_data_count++] = (struct SlotData){
+        action,
     };
 }
 
-static inline struct Entity create_door_at(int x, int y)
+static inline void create_door_at(struct Level *level, int x, int y)
 {
-    return (struct Entity){
+    level->entities[level->entity_count++] = (struct Entity){
         ENTITY_DOOR,
         SOLIDITY_NONE,
         {x, y},
-        NULL
+        -1,
     };
 }
 #endif // LEVEL_H

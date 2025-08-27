@@ -31,19 +31,16 @@ struct Tile default_grid[DEFAULT_LEVEL_GRID_SIZE] =
 void get_default_level(struct Level *level)
 {
     level->tilemap = default_grid;
-    level->entities[1] = (struct Entity){
+    create_slot_at(level, 2, 5, PA_DOOR_OPEN);
+    level->entities[level->entity_count++] = (struct Entity){
         ENTITY_PLAYER,
         SOLIDITY_MOVABLE,
         {8,8},
-        NULL
+        -1,
     };
-    level->entities[0] = create_slot_at(2, 5, PA_DOOR_OPEN, level->slot_data);
-    level->entities[2] = create_key_block_at(2, 7, GLFW_KEY_F, level->key_block_data);
-    level->entities[3] = create_movable_at(7,7,ENTITY_BOX);
-    level->entities[4] = create_door_at(2,0);
-    level->entity_count = 5;
-    level->key_block_data_count = 1;
-    level->slot_data_count = 1;
+    create_key_block_at(level, 2, 7, GLFW_KEY_F);
+    create_movable_at(level, 7, 7, ENTITY_BOX);
+    create_door_at(level, 2, 0);
     level->is_door_opened = 0;
     level->height = DEFAULT_LEVEL_SIZE;
     level->width = DEFAULT_LEVEL_SIZE;
@@ -65,7 +62,7 @@ void render_entities(struct Level *level, vec2 pos, float size)
         glm_vec3_copy(entities_color[(int)ent.type], color);
         if(ent.type == ENTITY_KEY)
         {
-            struct KeyBlockData *key_block_data = (struct KeyBlockData*)ent.data;
+            struct KeyBlockData *key_block_data = level->key_block_data+ent.data_index;
             if(key_block_data == NULL)
             {
                 perror("This ENTITY_KEY doesn't have KeyBlockData.");

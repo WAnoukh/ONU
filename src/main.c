@@ -100,14 +100,14 @@ void update_key_blocks(struct Game *game)
         struct Entity *ent = game->level.entities+i;
         if(ent->type != ENTITY_KEY) continue;
 
-        struct KeyBlockData *key_data = ent->data;
+        struct KeyBlockData *key_data = game->level.key_block_data+ent->data_index;
         key_data->is_pressed = i_key_down(key_data->key);
         if(i_key_pressed(key_data->key))
         {
             struct Entity *slot = get_slot_at(&game->level, ent->position);
             if(slot != NULL)
             {
-                struct SlotData *slot_data = slot->data;
+                struct SlotData *slot_data = game->level.slot_data+ent->data_index;
                 request_new_turn(game, slot_data->action);
             }
         }
