@@ -4,6 +4,22 @@
 #include "tilemap.h"
 #include "window/input.h"
 
+struct KeyBlockData
+{
+    int key;
+    int is_pressed;
+};
+
+struct SlotData
+{
+    enum PlayerAction action;
+};
+
+struct DoorData
+{
+    int is_opened;
+};
+
 enum EntityType
 {
     ENTITY_NONE,
@@ -28,22 +44,6 @@ struct Entity
     enum Solidity solidity;
     ivec2 position;
     int data_index;
-};
-
-struct KeyBlockData
-{
-    int key;
-    int is_pressed;
-};
-
-struct SlotData
-{
-    enum PlayerAction action;
-};
-
-struct DoorData
-{
-    int is_opened;
 };
 
 struct Level 

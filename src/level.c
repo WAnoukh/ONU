@@ -39,6 +39,7 @@ void get_default_level(struct Level *level)
         -1,
     };
     create_key_block_at(level, 2, 7, GLFW_KEY_F);
+    create_key_block_at(level, 5, 2, GLFW_KEY_W);
     create_movable_at(level, 7, 7, ENTITY_BOX);
     create_door_at(level, 2, 0);
     level->is_door_opened = 0;

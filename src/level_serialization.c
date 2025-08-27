@@ -30,7 +30,7 @@ int serialize_level(struct Level level, const char* path)
     {
         if(i > 0)
         {
-            fputc(',', file);
+            PUT_COMMA(file);
         }
         struct Entity *ent = level.entities + i;
         fputc('{', file);
@@ -41,8 +41,26 @@ int serialize_level(struct Level level, const char* path)
         PUT_INT(ent->position[0], file);
         PUT_COMMA(file);
         PUT_INT(ent->position[1], file);
+        PUT_COMMA(file);
+        PUT_INT(ent->data_index, file);
         fputc('}', file);
+    }
 
+    fputc('\n', file);
+
+    for(int i =0; i<level.key_block_data_count; ++i)
+    {
+        if(i > 0)
+        {
+            PUT_COMMA(file);
+        }
+        struct KeyBlockData *data = level.key_block_data+i;
+        fputc('{', file);
+        PUT_INT(data->is_pressed, file);
+        PUT_COMMA(file);
+        PUT_INT(data->key, file);
+        PUT_COMMA(file);
+        fputc('}', file);
     }
 
     fclose(file);

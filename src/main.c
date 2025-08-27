@@ -107,7 +107,7 @@ void update_key_blocks(struct Game *game)
             struct Entity *slot = get_slot_at(&game->level, ent->position);
             if(slot != NULL)
             {
-                struct SlotData *slot_data = game->level.slot_data+ent->data_index;
+                struct SlotData *slot_data = game->level.slot_data+slot->data_index;
                 request_new_turn(game, slot_data->action);
             }
         }
