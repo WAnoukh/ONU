@@ -3,19 +3,13 @@
 #include <GLFW/glfw3.h>
 
 #include "cglm/ivec2.h"
-#include "level.h"
+#include "game.h"
+#include "level_serialization.h"
 #include "texture.h"
 #include "window/input.h"
 #include "window/window.h"
 #include "rendering/rendering.h"
 
-#define HISTORY_SIZE 1000
-
-struct Level start_level;
-struct Level main_level;
-
-struct Level history[HISTORY_SIZE];
-int history_size = 0;
 
 double last_time;
 double new_time;
@@ -24,35 +18,11 @@ float delta_time;
 float time_between_input = 0.3f;
 float last_action_time = 0.f;
 
-int history_register(struct Level *level)
-{
-    if(history_size >= HISTORY_SIZE) {
-        perror("History full");
-        return 0;
-    }
-    history[history_size++] = *level;
-    return 1;
-}
 
-int history_empty()
+void request_new_turn(struct Game *game, enum PlayerAction action)
 {
-    return history_size <= 0;
-}
-
-struct Level history_pop()
-{
-   if(history_size <= 0) 
-   {
-        perror("Trying to pop an empty history\n");
-        exit(1);
-   }
-   return history[--history_size];
-}
-
-void request_new_turn(enum PlayerAction action)
-{
-    print_level(&main_level);
-    struct Entity *player =get_player(&main_level);
+    print_level(&game->level);
+    struct Entity *player =get_player(&game->level);
     if(player == NULL)
     {
         perror("Player not found in that level.");
@@ -61,18 +31,18 @@ void request_new_turn(enum PlayerAction action)
 
     if(action == PA_UNDO)
     {
-        if(!history_empty())
+        if(!history_empty(game))
         {
-           main_level = history_pop(); 
+           game->level = history_pop(game); 
         }
         return;
     }
     if(action == PA_DOOR_OPEN)
     {
-        main_level.is_door_opened = 1;
+        game->level.is_door_opened = 1;
     }
 
-    history_register(&main_level);
+    history_register(game);
 
     ivec2 player_movement;
     player_movement[0] = 0;
@@ -97,10 +67,10 @@ void request_new_turn(enum PlayerAction action)
     ivec2 new_pos;
     glm_ivec2_add(player->position, player_movement, new_pos);
 
-    push_entity(&main_level, player, player_movement);
+    push_entity(&game->level, player, player_movement);
 }
 
-void request_new_turn_if_needed()
+void request_new_turn_if_needed(struct Game *game)
 {
     enum PlayerAction player_action = i_get_current_player_action();
     if(player_action == PA_NONE) return;
@@ -110,7 +80,7 @@ void request_new_turn_if_needed()
     if(i_player_action_just_changed())
     {
         last_action_time = new_time_f;
-        request_new_turn(player_action);
+        request_new_turn(game, player_action);
         return;
     }
 
@@ -120,25 +90,25 @@ void request_new_turn_if_needed()
     }
 
     last_action_time = new_time_f;
-    request_new_turn(player_action);
+    request_new_turn(game, player_action);
 }
 
-void update_key_blocks()
+void update_key_blocks(struct Game *game)
 {
-    for(int i = 0; i < main_level.entity_count; ++i)
+    for(int i = 0; i < game->level.entity_count; ++i)
     {
-        struct Entity *ent = main_level.entities+i;
+        struct Entity *ent = game->level.entities+i;
         if(ent->type != ENTITY_KEY) continue;
 
         struct KeyBlockData *key_data = ent->data;
         key_data->is_pressed = i_key_down(key_data->key);
         if(i_key_pressed(key_data->key))
         {
-            struct Entity *slot = get_slot_at(&main_level, ent->position);
+            struct Entity *slot = get_slot_at(&game->level, ent->position);
             if(slot != NULL)
             {
                 struct SlotData *slot_data = slot->data;
-                request_new_turn(slot_data->action);
+                request_new_turn(game, slot_data->action);
             }
         }
     }
@@ -153,14 +123,17 @@ int main()
         return 1;
     }
 
+
     initialize_renderer();
     i_initialize(window);
     load_default_images(); 
  
-    get_default_level(&start_level);
-    main_level = start_level;
-    last_time = glfwGetTime();
+    struct Game game;
 
+    get_default_level(&game.level_start);
+    load_level(&game, game.level_start);
+
+    last_time = glfwGetTime();
 
     while (!glfwWindowShouldClose(window))
     {
@@ -173,23 +146,25 @@ int main()
         last_time = new_time;
 
         i_process(window);
-        update_key_blocks();
-        request_new_turn_if_needed();
+        update_key_blocks(&game);
+        request_new_turn_if_needed(&game);
 
-        if(main_level.is_door_reached)
+        if(game.level.is_door_reached)
         {
-           main_level = start_level; 
+            game.level = game.level_start;
         }
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        render_level(&main_level);
+        render_level(&game.level);
 
         glfwSwapBuffers(window);
         i_clear_pressed();
         glfwPollEvents();
     }
+
+    serialize_level(game.level, "resources/level/test.level");
 
     glfwTerminate();
     return 0;

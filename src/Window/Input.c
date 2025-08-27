@@ -1,7 +1,6 @@
 ﻿#include <cglm/vec2.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <stdio.h>
 
 #include "window/input.h"
 #include "rendering/rendering.h"

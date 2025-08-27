@@ -250,12 +250,13 @@ int try_push_entity(struct Level *level, struct Entity *entity, ivec2 offset)
     {
         return 0;
     }
-    if(obstacle == NULL || obstacle->solidity == SOLIDITY_NONE)
+    struct Entity *solid_entity = get_solid_entity_at(level, target_pos);
+    if(solid_entity == NULL || solid_entity->solidity == SOLIDITY_NONE)
     {
         glm_ivec2_copy(target_pos, entity->position);
         return 1;
     }
-    if(obstacle->solidity == SOLIDITY_MOVABLE && try_push_entity(level, obstacle, offset))
+    if(solid_entity->solidity == SOLIDITY_MOVABLE && try_push_entity(level, solid_entity, offset))
     {
         glm_ivec2_copy(target_pos, entity->position);
         return 1;
