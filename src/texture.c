@@ -1,12 +1,13 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "glad/glad.h"
-#include "cglm/cglm.h"
 #include <stb_image.h>
 
 #include "texture.h"
 
 GLuint texture_slot;
 GLuint texture_key;
+
+struct TextureAtlas font_atlas;
 
 unsigned int get_texture_slot()
 {
@@ -16,6 +17,11 @@ unsigned int get_texture_slot()
 unsigned int get_texture_key()
 {
     return texture_key;
+}
+
+struct TextureAtlas get_texture_font_atlas()
+{
+    return font_atlas;
 }
 
 GLuint texture_load(char* path)
@@ -50,5 +56,8 @@ void load_default_images()
 {
    texture_slot = texture_load("resources\\sprite\\slot.png");
    texture_key = texture_load("resources\\sprite\\key.png");
+   font_atlas.texture_id = texture_load("resources\\sprite\\font.png");
+   font_atlas.width = 10;
+   font_atlas.height = 5;
 }
 

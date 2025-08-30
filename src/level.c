@@ -105,6 +105,19 @@ void render_entities(struct Level *level, vec2 pos, float size)
         glm_vec2_add(pos, pos_offset, pos_offset);
         compute_transform(transform, pos_offset, size_vec);
         draw_transformed_quad(program, transform, color);
+        if(ent.type == ENTITY_KEY)
+        {
+            int x, y;
+            struct TextureAtlas atlas = get_texture_font_atlas();
+            struct KeyBlockData *key_block_data = level->key_block_data+ent.data_index;
+            atlas_index_to_coordinates(atlas, key_block_data->key - 'A', &x, &y);
+            program = shaders_use_atlas(atlas, x, y);
+            color[0] = 0; color[1] = 0; color[2] = 0; 
+            size_vec[0] *= 0.3f;
+            size_vec[1] *= 0.6f;
+            compute_transform(transform, pos_offset, size_vec);
+            draw_transformed_quad(program, transform, color);
+        }
     }
 }
 

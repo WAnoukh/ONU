@@ -30,6 +30,12 @@ static void shader_set_vec3(const GLuint program, const char *loc_name, vec3 vec
     glUniform3f(loc, vector[0], vector[1], vector[2]);
 }
 
+static void shader_set_vec2(const GLuint program, const char *loc_name, float x, float y)
+{
+    const int loc = glGetUniformLocation(program, loc_name);
+    glUniform2f(loc, x, y);
+}
+
 static inline void shader_set_int(const GLuint program, const char *loc_name, int number)
 {
     const int loc = glGetUniformLocation(program, loc_name);

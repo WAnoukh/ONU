@@ -4,11 +4,15 @@
 
 struct Entity;
 
+struct TextureAtlas;
+
 void initialize_renderer();
 
 unsigned int shaders_use_default();
 
 unsigned int shaders_use_sprite(unsigned int texture);
+
+unsigned int shaders_use_atlas(struct TextureAtlas atlas, int x, int y);
 
 void set_camera_zoom(float zoom);
 

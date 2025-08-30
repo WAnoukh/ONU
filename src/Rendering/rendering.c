@@ -3,8 +3,10 @@
 
 #include "glad/glad.h"
 #include "rendering/shader.h"
+#include "texture.h"
 #include "window/window.h"
 #include "rendering/rendering.h"
+
 #define GLCheckError() GLCheckErrorImpl(__FILE__, __LINE__)
 
 static void GLCheckErrorImpl(const char* file, int line) {
@@ -24,7 +26,8 @@ static void GLCheckErrorImpl(const char* file, int line) {
         fprintf(stderr, "OpenGL error (%s) in %s:%d\n", error, file, line);
     }
 }
-GLuint shader_program_default, shader_program_sprite;
+
+GLuint shader_program_default, shader_program_sprite, shader_program_atlas;
 
 unsigned int triangle_VBO = 0;
 unsigned int triangle_VAO = 0;
@@ -82,6 +85,11 @@ void initialize_default_shader_program()
     {
         exit(1);
     }
+    shader_program_atlas = create_shader_program("resources/shader/generic/atlas.vert","resources/shader/generic/atlas.frag");
+    if(!shader_program_atlas)
+    {
+        exit(1);
+    }
 }
 
 unsigned int shaders_use_default()
@@ -97,6 +105,21 @@ unsigned int shaders_use_sprite(unsigned int texture)
     glUseProgram(shader_program_sprite);
     shader_set_int(shader_program_sprite, "texture", 0);
     return shader_program_sprite;
+}
+
+unsigned int shaders_use_atlas(struct TextureAtlas atlas, int x, int y)
+{
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, atlas.texture_id);
+    glUseProgram(shader_program_atlas);
+    GLCheckError();
+    shader_set_int(shader_program_atlas, "texture", 0);
+    GLCheckError();
+    shader_set_vec2(shader_program_atlas, "atlas_pos", (float)x, (float)y);
+    GLCheckError();
+    shader_set_vec2(shader_program_atlas, "atlas_size", (float)atlas.width, (float)atlas.height);
+    GLCheckError();
+    return shader_program_atlas;
 }
 
 void initialize_quad()
@@ -178,12 +201,14 @@ void initialize_triangle()
 
 void draw_quad()
 {
+    GLCheckError();
     if (quad_EBO == 0)
     {
         initialize_quad();
     }
     glBindVertexArray(quad_VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    GLCheckError();
 }
 
 void draw_transformed_quad(unsigned int program, mat3 transform, vec3 color)
@@ -191,8 +216,11 @@ void draw_transformed_quad(unsigned int program, mat3 transform, vec3 color)
     mat3 result;
     glm_mat3_mul(view, transform, result);
     //glm_mat3_mul(transform, view, result);
+    GLCheckError();
     shader_set_mat3(program, "view", result);
+    GLCheckError();
     shader_set_vec3(program, "color", color);
+    GLCheckError();
     draw_quad();
 }
 
