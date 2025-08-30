@@ -116,6 +116,9 @@ void update_key_blocks(struct Game *game)
 
 int main()
 {
+    int do_ser = 1;
+    int do_deser = 1;
+
     GLFWwindow* window;
     if (!initGl(&window) || window == NULL)
     {
@@ -133,7 +136,7 @@ int main()
 
     get_default_level(&game.level_start);
     struct Level loaded_level;
-    if(deserialize_level(&loaded_level, level_path))
+    if(do_deser && deserialize_level(&loaded_level, level_path))
     {
         game.level_start = loaded_level;
     }
@@ -143,10 +146,10 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
-        GLenum err;
+        /*GLenum err;
         while ((err = glGetError()) != GL_NO_ERROR) {
             printf("OpenGL error: 0x%X\n", err);
-        }
+        }*/
         new_time = get_time();
         delta_time = (float)(new_time - last_time);
         last_time = new_time;
@@ -170,7 +173,10 @@ int main()
         glfwPollEvents();
     }
 
-    //serialize_level(game.level, level_path);
+    if(do_ser)
+    {
+        serialize_level(game.level, level_path);
+    }
 
     glfwTerminate();
     return 0;
