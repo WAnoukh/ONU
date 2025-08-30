@@ -2,7 +2,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "cglm/ivec2.h"
 #include "game.h"
 #include "level_serialization.h"
 #include "texture.h"
@@ -15,21 +14,24 @@ double last_time;
 double new_time;
 float delta_time;
 
-float time_between_input = 0.3f;
-float last_action_time = 0.f;
+ivec2 directions[] = {{0, -1},{0, 1},{-1, 0},{1, 0}};
 
-
-void request_new_turn(struct Game *game, enum PlayerAction action)
+int process_targeted_action(struct Game *game, int entity_index, enum ActionType action_type)
 {
-    print_level(&game->level);
-    struct Entity *player =get_player(&game->level);
-    if(player == NULL)
+    if(action_type != ACTION_UP && action_type != ACTION_DOWN && action_type != ACTION_LEFT && action_type != ACTION_RIGHT)
     {
-        perror("Player not found in that level.");
-        return;
+        return 0;
     }
+    int dir_index = (int)(action_type - ACTION_UP);
+    struct Entity *ent = game->level.entities+entity_index;
 
-    if(action == PA_UNDO)
+    push_entity(&game->level, ent, directions[dir_index]);
+    return 1;
+}
+
+void request_new_turn(struct Game *game, struct Action action)
+{
+    if(action.type == ACTION_UNDO)
     {
         if(!history_empty(game))
         {
@@ -37,60 +39,14 @@ void request_new_turn(struct Game *game, enum PlayerAction action)
         }
         return;
     }
-    if(action == PA_DOOR_OPEN)
+    if(action.type == ACTION_DOOR_OPEN)
     {
         game->level.is_door_opened = 1;
     }
 
     history_register(game);
 
-    ivec2 player_movement;
-    player_movement[0] = 0;
-    player_movement[1] = 0;
-    if(action == PA_UP)
-    {
-       player_movement[1] = -1;
-    }
-    else if (action == PA_DOWN)
-    {
-        player_movement[1] = 1;
-    }
-    else if (action == PA_LEFT)
-    {
-        player_movement[0] = -1;
-    }
-    else if (action == PA_RIGHT)
-    {
-        player_movement[0] = 1;
-    }
-
-    ivec2 new_pos;
-    glm_ivec2_add(player->position, player_movement, new_pos);
-
-    push_entity(&game->level, player, player_movement);
-}
-
-void request_new_turn_if_needed(struct Game *game)
-{
-    enum PlayerAction player_action = i_get_current_player_action();
-    if(player_action == PA_NONE) return;
-
-    float new_time_f = (float)new_time;
-
-    if(i_player_action_just_changed())
-    {
-        last_action_time = new_time_f;
-        request_new_turn(game, player_action);
-        return;
-    }
-
-    if(new_time_f < last_action_time + time_between_input)
-    {
-        return; 
-    }
-
-    last_action_time = new_time_f;
-    request_new_turn(game, player_action);
+    process_targeted_action(game, action.target_entity, action.type);
 }
 
 void update_key_blocks(struct Game *game)
@@ -116,8 +72,8 @@ void update_key_blocks(struct Game *game)
 
 int main()
 {
-    int do_ser = 1;
-    int do_deser = 1;
+    int do_ser = 0;
+    int do_deser = 0;
 
     GLFWwindow* window;
     if (!initGl(&window) || window == NULL)
@@ -156,7 +112,6 @@ int main()
 
         i_process(window);
         update_key_blocks(&game);
-        request_new_turn_if_needed(&game);
 
         if(game.level.is_door_reached)
         {

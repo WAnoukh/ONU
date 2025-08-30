@@ -8,8 +8,8 @@
 #include "rendering/rendering.h"
 #include "tilemap.h"
 #include "transform.h"
-#include "window/input.h"
 #include "texture.h"
+#include "level.h"
 
 #define DEFAULT_LEVEL_SIZE 10
 #define DEFAULT_LEVEL_GRID_SIZE DEFAULT_LEVEL_SIZE * DEFAULT_LEVEL_SIZE
@@ -31,7 +31,12 @@ struct Tile default_grid[DEFAULT_LEVEL_GRID_SIZE] =
 void get_default_level(struct Level *level)
 {
     level->tilemap = default_grid;
-    create_slot_at(level, 2, 5, PA_DOOR_OPEN);
+    level->entity_count = 0;
+    create_slot_at(level, 2, 5, ACTION_DOOR_OPEN, 0);
+    create_slot_at(level, 7, 1, ACTION_UP, 5);
+    create_slot_at(level, 7, 2, ACTION_DOWN, 5);
+    create_slot_at(level, 6, 2, ACTION_LEFT, 5);
+    create_slot_at(level, 8, 2, ACTION_RIGHT, 5);
     level->entities[level->entity_count++] = (struct Entity){
         ENTITY_PLAYER,
         SOLIDITY_MOVABLE,
@@ -39,7 +44,10 @@ void get_default_level(struct Level *level)
         -1,
     };
     create_key_block_at(level, 2, 7, GLFW_KEY_F);
-    create_key_block_at(level, 5, 2, GLFW_KEY_W);
+    create_key_block_at(level, 7, 1, GLFW_KEY_W);
+    create_key_block_at(level, 7, 2, GLFW_KEY_S);
+    create_key_block_at(level, 6, 2, GLFW_KEY_A);
+    create_key_block_at(level, 8, 2, GLFW_KEY_D);
     create_movable_at(level, 7, 7, ENTITY_BOX);
     create_door_at(level, 2, 0);
     level->is_door_opened = 0;
@@ -64,11 +72,6 @@ void render_entities(struct Level *level, vec2 pos, float size)
         if(ent.type == ENTITY_KEY)
         {
             struct KeyBlockData *key_block_data = level->key_block_data+ent.data_index;
-            if(key_block_data == NULL)
-            {
-                perror("This ENTITY_KEY doesn't have KeyBlockData.");
-                exit(1);
-            }
             if(key_block_data->is_pressed)
             {
                 glm_vec3_copy(color_key_block_activated, color);
@@ -142,32 +145,6 @@ int is_tilemap_solid_at(struct Level *level, ivec2 position)
 
 char tile_print[] = {' ', 'X'}; 
 char entity_print[] = {' ', 'P', 'K'};
-
-void print_level(struct Level *level)
-{
-    //TODO : Reimlement that
-    /*
-    for(int y = 0; y < level.height; ++y)
-    {
-        for(int x = 0; x < level.height; ++x)
-        {
-            int index = compute_index_from_coordinate(level, x, y);
-            struct Tile tile = level.tilemap[index];
-            struct EntityCell entity = level.entities[index];
-            
-            if(entity.entity_type != ENTITY_NONE)
-            {
-                printf("%c", entity_print[entity.entity_type]);
-            }
-            else
-            {
-                printf("%c", tile_print[tile.solidity]);
-            }
-        }
-        printf("\n");
-    }
-    */
-}
 
 struct Entity *get_entity_at(struct Level *level, ivec2 at)
 {

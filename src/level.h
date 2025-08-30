@@ -2,7 +2,24 @@
 #define LEVEL_H
 
 #include "tilemap.h"
-#include "window/input.h"
+
+enum ActionType
+{
+    ACTION_NONE,
+    ACTION_UP,
+    ACTION_DOWN,
+    ACTION_LEFT,
+    ACTION_RIGHT,
+    ACTION_UNDO,
+    ACTION_DOOR_OPEN,
+    ACTION_COUNT,
+};
+
+struct Action
+{
+    enum ActionType type;    
+    int target_entity;
+};
 
 struct KeyBlockData
 {
@@ -12,7 +29,7 @@ struct KeyBlockData
 
 struct SlotData
 {
-    enum PlayerAction action;
+    struct Action action;
 };
 
 struct DoorData
@@ -49,7 +66,7 @@ struct Entity
 struct Level 
 {
     TileMap tilemap;
-    struct Entity entities[20];
+    struct Entity entities[30];
     struct KeyBlockData key_block_data[10];
     struct SlotData slot_data[10];
     int entity_count;
@@ -103,7 +120,7 @@ static inline void create_key_block_at(struct Level *level, int x, int y, int ke
     };
 }
 
-static inline void create_slot_at(struct Level *level, int x, int y, enum PlayerAction action)
+static inline void create_slot_at(struct Level *level, int x, int y, enum ActionType action, int target_index)
 {
     level->entities[level->entity_count++] = (struct Entity){
         ENTITY_SLOT,
@@ -112,7 +129,7 @@ static inline void create_slot_at(struct Level *level, int x, int y, enum Player
         level->slot_data_count,
     };
     level->slot_data[level->slot_data_count++] = (struct SlotData){
-        action,
+        { action, target_index },
     };
 }
 

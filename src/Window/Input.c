@@ -15,9 +15,6 @@ float last_mouse_y;
 float mouse_delta_x;
 float mouse_delta_y;
 
-enum PlayerAction player_action_last = PA_NONE;
-int player_action_changed = 0;
-
 int down_keys[PRESSED_KEYS_MAX];
 int down_keys_count = 0;
 
@@ -61,16 +58,6 @@ int pressed_keys_contain(int key)
     int i = 0;
     while(i < pressed_keys_count && pressed_keys[i] != key) { ++i; }
     return i < pressed_keys_count;
-}
-
-enum PlayerAction i_get_current_player_action()
-{
-    return player_action_last;
-}
-
-int i_player_action_just_changed()
-{
-    return player_action_changed;
 }
 
 void register_key_state(int key, int action)
@@ -135,34 +122,6 @@ void scroll(float x_offset, float y_offset)
     set_camera_zoom(zoom);
 }
 
-int player_action_binds[] = 
-{
-    GLFW_KEY_UNKNOWN, GLFW_KEY_W, GLFW_KEY_S, GLFW_KEY_A, GLFW_KEY_D, GLFW_KEY_R, GLFW_KEY_UNKNOWN 
-};
-
-void process_player_action()
-{
-    for(int i = 0; i < PA_COUNT; ++i)
-    {
-        int player_action_key = player_action_binds[i];
-        if (player_action_key == GLFW_KEY_UNKNOWN)
-          continue;
-        if(pressed_keys_contain(player_action_key))
-        {
-            player_action_changed = true;
-            player_action_last = (enum PlayerAction)i;
-            return;
-        }
-    }
-
-    if(player_action_last == PA_NONE) return;
-
-    if(!down_keys_contain(player_action_binds[player_action_last]))
-    {
-        player_action_last = PA_NONE;
-    }
-}
-
 void i_process(GLFWwindow *window)
 {
     process_mouse_move();
@@ -178,11 +137,9 @@ void i_process(GLFWwindow *window)
         }
     }
 
-    process_player_action();
 }
 
 void i_clear_pressed()
 {
-    player_action_changed = false;
     pressed_keys_clear();
 }

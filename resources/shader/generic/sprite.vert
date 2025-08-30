@@ -4,6 +4,7 @@ layout (location = 1) in vec2 aTexCoord;
 
 out vec2 TexCoord;
 uniform mat3 view;
+
 void main()
 {
     vec3 pos = view * vec3(aPos.xy, 1.0);
