@@ -55,3 +55,5 @@ CMakeLists.txt
 .cache
 build
 CMakeFiles
+cmake-build-debug
+compile_commands.json
