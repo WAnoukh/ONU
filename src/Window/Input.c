@@ -215,7 +215,17 @@ void i_get_mouse_pos(float *out_x, float *out_y)
     double x_pos, y_pos;
     glfwGetCursorPos(window, &x_pos, &y_pos);
     *out_x = (float)x_pos;
-    *out_y = (float)y_pos;
+    *out_y = 1-(float)y_pos;
+}
+
+void i_get_mouse_pos_normalize(float *out_x, float *out_y)
+{
+    double x_pos, y_pos;
+    int screen_width, screen_height;
+    window_get_size(&screen_width, &screen_height);
+    glfwGetCursorPos(window, &x_pos, &y_pos);
+    *out_x = (float)x_pos / (float)screen_width;
+    *out_y = 1-(float)y_pos / (float)screen_height;
 }
 
 void i_process(GLFWwindow *window)

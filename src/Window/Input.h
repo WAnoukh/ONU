@@ -32,6 +32,8 @@ void i_get_mouse_move(float *x, float *y);
 
 void i_get_mouse_pos(float *out_x, float *out_y);
 
+void i_get_mouse_pos_normalize(float *out_x, float *out_y);
+
 void i_clear_pressed();
 
 #endif //INPUT_H

@@ -1,7 +1,7 @@
 ﻿#ifndef SHADER_H
 #define SHADER_H
+#include "cglm/types.h"
 #include "glad/glad.h"
-#include "cglm/cglm.h"
 
 struct shader_program
 {

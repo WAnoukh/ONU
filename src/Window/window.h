@@ -12,6 +12,8 @@ double get_time();
 
 float window_get_screen_ratio();
 
+void window_get_size(int *width, int *height);
+
 int is_framebuffer_resized();
 
 void clear_framebuffer_resized();

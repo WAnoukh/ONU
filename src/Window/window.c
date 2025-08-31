@@ -9,11 +9,14 @@ const int SCR_HEIGHT = 600;
 int is_framebuffer_resized_flag = 0;
 
 float framebuffer_ratio = (float)SCR_WIDTH/(float)SCR_HEIGHT;
+int framebuffer_width = SCR_WIDTH, framebuffer_height = SCR_HEIGHT;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
     framebuffer_ratio = (float)width/(float)height;
+    framebuffer_width = width;
+    framebuffer_height = height;
     is_framebuffer_resized_flag = 1;
 }
 
@@ -111,4 +114,10 @@ double get_time()
 float window_get_screen_ratio()
 {
     return framebuffer_ratio;
+}
+
+void window_get_size(int *width, int *height)
+{
+    *width = framebuffer_width;
+    *height = framebuffer_height;
 }

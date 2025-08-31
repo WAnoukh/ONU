@@ -9,6 +9,7 @@
 struct Camera
 {
     mat3 view;
+    mat3 view_inverse;
     vec2 pan;
     float zoom;
 };
@@ -32,4 +33,13 @@ int history_empty(struct Game *game);
 struct Level history_pop(struct Game *game);
 
 void load_level(struct Game *game, struct Level level);
+
+void camera_pan(struct Camera *camera, float x_offset, float y_offset);
+
+void camera_zoom(struct Camera *camera, float amount);
+
+void camera_compute_view(struct Camera *camera);
+
+void camera_screen_to_world(struct Camera *camera, const vec2 screen_pos, vec2 out_world);
+
 #endif // GAME_H

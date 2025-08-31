@@ -2,15 +2,18 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "cglm/io.h"
 #include "cglm/mat3.h"
 #include "game.h"
 #include "level_serialization.h"
 #include "texture.h"
+#include "transform.h"
 #include "window/input.h"
 #include "window/window.h"
 #include "rendering/rendering.h"
 
 ivec2 directions[] = {{0, -1},{0, 1},{-1, 0},{1, 0}};
+vec2 cursor_pos;
 
 int process_targeted_action(struct Game *game, int entity_index, enum ActionType action_type)
 {
@@ -66,34 +69,6 @@ void update_key_blocks(struct Game *game)
     }
 }
 
-void camera_zoom(struct Camera *camera, float amount)
-{
-    float zoom = camera->zoom;
-    zoom += zoom * amount;
-    const float max = 1.5f;
-    const float min = 0.1f;
-    camera->zoom = zoom;
-    camera->zoom = glm_clamp(camera->zoom, min, max);
-}
-
-void camera_pan(struct Camera *camera, float x_offset, float y_offset)
-{
-    camera->pan[0] += x_offset;
-    camera->pan[1] += y_offset;
-}
-
-void camera_compute_view(struct Camera *camera)
-{
-    float sx = camera->zoom / window_get_screen_ratio();
-    float sy = camera->zoom;
-    float tx = camera->pan[0];
-    float ty = camera->pan[1];
-    glm_mat3_identity(camera->view);
-    camera->view[0][0] = sx;
-    camera->view[1][1] = sy;
-    camera->view[2][0] = tx;
-    camera->view[2][1] = ty;
-}
 
 void editor_update(struct Game *game, GLFWwindow *window)
 {
@@ -105,7 +80,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
         camera_view_changed = 1;
     }
 
-    if (i_button_down(GLFW_MOUSE_BUTTON_2))
+    if (i_button_down(GLFW_MOUSE_BUTTON_3))
     {
         float mouse_delta_x, mouse_delta_y;
         i_get_mouse_move(&mouse_delta_x, &mouse_delta_y);
@@ -123,11 +98,26 @@ void editor_update(struct Game *game, GLFWwindow *window)
         camera_compute_view(&game->camera);
     }
 
-    if(i_button_down(GLFW_MOUSE_BUTTON_1))
-    {
-        float mouse_x, mouse_y;
-        i_get_mouse_pos(&mouse_x, &mouse_y);
+    vec2 mouse_pos;
+    i_get_mouse_pos_normalize(mouse_pos, mouse_pos+1);
+    camera_screen_to_world(&game->camera, mouse_pos, cursor_pos);
 
+    int edition = 0;
+    if(i_button_down(GLFW_MOUSE_BUTTON_1)) edition = 1;
+    if(i_button_down(GLFW_MOUSE_BUTTON_2)) edition = -1;
+
+    if(edition)
+    {
+        struct Level *level = &game->level;
+        ivec2 cursor_grid_pos;
+        cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level->width)/2);
+        cursor_grid_pos[1] = (int)roundf(-cursor_pos[1]+((float)level->height)/2);
+        if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level->width
+                && cursor_grid_pos[1] >= 0 && cursor_grid_pos[0] < level->height)
+        {
+            int index =cursor_grid_pos[0]+cursor_grid_pos[1]*level->width;
+            game->level.tilemap[index].type = edition > 0 ? TILE_WALL : TILE_EMPTY;
+        }
     }
 }
 
@@ -201,6 +191,15 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         render_level(&game.level);
+        
+        unsigned int program = shaders_use_default();
+        mat3 transform;
+        vec2 size = {0.2f, 0.2f};
+        vec2 cursor_grid_pos;
+        cursor_grid_pos[0] = roundf(cursor_pos[0]);
+        cursor_grid_pos[1] = roundf(cursor_pos[1]);
+        compute_transform(transform, cursor_grid_pos, size);
+        draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f});
 
         glfwSwapBuffers(window);
         i_clear_pressed();
