@@ -12,7 +12,13 @@ int i_key_pressed(int key);
 
 int i_key_down(int key);
 
+int i_button_down(int button);
+
+int i_button_pressed(int button);
+
 void register_key_state(int key, int action);
+
+void register_mouse_state(int button, int action);
 
 void scroll(float x_offset, float y_offset);
 
