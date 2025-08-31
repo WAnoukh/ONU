@@ -4,10 +4,12 @@
 #include "glad/glad.h"
 #include "rendering/shader.h"
 #include "texture.h"
-#include "window/window.h"
+#include "game.h"
 #include "rendering/rendering.h"
 
 #define GLCheckError() GLCheckErrorImpl(__FILE__, __LINE__)
+
+struct Camera *main_camera;
 
 static void GLCheckErrorImpl(const char* file, int line) {
     GLenum err;
@@ -54,23 +56,18 @@ unsigned int quad_indices[] = {
 
 GLuint quad_EBO = 0, quad_VBO = 0, quad_VAO = 0;
 
-mat3 view;
-
-float zoom = 0.2f;
-vec2 pan;
-
 void initialize_quad();
 
 void initialize_default_shader_program();
 
 void initialize_triangle();
 
-void initialize_renderer()
+void initialize_renderer(struct Camera *new_main_camera)
 {
     initialize_default_shader_program();
     initialize_quad();
-    compute_camera_view();
     initialize_triangle();
+    main_camera = new_main_camera;
 }
 
 void initialize_default_shader_program()
@@ -147,40 +144,6 @@ void initialize_quad()
     glBindVertexArray(0);
 }
 
-void compute_camera_view()
-{
-    float sx = zoom / window_get_screen_ratio();
-    float sy = zoom;
-    float tx = pan[0];
-    float ty = pan[1];
-    glm_mat3_identity(view);
-    view[0][0] = sx;
-    view[1][1] = sy;
-    view[2][0] = tx;
-    view[2][1] = ty;
-}
-
-void set_camera_zoom(float in_zoom)
-{
-    const float max = 1.5f;
-    const float min = 0.1f;
-    zoom = in_zoom;
-    zoom = glm_clamp(zoom, min, max);
-    compute_camera_view();
-}
-
-float get_camera_zoom()
-{
-    return zoom;
-}
-
-void pan_camera(float x_offset, float y_offset)
-{
-    pan[0] += x_offset;
-    pan[1] += y_offset;
-    compute_camera_view();
-}
-
 void initialize_triangle()
 {
     glGenVertexArrays(1, &triangle_VAO);
@@ -214,8 +177,8 @@ void draw_quad()
 void draw_transformed_quad(unsigned int program, mat3 transform, vec3 color)
 {
     mat3 result;
-    glm_mat3_mul(view, transform, result);
-    //glm_mat3_mul(transform, view, result);
+    glm_mat3_mul(main_camera->view, transform, result);
+    //glm_mat3_mul(transform, camera->view, result);
     GLCheckError();
     shader_set_mat3(program, "view", result);
     GLCheckError();

@@ -3,18 +3,16 @@
 #include <GLFW/glfw3.h>
 
 #include "window/input.h"
-#include "rendering/rendering.h"
 
 #define PRESSED_KEYS_MAX 10
 #define PRESSED_BUTTONS_MAX 3
 
 GLFWwindow *window;
 
-int first_mouse_input = 1;
-float last_mouse_x;
-float last_mouse_y;
-float mouse_delta_x;
-float mouse_delta_y;
+float mouse_first_move = 1;
+float mouse_last_x, mouse_last_y;
+float mouse_offset_x=0, mouse_offset_y=0;
+float scroll_x, scroll_y;
 
 int down_keys[PRESSED_KEYS_MAX];
 int down_keys_count = 0;
@@ -160,23 +158,51 @@ int i_button_pressed(int button)
     return pressed_buttons_contain(button);
 }
 
-void process_mouse_move()
+//Scroll Handling
+void register_scroll_state(double x_offset, double y_offset)
 {
-    double dx, dy;
-    glfwGetCursorPos(window,&dx, &dy);
-    float x = (float)dx, y = (float)dy;
-    if (first_mouse_input)
+    scroll_x += (float)x_offset;
+    scroll_y += (float)y_offset;
+}
+
+void scroll_clear()
+{
+    scroll_x = 0;
+    scroll_y = 0;
+}
+
+float i_get_scroll_y()
+{
+    return scroll_y;
+}
+
+//Mouse move Handling
+void register_mouse_move_state(double pos_x, double pos_y)
+{
+    float fpos_x = (float)pos_x, fpos_y = (float)pos_y;
+    if(mouse_first_move)
     {
-        last_mouse_x = x;
-        last_mouse_y = y;
-        first_mouse_input = 0;
+        mouse_first_move = 0;
+        mouse_last_x = fpos_x;
+        mouse_last_y = fpos_y;
         return;
     }
-    mouse_delta_x = x - last_mouse_x;
-    mouse_delta_y = y - last_mouse_y;
+    mouse_offset_x += fpos_x - mouse_last_x;
+    mouse_offset_y += fpos_y - mouse_last_y;
+    mouse_last_x = fpos_x;
+    mouse_last_y = fpos_y;
+}
 
-    last_mouse_x = x;
-    last_mouse_y = y;
+void mouse_move_clear()
+{
+    mouse_offset_x = 0;
+    mouse_offset_y = 0;
+}
+
+void i_get_mouse_move(float *x, float *y)
+{
+    *x = mouse_offset_x;
+    *y = mouse_offset_y;
 }
 
 void i_initialize(GLFWwindow *in_window)
@@ -184,31 +210,24 @@ void i_initialize(GLFWwindow *in_window)
     window = in_window;
 }
 
-void scroll(float x_offset, float y_offset)
+void i_get_mouse_pos(float *out_x, float *out_y)
 {
-    float zoom = get_camera_zoom();
-    zoom += 0.2f * zoom * y_offset;
-    set_camera_zoom(zoom);
+    double x_pos, y_pos;
+    glfwGetCursorPos(window, &x_pos, &y_pos);
+    *out_x = (float)x_pos;
+    *out_y = (float)y_pos;
 }
 
 void i_process(GLFWwindow *window)
 {
-    process_mouse_move();
     if (i_key_down(GLFW_KEY_ESCAPE))
         glfwSetWindowShouldClose(window, 1);
-    if (i_button_down(GLFW_MOUSE_BUTTON_1))
-    {
-        if (fabsf(mouse_delta_x) > 0.00001f || fabsf(mouse_delta_y) > 0.00001f)
-        {
-            int width, height;
-            glfwGetFramebufferSize(window, &width, &height);
-            pan_camera(mouse_delta_x/(float)width, -mouse_delta_y/(float)height);
-        }
-    }
 }
 
 void i_clear_pressed()
 {
     pressed_keys_clear();
     pressed_buttons_clear();
+    scroll_clear();
+    mouse_move_clear();
 }

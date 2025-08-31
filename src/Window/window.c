@@ -2,11 +2,11 @@
 #include <stdio.h>
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
-#include "rendering/rendering.h"
 #include "window/input.h"
 
 const int SCR_WIDTH = 800;
 const int SCR_HEIGHT = 600;
+int is_framebuffer_resized_flag = 0;
 
 float framebuffer_ratio = (float)SCR_WIDTH/(float)SCR_HEIGHT;
 
@@ -14,12 +14,22 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
     framebuffer_ratio = (float)width/(float)height;
-    compute_camera_view();
+    is_framebuffer_resized_flag = 1;
 }
 
 void scroll_callback(GLFWwindow* window, double x_offset, double y_offset)
 {
-    scroll((float)x_offset, (float)y_offset);
+    register_scroll_state((float)x_offset, (float)y_offset);
+}
+
+int is_framebuffer_resized()
+{
+    return is_framebuffer_resized_flag;
+}
+
+void clear_framebuffer_resized()
+{
+    is_framebuffer_resized_flag = 0;
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int opt)
@@ -30,6 +40,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int opt
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mode)
 {
     register_mouse_state(button, action); 
+}
+
+void mouse_move_callback(GLFWwindow *window, double x_offset, double y_offset)
+{
+    register_mouse_move_state(x_offset, y_offset);
 }
 
 void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id,
@@ -57,11 +72,22 @@ int initGl(GLFWwindow **window)
         glfwTerminate();
         return 0;
     }
+    
+    if (glfwRawMouseMotionSupported())
+    {
+        glfwSetInputMode(*window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    }
+    else
+    {
+        printf("Error initializing the window : Raw mouse not supported");
+    }
+
     glfwMakeContextCurrent(*window);
     glfwSetFramebufferSizeCallback(*window, framebuffer_size_callback);
     glfwSetScrollCallback(*window, scroll_callback);
     glfwSetKeyCallback(*window, key_callback);
     glfwSetMouseButtonCallback(*window, mouse_button_callback);
+    glfwSetCursorPosCallback(*window, mouse_move_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {

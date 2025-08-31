@@ -3,24 +3,16 @@
 #include <cglm/ivec2.h>
 
 struct Entity;
-
 struct TextureAtlas;
+struct Camera;
 
-void initialize_renderer();
+void initialize_renderer(struct Camera *new_main_camera);
 
 unsigned int shaders_use_default();
 
 unsigned int shaders_use_sprite(unsigned int texture);
 
 unsigned int shaders_use_atlas(struct TextureAtlas atlas, int x, int y);
-
-void set_camera_zoom(float zoom);
-
-float get_camera_zoom();
-
-void pan_camera(float x_offset, float y_offset);
-
-void compute_camera_view();
 
 void draw_transformed_quad(unsigned int program, mat3 transform, vec3 color);
 
