@@ -33,10 +33,11 @@ void get_default_level(struct Level *level)
     level->tilemap = default_grid;
     level->entity_count = 0;
     create_slot_at(level, 2, 5, ACTION_DOOR_OPEN, 0);
-    create_slot_at(level, 7, 1, ACTION_UP, 5);
-    create_slot_at(level, 7, 2, ACTION_DOWN, 5);
-    create_slot_at(level, 6, 2, ACTION_LEFT, 5);
-    create_slot_at(level, 8, 2, ACTION_RIGHT, 5);
+    create_slot_at(level, 7, 1, ACTION_UP, 6);
+    create_slot_at(level, 7, 2, ACTION_DOWN, 6);
+    create_slot_at(level, 6, 2, ACTION_LEFT, 6);
+    create_slot_at(level, 8, 2, ACTION_RIGHT, 6);
+    create_slot_at(level, 4, 1, ACTION_UNDO, 6);
     level->entities[level->entity_count++] = (struct Entity){
         ENTITY_PLAYER,
         SOLIDITY_MOVABLE,
@@ -48,6 +49,7 @@ void get_default_level(struct Level *level)
     create_key_block_at(level, 7, 2, GLFW_KEY_S);
     create_key_block_at(level, 6, 2, GLFW_KEY_A);
     create_key_block_at(level, 8, 2, GLFW_KEY_D);
+    create_key_block_at(level, 4, 1, GLFW_KEY_R);
     create_movable_at(level, 7, 7, ENTITY_BOX);
     create_door_at(level, 2, 0);
     level->is_door_opened = 0;
