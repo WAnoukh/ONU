@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "level.h"
 #include "GLFW/glfw3.h"
@@ -30,7 +32,10 @@ struct Tile default_grid[DEFAULT_LEVEL_GRID_SIZE] =
 
 void get_default_level(struct Level *level)
 {
-    level->tilemap = default_grid;
+    int grid_size=sizeof(struct Tile) * DEFAULT_LEVEL_GRID_SIZE;
+    level->tilemap = malloc(grid_size);
+    level->tilemap[0].type = TILE_WALL;
+    void *result = memcpy(level->tilemap, default_grid, grid_size);
     level->entity_count = 0;
     create_slot_at(level, 2, 5, ACTION_DOOR_OPEN, 0);
     create_slot_at(level, 7, 1, ACTION_UP, 6);
@@ -55,6 +60,7 @@ void get_default_level(struct Level *level)
     level->is_door_opened = 0;
     level->height = DEFAULT_LEVEL_SIZE;
     level->width = DEFAULT_LEVEL_SIZE;
+    printf("Resizing !! \n");
 }
 
 vec3 color_key_block_activated = {203.f, 214.f, 0.f};
@@ -121,6 +127,35 @@ void render_entities(struct Level *level, vec2 pos, float size)
             draw_transformed_quad(program, transform, color);
         }
     }
+}
+
+void resize_level(struct Level *level, int new_width, int new_height)
+{
+    int new_size = new_height*new_width;
+    TileMap new_tilemap = malloc(sizeof(struct Tile)*new_size);
+    if(!new_tilemap)
+    {
+        printf("Error while allocating resized level");
+        exit(1);
+    }
+    for(int i = 0; i < new_size; ++i)
+    {
+        new_tilemap[i].type = TILE_WALL;
+    }
+    //memset(new_tilemap, TILE_WALL, sizeof(struct Tile)*new_size);
+    int copy_width = level->width, copy_height = level->height;
+    if(copy_width > new_width) copy_width = new_width;
+    if(copy_height > new_height) copy_height = new_height;
+    for(int h = 0; h < copy_height; ++h)
+    {
+        int original_index = h * level->width;
+        int new_index = h * new_width;
+        memcpy(new_tilemap+new_index, level->tilemap+original_index, sizeof(struct Tile)*copy_width);
+    }
+    free(level->tilemap);
+    level->tilemap = new_tilemap;
+    level->width = new_width;
+    level->height = new_height;
 }
 
 void render_level(struct Level *level)

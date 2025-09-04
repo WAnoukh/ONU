@@ -1,16 +1,19 @@
-﻿#include <stdio.h>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include "cglm/io.h"
-#include "cglm/mat3.h"
-#include "game.h"
+﻿#include "game.h"
 #include "level_serialization.h"
 #include "texture.h"
 #include "transform.h"
 #include "window/input.h"
 #include "window/window.h"
 #include "rendering/rendering.h"
+#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
+#define CIMGUI_USE_OPENGL3
+#define CIMGUI_USE_GLFW
+#include "cimgui.h"
+#include "cimgui_impl.h"
+
+#include <stdio.h>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 ivec2 directions[] = {{0, -1},{0, 1},{-1, 0},{1, 0}};
 vec2 cursor_pos;
@@ -69,6 +72,7 @@ void update_key_blocks(struct Game *game)
     }
 }
 
+bool editing_tilemap = false;
 
 void editor_update(struct Game *game, GLFWwindow *window)
 {
@@ -102,23 +106,48 @@ void editor_update(struct Game *game, GLFWwindow *window)
     i_get_mouse_pos_normalize(mouse_pos, mouse_pos+1);
     camera_screen_to_world(&game->camera, mouse_pos, cursor_pos);
 
-    int edition = 0;
-    if(i_button_down(GLFW_MOUSE_BUTTON_1)) edition = 1;
-    if(i_button_down(GLFW_MOUSE_BUTTON_2)) edition = -1;
-
-    if(edition)
+    if(editing_tilemap)
     {
+        int edition = 0;
+        if(i_button_down(GLFW_MOUSE_BUTTON_1)) edition = 1;
+        if(i_button_down(GLFW_MOUSE_BUTTON_2)) edition = -1;
+
         struct Level *level = &game->level;
-        ivec2 cursor_grid_pos;
-        cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level->width)/2);
-        cursor_grid_pos[1] = (int)roundf(-cursor_pos[1]+((float)level->height)/2);
-        if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level->width
-                && cursor_grid_pos[1] >= 0 && cursor_grid_pos[0] < level->height)
+        if(edition)
         {
-            int index =cursor_grid_pos[0]+cursor_grid_pos[1]*level->width;
-            game->level.tilemap[index].type = edition > 0 ? TILE_WALL : TILE_EMPTY;
+            ivec2 cursor_grid_pos;
+            cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level->width)/2);
+            cursor_grid_pos[1] = (int)roundf(-cursor_pos[1]+((float)level->height)/2);
+            if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level->width
+                    && cursor_grid_pos[1] >= 0 && cursor_grid_pos[0] < level->height)
+            {
+                int index =cursor_grid_pos[0]+cursor_grid_pos[1]*level->width;
+                game->level.tilemap[index].type = edition > 0 ? TILE_WALL : TILE_EMPTY;
+            }
         }
+        unsigned int program = shaders_use_default();
+        mat3 transform;
+        vec2 size = {0.2f, 0.2f};
+        vec2 cursor_grid_pos;
+        cursor_grid_pos[0] = roundf(cursor_pos[0]-((float)level->width)/2)+(float)(level->width)/2;
+        cursor_grid_pos[1] = roundf(cursor_pos[1]-((float)level->height)/2)+(float)(level->height)/2;
+
+        compute_transform(transform, cursor_grid_pos, size);
+        draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f});
     }
+
+    igBegin("LevelEditor", NULL, 0);
+    igCheckbox("Edit Tilemap", &editing_tilemap);
+    ivec2 tilemapSize;
+    tilemapSize[0] = game->level.width;
+    tilemapSize[1] = game->level.height;
+    if(igInputInt2("Tilemap size: ", tilemapSize, ImGuiInputTextFlags_None) && igIsKeyPressed_Bool(ImGuiKey_Enter, false))
+    {
+        resize_level(&game->level, tilemapSize[0], tilemapSize[1]);
+    }
+    
+    igEnd();
+
 }
 
 struct Game initialize_game()
@@ -147,6 +176,17 @@ int main()
         perror("Failed to initialize OpenGL context\n");
         return 1;
     }
+    ImGuiContext* ctx = igCreateContext(NULL);
+    if (ctx) {
+        printf("Dear ImGui context created!\n");
+    }
+    else
+    {
+        return 1;
+    }
+    ImGuiIO* io = igGetIO_ContextPtr(ctx);
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 130");
 
     const char* level_path="resources/level/test.level";
 
@@ -158,12 +198,16 @@ int main()
     struct Level loaded_level;
     if(do_deser && deserialize_level(&loaded_level, level_path))
     {
-        game.level_start = loaded_level;
+        //game.level_start = loaded_level;
     }
     load_level(&game, game.level_start);
 
     while (!glfwWindowShouldClose(window))
     {
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        igNewFrame();
+
         GLenum err;
         while ((err = glGetError()) != GL_NO_ERROR) {
             printf("OpenGL error: 0x%X\n", err);
@@ -179,7 +223,6 @@ int main()
         }
 
         i_process(window);
-        if(editor) editor_update(&game, window);
         update_key_blocks(&game);
 
         if(game.level.is_door_reached)
@@ -191,16 +234,11 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         render_level(&game.level);
-        
-        unsigned int program = shaders_use_default();
-        mat3 transform;
-        vec2 size = {0.2f, 0.2f};
-        vec2 cursor_grid_pos;
-        cursor_grid_pos[0] = roundf(cursor_pos[0]);
-        cursor_grid_pos[1] = roundf(cursor_pos[1]);
-        compute_transform(transform, cursor_grid_pos, size);
-        draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f});
 
+        if(editor) editor_update(&game, window);
+
+        igRender();
+        ImGui_ImplOpenGL3_RenderDrawData(igGetDrawData());
         glfwSwapBuffers(window);
         i_clear_pressed();
         glfwPollEvents();
@@ -210,7 +248,7 @@ int main()
     {
         serialize_level(game.level, level_path);
     }
-
+    igDestroyContext(ctx);
     glfwTerminate();
     return 0;
 }

@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
+#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
+#include "cimgui.h"
 #include "window/input.h"
 
 const int SCR_WIDTH = 800;
@@ -42,6 +44,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int opt
 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mode)
 {
+    ImGuiIO *io = igGetIO_Nil();
+    if(io->WantCaptureMouse) return;
     register_mouse_state(button, action); 
 }
 
@@ -54,6 +58,10 @@ void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id,
                             GLenum severity, GLsizei length,
                             const GLchar *message, const void *userParam)
 {
+    if(type == GL_DEBUG_TYPE_OTHER) 
+    {
+        return;
+    }
     fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
             (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
             type, severity, message);
