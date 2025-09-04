@@ -78,6 +78,8 @@ struct Level
     int height;
 };
 
+char *get_entity_name(enum EntityType type);
+
 void get_default_level(struct Level *level);
 
 void resize_level(struct Level *level, int new_width, int new_height);

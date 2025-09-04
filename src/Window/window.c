@@ -45,7 +45,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int opt
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mode)
 {
     ImGuiIO *io = igGetIO_Nil();
-    if(io->WantCaptureMouse) return;
+    if(io->WantCaptureMouse && action != GLFW_RELEASE) return;
     register_mouse_state(button, action); 
 }
 

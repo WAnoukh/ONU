@@ -73,6 +73,8 @@ void update_key_blocks(struct Game *game)
 }
 
 bool editing_tilemap = false;
+ivec2 popup_last_clicked_pos;
+struct Entity *reposition_entity = NULL;
 
 void editor_update(struct Game *game, GLFWwindow *window)
 {
@@ -106,13 +108,14 @@ void editor_update(struct Game *game, GLFWwindow *window)
     i_get_mouse_pos_normalize(mouse_pos, mouse_pos+1);
     camera_screen_to_world(&game->camera, mouse_pos, cursor_pos);
 
+    struct Level *level = &game->level;
+
     if(editing_tilemap)
     {
         int edition = 0;
         if(i_button_down(GLFW_MOUSE_BUTTON_1)) edition = 1;
         if(i_button_down(GLFW_MOUSE_BUTTON_2)) edition = -1;
 
-        struct Level *level = &game->level;
         if(edition)
         {
             ivec2 cursor_grid_pos;
@@ -145,9 +148,64 @@ void editor_update(struct Game *game, GLFWwindow *window)
     {
         resize_level(&game->level, tilemapSize[0], tilemapSize[1]);
     }
-    
     igEnd();
-
+    
+    if(!editing_tilemap && igIsMouseClicked_Bool(ImGuiMouseButton_Right, false))
+    {
+        ivec2 cursor_grid_pos;
+        cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level->width)/2);
+        cursor_grid_pos[1] = (int)roundf(-cursor_pos[1]+((float)level->height)/2);
+        if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level->width
+                && cursor_grid_pos[1] >= 0 && cursor_grid_pos[0] < level->height)
+        {
+            igOpenPopup_Str("Menu", 0);
+            glm_ivec2_copy(cursor_grid_pos, popup_last_clicked_pos);
+        }
+    }
+    ImGuiPopupFlags flags = ImGuiPopupFlags_None;
+    if(igBeginPopupContextItem("Menu", flags))
+    {
+        int found = 0;
+        for(int entity_index = 0; entity_index < level->entity_count; ++entity_index)
+        {
+            struct Entity *ent = level->entities+entity_index;
+            if(glm_ivec2_eqv(popup_last_clicked_pos, ent->position))
+            {
+                ++found;
+                if(igBeginMenu(get_entity_name(ent->type), true))
+                {
+                    if(igSelectable_Bool("change position", false, 0, (struct ImVec2){0,0}))
+                    {
+                        reposition_entity = ent;
+                    }
+                    igEndMenu();
+                }
+            }
+        }
+        if(!found)
+        {
+            igText("No entity here.");
+        }
+        igEndPopup();
+    }
+    if(reposition_entity)
+    {
+        igOpenPopup_Str("reposition", 0);
+    }
+    struct ImVec2 center;
+    ImGuiViewport_GetCenter(&center, igGetMainViewport());
+    igSetNextWindowPos(center, ImGuiCond_Appearing, (struct ImVec2){0.5f,0.5f});
+    if(igBeginPopupModal("reposition", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        igText("Entity position:");
+        igInputInt2("Tilemap size: ", reposition_entity->position, ImGuiInputTextFlags_None);
+        if(igButton("Comfirm", (struct ImVec2){0,0}))
+        {
+            reposition_entity = NULL; 
+            igCloseCurrentPopup();
+        }
+        igEndPopup();
+    }
 }
 
 struct Game initialize_game()

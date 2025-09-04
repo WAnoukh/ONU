@@ -16,6 +16,13 @@
 #define DEFAULT_LEVEL_SIZE 10
 #define DEFAULT_LEVEL_GRID_SIZE DEFAULT_LEVEL_SIZE * DEFAULT_LEVEL_SIZE
 
+char *entity_names[] = {"None","Wall","Player","Box","Key","Slot","Door"};
+
+char *get_entity_name(enum EntityType type)
+{
+    return entity_names[type];
+}
+
 struct Tile default_grid[DEFAULT_LEVEL_GRID_SIZE] = 
 {
     {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL},
