@@ -72,7 +72,7 @@ void get_default_level(struct Level *level)
 
 vec3 color_key_block_activated = {203.f, 214.f, 0.f};
 vec3 color_door_open = {0.f,1.f,0.f};
-vec3 entities_color[] = {{0.f,0.f,0.f}, {0.f,0.f,0.f},{0.5f,0.1f,0.3f},{0.2f,0.2f,0.2f},{0.1f,0.6f,0.6f},{0.9f,0.9f,0.9f},{0.f,0.f,0.f}};
+vec3 entities_color[] = {{0.f,0.f,0.f}, {0.5f,0.1f,0.3f},{0.2f,0.2f,0.2f},{0.1f,0.6f,0.6f},{0.9f,0.9f,0.9f},{0.f,0.f,0.f}};
 
 void render_entities(struct Level *level, vec2 pos, float size)
 {

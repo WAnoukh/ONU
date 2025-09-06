@@ -40,12 +40,12 @@ struct DoorData
 enum EntityType
 {
     ENTITY_NONE,
-    ENTITY_WALL,
     ENTITY_PLAYER,
     ENTITY_BOX,
     ENTITY_KEY,
     ENTITY_SLOT,
     ENTITY_DOOR,
+    ENTITY_COUNT,
 };
 
 enum Solidity 
