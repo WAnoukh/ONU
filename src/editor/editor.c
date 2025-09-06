@@ -11,15 +11,22 @@
 #include "cimgui.h"
 #include "cimgui_impl.h"
 
-
-bool editing_tilemap = false;
-ivec2 popup_last_clicked_pos;
-struct Entity *reposition_entity = NULL;
-enum EntityType creation_type = ENTITY_NONE;
-ivec2 creation_position;
-vec2 cursor_pos;
+const char* window_create = "Create entity";
+const char * window_move = "Move entity";
 
 ImGuiContext* ctx;
+bool editing_tilemap = false;
+vec2 cursor_pos;
+ivec2 popup_last_clicked_pos;
+
+struct Entity *reposition_entity = NULL;
+
+enum EntityType creation_type = ENTITY_NONE;
+ivec2 creation_position;
+int creation_key = GLFW_KEY_A;
+enum ActionType creation_action = ACTION_NONE;
+int creation_action_target = 0;
+
 
 int editor_initialize(GLFWwindow *window)
 {
@@ -126,7 +133,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
     ivec2 tilemapSize;
     tilemapSize[0] = game->level.width;
     tilemapSize[1] = game->level.height;
-    if(igInputInt2("Tilemap size: ", tilemapSize, ImGuiInputTextFlags_None) && igIsKeyPressed_Bool(ImGuiKey_Enter, false))
+    if(igInputInt2(": Tilemap size", tilemapSize, ImGuiInputTextFlags_None) && igIsKeyPressed_Bool(ImGuiKey_Enter, false))
     {
         resize_level(&game->level, tilemapSize[0], tilemapSize[1]);
     }
@@ -156,7 +163,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
                 ++found;
                 if(igBeginMenu(get_entity_name(ent->type), true))
                 {
-                    if(igSelectable_Bool("change position", false, 0, (struct ImVec2){0,0}))
+                    if(igSelectable_Bool("Move", false, 0, (struct ImVec2){0,0}))
                     {
                         reposition_entity = ent;
                     }
@@ -168,6 +175,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
         {
             igText("No entity here.");
         }
+        igSeparator();
         if(igBeginMenu("Create entity", true))
         {
             for(enum EntityType i = 1; i < ENTITY_COUNT; ++i)
@@ -175,8 +183,8 @@ void editor_update(struct Game *game, GLFWwindow *window)
                 if(igSelectable_Bool(get_entity_name(i), false, 0, (struct ImVec2){0,0}))       
                 {
                     creation_type = i;
-                    creation_position[0] = 0;
-                    creation_position[1] = 0;
+                    glm_ivec2_copy(popup_last_clicked_pos, creation_position);
+                    creation_action_target = -1;
                 }
             }
             igEndMenu();
@@ -185,16 +193,20 @@ void editor_update(struct Game *game, GLFWwindow *window)
     }
     if(reposition_entity)
     {
-        igOpenPopup_Str("reposition", 0);
+        igOpenPopup_Str(window_move, 0);
     }
     else if(creation_type)
     {
-        igOpenPopup_Str("create", 0);
+        igOpenPopup_Str(window_create, 0);
     }
     struct ImVec2 center;
     ImGuiViewport_GetCenter(&center, igGetMainViewport());
     igSetNextWindowPos(center, ImGuiCond_Appearing, (struct ImVec2){0.5f,0.5f});
-    if(igBeginPopupModal("reposition", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    
+    ///////////////////
+    //  ENTITY MOVE  //
+    ///////////////////
+    if(igBeginPopupModal(window_move, NULL, ImGuiWindowFlags_AlwaysAutoResize))
     {
         igText("Entity position:");
         igInputInt2("Tilemap size: ", reposition_entity->position, ImGuiInputTextFlags_None);
@@ -205,12 +217,62 @@ void editor_update(struct Game *game, GLFWwindow *window)
         }
         igEndPopup();
     }
-    if(igBeginPopupModal("create", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+
+    ///////////////////////
+    //  ENTITY CREATION  //
+    ///////////////////////
+    if(igBeginPopupModal(window_create, NULL, ImGuiWindowFlags_AlwaysAutoResize))
     {
+        igText(get_entity_name(creation_type));
+        igSeparator();
         igText("Entity position:");
-        igInputInt2("Tilemap size: ", creation_position, ImGuiInputTextFlags_None);
+        igInputInt2("##position", creation_position, ImGuiInputTextFlags_None);
+        if(creation_type == ENTITY_KEY)
+        {
+            char letter[] = {(char)creation_key, '\0'};
+            igText("Key binding:");
+            if(igInputText("##keybinding", letter, 2, ImGuiInputTextFlags_CharsUppercase, NULL, NULL))
+            {
+               if(letter[0] >= 'a' && letter[0] <= 'z')
+               {
+                   letter[0] = (char)(letter[0] + 'A' - 'a');
+               }
+               if(letter[0] >= GLFW_KEY_A || letter[0] <= GLFW_KEY_Z)
+               {
+                   creation_key = (int)letter[0];
+               }
+            }
+        }
+        if(creation_type == ENTITY_SLOT)
+        {
+            igText("Target:");
+            if(igInputInt("##target", &creation_action_target, 1, 1, 0))
+            {
+                if(creation_action_target < -1) creation_action_target = -1;
+                if(creation_action_target >= level->entity_count) creation_action_target = level->entity_count-1;
+            }
+            igText("Action:");
+            igCombo_Str_arr("##action", (int*)&creation_action, get_action_names(), ACTION_COUNT, ACTION_COUNT);
+        }
         if(igButton("Comfirm", (struct ImVec2){0,0}))
         {
+            switch(creation_type)
+            {
+                case ENTITY_NONE:
+                    break;
+                case ENTITY_KEY:
+                    create_key_block_at(level, creation_position[0], creation_position[1], creation_key);
+                    break;
+                case ENTITY_SLOT:
+                    create_slot_at(level, creation_position[0], creation_position[1], creation_action, creation_action_target);
+                    break;
+                case ENTITY_DOOR:
+                    create_door_at(level, creation_position[0], creation_position[1]);
+                    break;
+                default:
+                    create_movable_at(level, creation_position[0], creation_position[1], creation_type);
+                    break;
+            }
             creation_type = 0;
             igCloseCurrentPopup();
         }

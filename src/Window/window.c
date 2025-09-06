@@ -39,6 +39,8 @@ void clear_framebuffer_resized()
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int opt)
 {
+    ImGuiIO *io = igGetIO_Nil();
+    if(io->WantCaptureMouse && action != GLFW_RELEASE) return;
     register_key_state(key, action);
 }
 

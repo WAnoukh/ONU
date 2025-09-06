@@ -16,11 +16,28 @@
 #define DEFAULT_LEVEL_SIZE 10
 #define DEFAULT_LEVEL_GRID_SIZE DEFAULT_LEVEL_SIZE * DEFAULT_LEVEL_SIZE
 
-char *entity_names[] = {"None","Wall","Player","Box","Key","Slot","Door"};
+const char *entity_names[] = {"None","Player","Box","Key","Slot","Door"};
 
-char *get_entity_name(enum EntityType type)
+const char *get_entity_name(enum EntityType type)
 {
     return entity_names[type];
+}
+
+const char * const*get_entity_names()
+{
+    return entity_names;
+}
+
+const char *action_names[] = {"None","Up","Down","Left","Right","Undo","DoorOpen","DoorClose"};
+
+const char *get_action_name(enum ActionType type)
+{
+    return action_names[type];
+}
+
+const char * const*get_action_names()
+{
+    return action_names;
 }
 
 struct Tile default_grid[DEFAULT_LEVEL_GRID_SIZE] = 

@@ -12,6 +12,7 @@ enum ActionType
     ACTION_RIGHT,
     ACTION_UNDO,
     ACTION_DOOR_OPEN,
+    ACTION_DOOR_CLOSE,
     ACTION_COUNT,
 };
 
@@ -78,7 +79,13 @@ struct Level
     int height;
 };
 
-char *get_entity_name(enum EntityType type);
+const char *get_entity_name(enum EntityType type);
+
+const char * const*get_entity_names();
+
+const char *get_action_name(enum ActionType type);
+
+const char * const*get_action_names();
 
 void get_default_level(struct Level *level);
 
