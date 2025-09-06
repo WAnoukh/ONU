@@ -87,6 +87,8 @@ const char *get_action_name(enum ActionType type);
 
 const char * const*get_action_names();
 
+int get_entity_index(struct Level *level, struct Entity *entity);
+
 void get_default_level(struct Level *level);
 
 void resize_level(struct Level *level, int new_width, int new_height);
@@ -106,6 +108,8 @@ int is_tilemap_solid_at(struct Level *level, ivec2 position);
 struct Entity *get_player(struct Level *level);
     
 void push_entity(struct Level *level, struct Entity *entity, ivec2 offset);
+
+void remove_entity(struct Level *level, int index);
 
 static inline void create_movable_at(struct Level *level, int x, int y, enum EntityType type)
 {

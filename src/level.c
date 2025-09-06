@@ -40,6 +40,11 @@ const char * const*get_action_names()
     return action_names;
 }
 
+int get_entity_index(struct Level *level, struct Entity *entity)
+{
+    return (int)(entity - level->entities);
+}
+
 struct Tile default_grid[DEFAULT_LEVEL_GRID_SIZE] = 
 {
     {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL},
@@ -95,10 +100,32 @@ void render_entities(struct Level *level, vec2 pos, float size)
 {
     float width_2 = (float)level->width / 2.f;
     float height_2 = (float)level->height / 2.f;
+    //Render slot first
     for(int i = 0; i < level->entity_count; ++i)
     {
         struct Entity ent = level->entities[i];
-        
+        if(ent.type != ENTITY_SLOT) continue;
+        vec3 color;
+        glm_vec3_copy(entities_color[(int)ent.type], color);
+        unsigned int program;
+        program = shaders_use_sprite(get_texture_slot());
+
+        mat3 transform;
+        vec2 size_vec = {size, size};
+        vec2 pos_offset;
+        pos_offset[0] = (float)(ent.position[0]) * size - width_2;
+        pos_offset[1] = (float)(level->height-ent.position[1]) * size - height_2;
+        glm_vec2_add(pos, pos_offset, pos_offset);
+        compute_transform(transform, pos_offset, size_vec);
+        draw_transformed_quad(program, transform, color);
+    }
+
+
+    //Render the rest
+    for(int i = 0; i < level->entity_count; ++i)
+    {
+        struct Entity ent = level->entities[i];
+        if(ent.type == ENTITY_SLOT) continue;
         vec3 color;
         glm_vec3_copy(entities_color[(int)ent.type], color);
         if(ent.type == ENTITY_KEY)
@@ -118,9 +145,6 @@ void render_entities(struct Level *level, vec2 pos, float size)
         unsigned int program;
         switch (ent.type)
         {
-            case ENTITY_SLOT:
-                program = shaders_use_sprite(get_texture_slot());
-                break;
             case ENTITY_KEY:
                 program = shaders_use_sprite(get_texture_key());
                 break;
@@ -322,4 +346,21 @@ void push_entity(struct Level *level, struct Entity *entity, ivec2 offset)
         return;
     }
     try_push_entity(level, entity, offset);
+}
+
+void remove_entity(struct Level *level, int index)
+{
+    for(int i = 0; i < level->slot_data_count; ++i)
+    {
+        struct SlotData *slot = level->slot_data+i;
+        if(slot->action.target_entity == level->entity_count)
+        {
+            slot->action.target_entity = index;
+        }
+        else if(slot->action.target_entity == index)
+        {
+            slot->action.target_entity = -1;
+        }
+    }
+    level->entities[index] = level->entities[--level->entity_count];
 }

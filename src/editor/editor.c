@@ -5,6 +5,7 @@
 #include "level.h"
 #include "transform.h"
 #include "window/input.h"
+#include <string.h>
 #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
 #define CIMGUI_USE_OPENGL3
 #define CIMGUI_USE_GLFW
@@ -13,6 +14,7 @@
 
 const char* window_create = "Create entity";
 const char * window_move = "Move entity";
+const char * window_deletion = "Comfirm deletion";
 
 ImGuiContext* ctx;
 bool editing_tilemap = false;
@@ -27,6 +29,7 @@ int creation_key = GLFW_KEY_A;
 enum ActionType creation_action = ACTION_NONE;
 int creation_action_target = 0;
 
+int deletion_index = -1;
 
 int editor_initialize(GLFWwindow *window)
 {
@@ -161,11 +164,23 @@ void editor_update(struct Game *game, GLFWwindow *window)
             if(glm_ivec2_eqv(popup_last_clicked_pos, ent->position))
             {
                 ++found;
-                if(igBeginMenu(get_entity_name(ent->type), true))
+                const int number_max_char = 3;
+                char str_name[30];
+                char str_number[number_max_char];
+                strcpy(str_name, get_entity_name(ent->type));
+                itoa(get_entity_index(level, ent), str_number, 10);
+                strcat(str_name, " (");
+                strcat(str_name, str_number);
+                strcat(str_name, ")");
+                if(igBeginMenu(str_name, true))
                 {
                     if(igSelectable_Bool("Move", false, 0, (struct ImVec2){0,0}))
                     {
                         reposition_entity = ent;
+                    }
+                    if(igSelectable_Bool("Remove", false, 0, (struct ImVec2){0,0}))
+                    {
+                        deletion_index = get_entity_index(level, ent);
                     }
                     igEndMenu();
                 }
@@ -198,6 +213,10 @@ void editor_update(struct Game *game, GLFWwindow *window)
     else if(creation_type)
     {
         igOpenPopup_Str(window_create, 0);
+    }
+    else if(deletion_index >= 0)
+    {
+        igOpenPopup_Str(window_deletion, 0);
     }
     struct ImVec2 center;
     ImGuiViewport_GetCenter(&center, igGetMainViewport());
@@ -276,6 +295,29 @@ void editor_update(struct Game *game, GLFWwindow *window)
             creation_type = 0;
             igCloseCurrentPopup();
         }
+        igEndPopup();
+    }
+    
+    ///////////////////////
+    //  ENTITY DELETION  //
+    ///////////////////////
+    if(igBeginPopupModal(window_deletion, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        igText("Are you sure you want to delete that entity?");
+        igSeparator();
+        if(igButton("Yes", (struct ImVec2){0,0}))
+        {
+            remove_entity(level, deletion_index);
+            deletion_index = -1;
+            igCloseCurrentPopup();
+        }
+        igSameLine(0,-1);
+        if(igButton("No", (struct ImVec2){0,0}))
+        {
+            deletion_index = -1;
+            igCloseCurrentPopup();
+        }
+
         igEndPopup();
     }
 }
