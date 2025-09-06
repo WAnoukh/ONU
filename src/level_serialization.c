@@ -3,6 +3,7 @@
 #include "level_serialization.h"
 #include "level.h"
 #include "tilemap.h"
+#include "game.h"
 
 #define S_ERROR(msg) printf("%s, %d, Serialization error: %s", __FILE__, __LINE__, msg)
 
@@ -36,6 +37,17 @@ int serialize_level(struct Level level, const char* path)
     return 1;
 }
 
+int deserialize_level_into_game(struct Game *game, const char *path)
+{
+    free(game->level.tilemap);
+    int result = deserialize_level(&game->level_start, path);
+    if(result)
+    {
+        load_level(game, game->level_start);
+    }
+    return result;
+}
+
 int deserialize_level(struct Level *out_level, const char *path)
 {
     struct Level level;  
@@ -65,5 +77,7 @@ int deserialize_level(struct Level *out_level, const char *path)
     fread(level.slot_data, sizeof(struct SlotData) * level.slot_data_count, 1, file);
 
     *out_level = level;
+
+    fclose(file);
     return 1;
 }

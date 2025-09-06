@@ -28,7 +28,7 @@ struct Game
 
 int history_register(struct Game *game);
 
-int history_empty(struct Game *game);
+int history_clear(struct Game *game);
 
 struct Level history_pop(struct Game *game);
 

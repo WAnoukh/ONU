@@ -30,7 +30,7 @@ void request_new_turn(struct Game *game, struct Action action)
 {
     if(action.type == ACTION_UNDO)
     {
-        if(!history_empty(game))
+        if(!history_clear(game))
         {
             game->level = history_pop(game); 
         }

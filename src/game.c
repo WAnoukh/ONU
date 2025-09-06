@@ -1,18 +1,19 @@
 #include "game.h"
 #include "cglm/mat3.h"
 #include "window/window.h"
+#include <stdio.h>
 
 int history_register(struct Game *game)
 {
     if(game->history_size >= HISTORY_MAX_SIZE) {
-        perror("History full");
+        printf("History full\n");
         return 0;
     }
     game->history[game->history_size++] = game->level;
     return 1;
 }
 
-int history_empty(struct Game *game)
+int history_clear(struct Game *game)
 {
     return game->history_size <= 0;
 }

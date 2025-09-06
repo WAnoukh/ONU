@@ -1,21 +1,28 @@
+#include <string.h>
+#include <io.h>
+#include <stdio.h>
+#include <dirent.h>
+
 #include "editor.h"
 #include "GLFW/glfw3.h"
 #include "cglm/types.h"
 #include "game.h"
 #include "level.h"
+#include "level_serialization.h"
 #include "transform.h"
 #include "window/input.h"
-#include <string.h>
 #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
 #define CIMGUI_USE_OPENGL3
 #define CIMGUI_USE_GLFW
 #include "cimgui.h"
 #include "cimgui_impl.h"
 
-const char* window_create = "Create entity";
-const char * window_move = "Move entity";
-const char * window_deletion = "Comfirm deletion";
-const char * window_edition = "Edit";
+const char *window_create = "Create entity";
+const char *window_move = "Move entity";
+const char *window_deletion = "Comfirm deletion";
+const char *window_edition = "Edit";
+const char *window_saving = "Save";
+const char *window_opening = "Opening";
 
 ImGuiContext* ctx;
 bool editing_tilemap = false;
@@ -34,6 +41,13 @@ int deletion_index = -1;
 
 struct Entity *edition_entity = NULL;
 
+char file_suffix[] = ".level";
+char file_current[100] = "NewFile";
+char file_path[] = "resources/level/";
+int saving = 0;
+int opening = 0;
+int opening_failed = 0;
+
 int editor_initialize(GLFWwindow *window)
 {
 
@@ -45,9 +59,16 @@ int editor_initialize(GLFWwindow *window)
     {
         return 0;
     }
-    //ImGuiIO* io = igGetIO_ContextPtr(ctx);
+    ImGuiIO* io = igGetIO_ContextPtr(ctx);
+    ImGuiStyle* style = igGetStyle();
+
+    float ui_scale = 2.f;
+    ImGuiStyle_ScaleAllSizes(style, ui_scale);
+    style->FontScaleMain *= ui_scale;
+
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 130");
+
     return 1;
 }
 
@@ -95,9 +116,55 @@ void edit_entity_slot(struct Level *level, int *target, enum ActionType *type)
     {
         if(*target < -1) *target = -1;
         if(*target >= level->entity_count) *target = level->entity_count-1;
-    }
+    } 
     igText("Action:");
     igCombo_Str_arr("##action", (int*)type, get_action_names(), ACTION_COUNT, ACTION_COUNT);
+}
+
+void menu_bar(struct Game *game)
+{
+    if (igBeginMainMenuBar()) {
+        if (igBeginMenu("File", true)) {
+            if (igMenuItem_Bool("New", NULL, false, true)) {
+                load_level(game, game->level_start);
+            }
+            if (igMenuItem_Bool("Open", NULL, false, true)) {
+                opening = 1;
+                opening_failed = 0;
+            }
+            if (igMenuItem_Bool("Save", NULL, false, true)) {
+                saving = 1;             
+            }
+            igEndMenu();
+        }
+
+        if (igBeginMenu("Level", true)) {
+            igCheckbox("Edit Tilemap", &editing_tilemap);
+            ivec2 tilemapSize;
+            tilemapSize[0] = game->level.width;
+            tilemapSize[1] = game->level.height;
+            if(igInputInt2(": Tilemap size", tilemapSize, ImGuiInputTextFlags_None) && igIsKeyPressed_Bool(ImGuiKey_Enter, false))
+            {
+                resize_level(&game->level, tilemapSize[0], tilemapSize[1]);
+            }
+            igEndMenu();
+        }
+
+        if(igBeginMenu("Options", true))
+        {
+            ImGuiStyle* style = igGetStyle();
+            float old_scale = style->FontScaleMain;
+            if(igInputFloat("uiscale", &style->FontScaleMain, 1, 1, NULL, 0))
+            {
+                if(style->FontScaleMain < 1) style->FontScaleMain = 1;
+                if(style->FontScaleMain > 4) style->FontScaleMain = 4;
+                ImGuiStyle_ScaleAllSizes(style, style->FontScaleMain/old_scale);
+            }
+            igEndMenu();
+        }
+
+        igEndMainMenuBar();
+    }
 }
 
 void editor_update(struct Game *game, GLFWwindow *window)
@@ -163,17 +230,8 @@ void editor_update(struct Game *game, GLFWwindow *window)
         draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f});
     }
 
-    igBegin("LevelEditor", NULL, 0);
-    igCheckbox("Edit Tilemap", &editing_tilemap);
-    ivec2 tilemapSize;
-    tilemapSize[0] = game->level.width;
-    tilemapSize[1] = game->level.height;
-    if(igInputInt2(": Tilemap size", tilemapSize, ImGuiInputTextFlags_None) && igIsKeyPressed_Bool(ImGuiKey_Enter, false))
-    {
-        resize_level(&game->level, tilemapSize[0], tilemapSize[1]);
-    }
-    igEnd();
-    
+    menu_bar(game);
+
     if(!editing_tilemap && igIsMouseClicked_Bool(ImGuiMouseButton_Right, false))
     {
         ivec2 cursor_grid_pos;
@@ -260,6 +318,14 @@ void editor_update(struct Game *game, GLFWwindow *window)
     else if(edition_entity)
     {
         igOpenPopup_Str(window_edition, 0);
+    }
+    else if(saving)
+    {
+        igOpenPopup_Str(window_saving, 0);
+    }
+    else if(opening)
+    {
+        igOpenPopup_Str(window_opening, 0);
     }
     struct ImVec2 center;
     ImGuiViewport_GetCenter(&center, igGetMainViewport());
@@ -372,6 +438,87 @@ void editor_update(struct Game *game, GLFWwindow *window)
         if(igButton("Comfirm", (struct ImVec2){0,0}))
         {
             edition_entity = NULL;
+            igCloseCurrentPopup();
+        }
+        igEndPopup();
+    }
+    
+    ///////////////
+    //  SAVING   //
+    ///////////////
+    if(igBeginPopupModal(window_saving, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        igText("File name:");
+        igInputText("##input", file_current, 100, 0, NULL, NULL);
+
+        char path[150];
+        strcpy(path, file_path);
+        strcat(path, file_current);
+        unsigned long long path_len = strlen(path);
+        unsigned long long suffix_len = strlen(file_suffix);
+        if(strcmp(path + path_len - suffix_len, file_suffix) != 0) 
+        {
+            strcat(path, file_suffix);
+        }
+        if(access(path, F_OK)==0)  
+        {
+            igText("/!\\/!\\ This file already exist, it will be overwrited !");
+        }
+        if(igButton("Comfirm", (struct ImVec2){0,0}))
+        {
+            serialize_level(*level, path);
+            saving = 0;
+            igCloseCurrentPopup();
+        }
+        igSameLine(0,-1);
+        if(igButton("Cancel", (struct ImVec2){0,0}))
+        {
+            saving = 0;
+            igCloseCurrentPopup();
+        }
+
+        igEndPopup();
+    }
+
+
+    ////////////////
+    //  OPENING   //
+    ////////////////
+    if(igBeginPopupModal(window_opening, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        igText("File name:");
+        igInputText("##input2", file_current, 100, 0, NULL, NULL);
+
+        char path[150];
+        strcpy(path, file_path);
+        strcat(path, file_current);
+        unsigned long long path_len = strlen(path);
+        unsigned long long suffix_len = strlen(file_suffix);
+        if(strcmp(path + path_len - suffix_len, file_suffix) != 0) 
+        {
+            strcat(path, file_suffix);
+        }
+        if(opening_failed)
+        {
+            igText("/!\\/!\\ This file don't exist !");
+        }
+        if(igButton("Comfirm", (struct ImVec2){0,0}))
+        {
+            if(access(path, F_OK)!=0)  
+            {
+                opening_failed = 1;
+            }
+            else 
+            {
+                deserialize_level_into_game(game, path);
+                opening = 0;
+                igCloseCurrentPopup();
+            }
+        }
+        igSameLine(0,-1);
+        if(igButton("Cancel", (struct ImVec2){0,0}))
+        {
+            opening = 0;
             igCloseCurrentPopup();
         }
         igEndPopup();
