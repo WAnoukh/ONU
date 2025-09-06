@@ -15,6 +15,7 @@
 const char* window_create = "Create entity";
 const char * window_move = "Move entity";
 const char * window_deletion = "Comfirm deletion";
+const char * window_edition = "Edit";
 
 ImGuiContext* ctx;
 bool editing_tilemap = false;
@@ -30,6 +31,8 @@ enum ActionType creation_action = ACTION_NONE;
 int creation_action_target = 0;
 
 int deletion_index = -1;
+
+struct Entity *edition_entity = NULL;
 
 int editor_initialize(GLFWwindow *window)
 {
@@ -66,6 +69,35 @@ void editor_destroy()
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     igDestroyContext(ctx);
+}
+
+void edit_entity_key(int *key)
+{
+    char letter[] = {(char)*key, '\0'};
+    igText("Key binding:");
+    if(igInputText("##keybinding", letter, 2, ImGuiInputTextFlags_CharsUppercase, NULL, NULL))
+    {
+        if(letter[0] >= 'a' && letter[0] <= 'z')
+        {
+            letter[0] = (char)(letter[0] + 'A' - 'a');
+        }
+        if(letter[0] >= GLFW_KEY_A || letter[0] <= GLFW_KEY_Z)
+        {
+            *key = (int)letter[0];
+        }
+    }
+}
+
+void edit_entity_slot(struct Level *level, int *target, enum ActionType *type)
+{
+    igText("Target:");
+    if(igInputInt("##target", target, 1, 1, 0))
+    {
+        if(*target < -1) *target = -1;
+        if(*target >= level->entity_count) *target = level->entity_count-1;
+    }
+    igText("Action:");
+    igCombo_Str_arr("##action", (int*)type, get_action_names(), ACTION_COUNT, ACTION_COUNT);
 }
 
 void editor_update(struct Game *game, GLFWwindow *window)
@@ -174,6 +206,13 @@ void editor_update(struct Game *game, GLFWwindow *window)
                 strcat(str_name, ")");
                 if(igBeginMenu(str_name, true))
                 {
+                    if(ent->type == ENTITY_SLOT || ent->type == ENTITY_KEY)
+                    {
+                        if(igSelectable_Bool("Edit", false, 0, (struct ImVec2){0,0}))
+                        {
+                            edition_entity = ent;
+                        }
+                    }
                     if(igSelectable_Bool("Move", false, 0, (struct ImVec2){0,0}))
                     {
                         reposition_entity = ent;
@@ -218,6 +257,10 @@ void editor_update(struct Game *game, GLFWwindow *window)
     {
         igOpenPopup_Str(window_deletion, 0);
     }
+    else if(edition_entity)
+    {
+        igOpenPopup_Str(window_edition, 0);
+    }
     struct ImVec2 center;
     ImGuiViewport_GetCenter(&center, igGetMainViewport());
     igSetNextWindowPos(center, ImGuiCond_Appearing, (struct ImVec2){0.5f,0.5f});
@@ -248,30 +291,11 @@ void editor_update(struct Game *game, GLFWwindow *window)
         igInputInt2("##position", creation_position, ImGuiInputTextFlags_None);
         if(creation_type == ENTITY_KEY)
         {
-            char letter[] = {(char)creation_key, '\0'};
-            igText("Key binding:");
-            if(igInputText("##keybinding", letter, 2, ImGuiInputTextFlags_CharsUppercase, NULL, NULL))
-            {
-               if(letter[0] >= 'a' && letter[0] <= 'z')
-               {
-                   letter[0] = (char)(letter[0] + 'A' - 'a');
-               }
-               if(letter[0] >= GLFW_KEY_A || letter[0] <= GLFW_KEY_Z)
-               {
-                   creation_key = (int)letter[0];
-               }
-            }
+            edit_entity_key(&creation_key);
         }
         if(creation_type == ENTITY_SLOT)
         {
-            igText("Target:");
-            if(igInputInt("##target", &creation_action_target, 1, 1, 0))
-            {
-                if(creation_action_target < -1) creation_action_target = -1;
-                if(creation_action_target >= level->entity_count) creation_action_target = level->entity_count-1;
-            }
-            igText("Action:");
-            igCombo_Str_arr("##action", (int*)&creation_action, get_action_names(), ACTION_COUNT, ACTION_COUNT);
+            edit_entity_slot(level, &creation_action_target, &creation_action);
         }
         if(igButton("Comfirm", (struct ImVec2){0,0}))
         {
@@ -318,6 +342,38 @@ void editor_update(struct Game *game, GLFWwindow *window)
             igCloseCurrentPopup();
         }
 
+        igEndPopup();
+    }
+    
+    //////////////////////
+    //  ENTITY EDITION  //
+    //////////////////////
+    if(igBeginPopupModal(window_edition, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        switch(edition_entity->type)
+        {
+            case ENTITY_KEY:
+                {
+                    struct KeyBlockData *key = level->key_block_data+edition_entity->data_index;
+                    edit_entity_key(&key->key);
+                }
+                break;
+            case ENTITY_SLOT:
+                {
+                    struct SlotData *slot = level->slot_data+edition_entity->data_index;
+                    edit_entity_slot(level, &slot->action.target_entity, &slot->action.type);
+                }
+                break;
+            default:
+                igCloseCurrentPopup();
+                break;
+        }
+
+        if(igButton("Comfirm", (struct ImVec2){0,0}))
+        {
+            edition_entity = NULL;
+            igCloseCurrentPopup();
+        }
         igEndPopup();
     }
 }
