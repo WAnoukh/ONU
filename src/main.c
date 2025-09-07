@@ -40,6 +40,10 @@ void request_new_turn(struct Game *game, struct Action action)
     {
         game->level.is_door_opened = 1;
     }
+    if(action.type == ACTION_DOOR_CLOSE)
+    {
+        game->level.is_door_opened = 0;
+    }
 
     history_register(game);
 

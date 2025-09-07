@@ -66,7 +66,7 @@ void get_default_level(struct Level *level)
     level->tilemap[0].type = TILE_WALL;
     void *result = memcpy(level->tilemap, default_grid, grid_size);
     level->entity_count = 0;
-    create_slot_at(level, 2, 5, ACTION_DOOR_OPEN, 0);
+    create_slot_at(level, 2, 5, ACTION_DOOR_OPEN, -1);
     create_slot_at(level, 7, 1, ACTION_UP, 6);
     create_slot_at(level, 7, 2, ACTION_DOWN, 6);
     create_slot_at(level, 6, 2, ACTION_LEFT, 6);
@@ -89,7 +89,6 @@ void get_default_level(struct Level *level)
     level->is_door_opened = 0;
     level->height = DEFAULT_LEVEL_SIZE;
     level->width = DEFAULT_LEVEL_SIZE;
-    printf("Resizing !! \n");
 }
 
 vec3 color_key_block_activated = {203.f, 214.f, 0.f};
