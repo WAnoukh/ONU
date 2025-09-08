@@ -24,6 +24,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void scroll_callback(GLFWwindow* window, double x_offset, double y_offset)
 {
+    ImGuiIO *io = igGetIO_Nil();
+    if(io->WantCaptureMouse) return;
     register_scroll_state((float)x_offset, (float)y_offset);
 }
 

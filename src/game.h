@@ -29,7 +29,6 @@ struct Game
 
 static inline void layer_set_visibility(struct Game *game, int layer, int visibility)
 {
-    printf("visibility : %d\n", game->tilemap_layer_mask);
     if(visibility)
     {
         game->tilemap_layer_mask |= 0b1 << layer;
@@ -42,7 +41,6 @@ static inline void layer_set_visibility(struct Game *game, int layer, int visibi
 
 static inline int layer_get_visibility(struct Game *game, int layer)
 {
-    printf("visibility : %d\n", game->tilemap_layer_mask);
     return game->tilemap_layer_mask & 0b1 << layer;
 }
 

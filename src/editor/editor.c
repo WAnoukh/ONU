@@ -10,6 +10,7 @@
 #include "game.h"
 #include "level.h"
 #include "level_serialization.h"
+#include "texture.h"
 #include "transform.h"
 #include "window/input.h"
 #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
@@ -24,12 +25,12 @@ const char *window_deletion = "Comfirm deletion";
 const char *window_edition = "Edit";
 const char *window_saving = "Save";
 const char *window_opening = "Opening";
-const char *floating_tilemap = "Tilemap Editor";
+const char *floating_editor = "World Editor";
 
 ImGuiContext* ctx;
-bool editing_tilemap = false;
 vec2 cursor_pos;
 ivec2 popup_last_clicked_pos;
+_Bool floating_editor_show = 0;
 
 struct Entity *reposition_entity = NULL;
 
@@ -41,7 +42,7 @@ int creation_action_target = 0;
 
 int deletion_index = -1;
 
-int tilemap_selected_layer = -1;
+int layer_selected = 1;
 
 struct Entity *edition_entity = NULL;
 
@@ -51,6 +52,9 @@ char file_path[] = "resources/level/";
 int saving = 0;
 int opening = 0;
 int opening_failed = 0;
+
+int tile_index;
+struct ImVec2i tile_position;
 
 int editor_initialize(GLFWwindow *window)
 {
@@ -143,7 +147,7 @@ void menu_bar(struct Game *game)
         }
 
         if (igBeginMenu("Level", true)) {
-            igCheckbox("Edit Tilemap", &editing_tilemap);
+            igCheckbox("Show World Editor", &floating_editor_show);
             ivec2 tilemapSize;
             tilemapSize[0] = level_get_width(&game->level);
             tilemapSize[1] = level_get_height(&game->level);
@@ -174,15 +178,14 @@ void menu_bar(struct Game *game)
 void tilemap_ig_layer(struct Game *game, char *title, int layer)
 {
     igSetNextItemAllowOverlap();
-    if (igSelectable_Bool("##selectable", tilemap_selected_layer == layer, ImGuiSelectableFlags_SpanAvailWidth, (struct ImVec2){0,0}))
+    if (igSelectable_Bool("##selectable", layer_selected == layer, ImGuiSelectableFlags_SpanAvailWidth, (struct ImVec2){0,0}))
     {
-        tilemap_selected_layer = layer;
+        layer_selected = layer;
     }
 
     igSameLine(0, 0);
 
     int visible = layer_get_visibility(game, layer);
-    printf("Layer %d, visible %s\n", layer, (visible ? "true" : "false"));
     if (igSmallButton(visible ? "O" : "_"))
     {
         layer_set_visibility(game, layer, !visible);
@@ -192,6 +195,50 @@ void tilemap_ig_layer(struct Game *game, char *title, int layer)
     igSameLine(0, spacing.x);
 
     igText(title);
+}
+
+void tilemap_ig_selection(struct ImVec2 pos, float size)
+{
+    ImDrawList* draw_list = igGetWindowDrawList();
+    struct ImVec2 rect_min = { pos.x + (float)tile_position.x * size,
+        pos.y + (float)tile_position.y * size };
+    struct ImVec2 rect_max = { rect_min.x + size,
+        rect_min.y + size };
+
+    ImU32 color = igGetColorU32_Vec4((struct ImVec4){255, 0, 0, 20}); // red, semi-transparent
+    ImDrawList_AddRectFilled(draw_list, rect_min, rect_max, color, 0.0f, 0);
+}
+
+int tilemap_ig_tile_selector(struct TextureAtlas atlas, int *out_index, struct ImVec2i *out_pos)
+{
+    unsigned int texture_id = atlas.texture_id;
+    struct ImTextureRef *ref =ImTextureRef_ImTextureRef_TextureID(texture_id);
+    struct ImVec2 image_size = {(float)(32*atlas.width), (float)(32*atlas.height)};
+    struct ImVec2 pos; 
+    igGetCursorScreenPos(&pos);
+
+    igImage(*ref, image_size,(struct ImVec2){0,1},(struct ImVec2){1,0});
+
+    tilemap_ig_selection(pos, 32);
+
+    struct ImVec2 mouse;
+    igGetMousePos(&mouse);
+    if (mouse.x >= pos.x && mouse.y >= pos.y &&
+            mouse.x <= pos.x + image_size.x &&
+            mouse.y <= pos.y + image_size.y &&
+            igIsKeyPressed_Bool(ImGuiKey_MouseLeft, false)) 
+    {
+        float u = (mouse.x - pos.x) / image_size.x;
+        float v = (mouse.y - pos.y) / image_size.y;
+
+        int tile_x = (int)(u * (float)atlas.width);
+        int tile_y = (int)(v * (float)atlas.height);
+
+        *out_index = tile_y * atlas.width + tile_x;
+        *out_pos = (struct ImVec2i){tile_x, tile_y};
+        return 1;
+    }
+    return 0;
 }
 
 void editor_update(struct Game *game, GLFWwindow *window)
@@ -219,7 +266,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
 
     if(igIsKeyPressed_Bool(ImGuiKey_Tab, false))
     {
-        editing_tilemap = !editing_tilemap;
+         floating_editor_show = !floating_editor_show;
     }
 
     if(camera_view_changed)
@@ -235,22 +282,33 @@ void editor_update(struct Game *game, GLFWwindow *window)
     int level_width = level_get_width(level);
     int level_height = level_get_height(level);
 
-    if(editing_tilemap)
+    if(layer_selected != 1)
     {
         int edition = 0;
         if(i_button_down(GLFW_MOUSE_BUTTON_1)) edition = 1;
         if(i_button_down(GLFW_MOUSE_BUTTON_2)) edition = -1;
 
-        if(edition)
+        ivec2 cursor_grid_ipos;
+        cursor_grid_ipos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2);
+        cursor_grid_ipos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2);
+        int is_inside = cursor_grid_ipos[0] >= 0 && cursor_grid_ipos[0] < level_width
+                    && cursor_grid_ipos[1] >= 0 && cursor_grid_ipos[0] < level_height;
+
+        if(edition && layer_selected == 0)
         {
-            ivec2 cursor_grid_pos;
-            cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2);
-            cursor_grid_pos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2);
-            if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level_width
-                    && cursor_grid_pos[1] >= 0 && cursor_grid_pos[0] < level_height)
+            if(is_inside)
             {
-                int index =cursor_grid_pos[0]+cursor_grid_pos[1]*level_width;
+                int index =cursor_grid_ipos[0]+cursor_grid_ipos[1]*level_width;
                 game->level.tilemap.solidity[index] = edition > 0 ? STILE_SOLID : STILE_EMPTY;
+            }
+        }
+        if(edition && layer_selected >= 2)
+        {
+            if(is_inside)
+            {
+                Tile *layer = tilemap_get_layer_by_index(&level->tilemap, layer_selected - 2);
+                Tile *tile_to_draw = layer + cursor_grid_ipos[0] + cursor_grid_ipos[1] * level_width;
+                *tile_to_draw = tile_index; 
             }
         }
         unsigned int program = shaders_use_default();
@@ -262,11 +320,13 @@ void editor_update(struct Game *game, GLFWwindow *window)
 
         compute_transform(transform, cursor_grid_pos, size);
         draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.8f);
+    }
 
-        igPushID_Str("tilemap");
-        igBegin(floating_tilemap, NULL, 0);
-        igText("Layers:");
-        igSeparator();
+    if(floating_editor_show)
+    {
+        igPushID_Str("Layers");
+        igBegin(floating_editor, NULL, 0);
+        igSeparatorText("Layers:");
         igPushID_Int(0);
         tilemap_ig_layer(game, "Collisions", 0);
         igPopID();
@@ -283,13 +343,21 @@ void editor_update(struct Game *game, GLFWwindow *window)
             tilemap_ig_layer(game, selectable_title, i);
             igPopID();
         }
+        if(layer_selected >= 2)
+        {
+            igSeparatorText("Tiles:");
+            if(tilemap_ig_tile_selector(get_atlas_tilemap(), &tile_index, &tile_position))
+            {
+                
+            }
+        }
         igEnd();
         igPopID();
     }
 
     menu_bar(game);
 
-    if(!editing_tilemap && igIsMouseClicked_Bool(ImGuiMouseButton_Right, false))
+    if(layer_selected == 1 && igIsMouseClicked_Bool(ImGuiMouseButton_Right, false))
     {
         ivec2 cursor_grid_pos;
         cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2);
