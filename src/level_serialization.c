@@ -22,12 +22,19 @@ int serialize_level(const struct Level *level, const char* path)
     fwrite(&level_width, sizeof(level_width), 1, file);
     fwrite(&level_height, sizeof(level_height), 1, file);
 
-    //TODO : Save the tilemap too
     for(int i = 0; i < level_height * level_width; ++i)
     {
         fwrite(level->tilemap.solidity + i, sizeof(enum TileSolidity), 1, file);
     }
+
+    int layer_count = level->tilemap.layer_count;
+    fwrite(&layer_count, sizeof(layer_count), 1, file);
     
+    for(int i = 0; i < layer_count * level_width * level_height; ++i)
+    {
+        fwrite(level->tilemap.tile+i, sizeof(Tile), 1, file);
+    }
+
     fwrite(&level->entity_count, sizeof(int), 1, file);
     fwrite(level->entities, sizeof(struct Entity)*level->entity_count, 1, file);
 
@@ -65,13 +72,17 @@ int deserialize_level(struct Level *out_level, const char *path)
         return 0;
     }
 
-    //TODO : Adapt to new tilemap
-    level.tilemap.solidity = malloc(sizeof(enum TileSolidity)*500);
 
     fread(&level.tilemap.width, sizeof(level.tilemap.width), 1, file);
     fread(&level.tilemap.height, sizeof(level.tilemap.height), 1, file);
+    level.tilemap.solidity = malloc(sizeof(enum TileSolidity)*level.tilemap.width*level.tilemap.height);
 
     fread(level.tilemap.solidity, sizeof(enum TileSolidity)*level.tilemap.height*level.tilemap.width, 1, file);
+
+    fread(&level.tilemap.layer_count, sizeof(level.tilemap.layer_count), 1, file);
+    level.tilemap.tile = malloc(sizeof(Tile)*level.tilemap.width*level.tilemap.height*level.tilemap.layer_count);
+
+    fread(level.tilemap.tile, sizeof(Tile)*level.tilemap.height*level.tilemap.width*level.tilemap.layer_count, 1, file);
 
     fread(&level.entity_count, sizeof(int), 1, file);
     fread(level.entities, sizeof(struct Entity)*level.entity_count, 1, file);
