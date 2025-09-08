@@ -1,4 +1,5 @@
 #include <string.h>
+
 #include <io.h>
 #include <stdio.h>
 #include <dirent.h>
@@ -141,8 +142,8 @@ void menu_bar(struct Game *game)
         if (igBeginMenu("Level", true)) {
             igCheckbox("Edit Tilemap", &editing_tilemap);
             ivec2 tilemapSize;
-            tilemapSize[0] = game->level.width;
-            tilemapSize[1] = game->level.height;
+            tilemapSize[0] = level_get_width(&game->level);
+            tilemapSize[1] = level_get_height(&game->level);
             if(igInputInt2(": Tilemap size", tilemapSize, ImGuiInputTextFlags_None) && igIsKeyPressed_Bool(ImGuiKey_Enter, false))
             {
                 resize_level(&game->level, tilemapSize[0], tilemapSize[1]);
@@ -200,6 +201,8 @@ void editor_update(struct Game *game, GLFWwindow *window)
     camera_screen_to_world(&game->camera, mouse_pos, cursor_pos);
 
     struct Level *level = &game->level;
+    int level_width = level_get_width(level);
+    int level_height = level_get_height(level);
 
     if(editing_tilemap)
     {
@@ -210,21 +213,21 @@ void editor_update(struct Game *game, GLFWwindow *window)
         if(edition)
         {
             ivec2 cursor_grid_pos;
-            cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level->width)/2);
-            cursor_grid_pos[1] = (int)roundf(-cursor_pos[1]+((float)level->height)/2);
-            if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level->width
-                    && cursor_grid_pos[1] >= 0 && cursor_grid_pos[0] < level->height)
+            cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2);
+            cursor_grid_pos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2);
+            if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level_width
+                    && cursor_grid_pos[1] >= 0 && cursor_grid_pos[0] < level_height)
             {
-                int index =cursor_grid_pos[0]+cursor_grid_pos[1]*level->width;
-                game->level.tilemap[index].type = edition > 0 ? TILE_WALL : TILE_EMPTY;
+                int index =cursor_grid_pos[0]+cursor_grid_pos[1]*level_width;
+                game->level.tilemap.solidity[index] = edition > 0 ? STILE_SOLID : STILE_EMPTY;
             }
         }
         unsigned int program = shaders_use_default();
         mat3 transform;
         vec2 size = {0.2f, 0.2f};
         vec2 cursor_grid_pos;
-        cursor_grid_pos[0] = roundf(cursor_pos[0]-((float)level->width)/2)+(float)(level->width)/2;
-        cursor_grid_pos[1] = roundf(cursor_pos[1]-((float)level->height)/2)+(float)(level->height)/2;
+        cursor_grid_pos[0] = roundf(cursor_pos[0]-((float)level_width)/2)+(float)(level_width)/2;
+        cursor_grid_pos[1] = roundf(cursor_pos[1]-((float)level_height)/2)+(float)(level_height)/2;
 
         compute_transform(transform, cursor_grid_pos, size);
         draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f});
@@ -235,10 +238,10 @@ void editor_update(struct Game *game, GLFWwindow *window)
     if(!editing_tilemap && igIsMouseClicked_Bool(ImGuiMouseButton_Right, false))
     {
         ivec2 cursor_grid_pos;
-        cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level->width)/2);
-        cursor_grid_pos[1] = (int)roundf(-cursor_pos[1]+((float)level->height)/2);
-        if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level->width
-                && cursor_grid_pos[1] >= 0 && cursor_grid_pos[0] < level->height)
+        cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2);
+        cursor_grid_pos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2);
+        if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level_width
+                && cursor_grid_pos[1] >= 0 && cursor_grid_pos[0] < level_height)
         {
             igOpenPopup_Str("Menu", 0);
             glm_ivec2_copy(cursor_grid_pos, popup_last_clicked_pos);
@@ -466,7 +469,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
         }
         if(igButton("Comfirm", (struct ImVec2){0,0}))
         {
-            serialize_level(*level, path);
+            serialize_level(level, path);
             saving = 0;
             igCloseCurrentPopup();
         }

@@ -45,26 +45,36 @@ int get_entity_index(struct Level *level, struct Entity *entity)
     return (int)(entity - level->entities);
 }
 
-struct Tile default_grid[DEFAULT_LEVEL_GRID_SIZE] = 
+enum TileSolidity default_solidmap[DEFAULT_LEVEL_GRID_SIZE] = 
 {
-    {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL},
-    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL}, {TILE_WALL},
-    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL},
-    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL},
-    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL},
-    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL},
-    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL},
-    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL},
-    {TILE_WALL}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_EMPTY}, {TILE_WALL},
-    {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL}, {TILE_WALL},
+    STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID,
+    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID, STILE_SOLID,
+    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID,
+    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID,
+    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID,
+    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID,
+    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID,
+    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID,
+    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID,
+    STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID,
 };
 
 void get_default_level(struct Level *level)
 {
-    int grid_size=sizeof(struct Tile) * DEFAULT_LEVEL_GRID_SIZE;
-    level->tilemap = malloc(grid_size);
-    level->tilemap[0].type = TILE_WALL;
-    void *result = memcpy(level->tilemap, default_grid, grid_size);
+    //TILEMAP
+    //solidity
+    int grid_size=sizeof(enum TileSolidity) * DEFAULT_LEVEL_GRID_SIZE;
+    level->tilemap.solidity = malloc(grid_size);
+    memcpy(level->tilemap.solidity, default_solidmap, grid_size);
+    level->tilemap.layer_count = 0;
+    //tiles
+    level->tilemap.tile = malloc(sizeof(Tile) * grid_size);
+    level->tilemap.layer_count = 1;
+    for(int i =0; i < grid_size; ++i) level->tilemap.tile[i] = 4+20;
+    printf("Tiles init %d \n", level->tilemap.tile[0]);
+    level_set_width(level, DEFAULT_LEVEL_SIZE);
+    level_set_height(level, DEFAULT_LEVEL_SIZE);
+
     level->entity_count = 0;
     create_slot_at(level, 2, 5, ACTION_DOOR_OPEN, -1);
     create_slot_at(level, 7, 1, ACTION_UP, 6);
@@ -87,8 +97,6 @@ void get_default_level(struct Level *level)
     create_movable_at(level, 7, 7, ENTITY_BOX);
     create_door_at(level, 2, 0);
     level->is_door_opened = 0;
-    level->height = DEFAULT_LEVEL_SIZE;
-    level->width = DEFAULT_LEVEL_SIZE;
 }
 
 vec3 color_key_block_activated = {203.f, 214.f, 0.f};
@@ -97,8 +105,8 @@ vec3 entities_color[] = {{0.f,0.f,0.f}, {0.5f,0.1f,0.3f},{0.2f,0.2f,0.2f},{0.1f,
 
 void render_entities(struct Level *level, vec2 pos, float size)
 {
-    float width_2 = (float)level->width / 2.f;
-    float height_2 = (float)level->height / 2.f;
+    float width_2 = (float)level_get_width(level) / 2.f;
+    float height_2 = (float)level_get_height(level) / 2.f;
     //Render slot first
     for(int i = 0; i < level->entity_count; ++i)
     {
@@ -113,7 +121,7 @@ void render_entities(struct Level *level, vec2 pos, float size)
         vec2 size_vec = {size, size};
         vec2 pos_offset;
         pos_offset[0] = (float)(ent.position[0]) * size - width_2;
-        pos_offset[1] = (float)(level->height-ent.position[1]) * size - height_2;
+        pos_offset[1] = (float)(level_get_height(level)-ent.position[1]) * size - height_2;
         glm_vec2_add(pos, pos_offset, pos_offset);
         compute_transform(transform, pos_offset, size_vec);
         draw_transformed_quad(program, transform, color);
@@ -156,7 +164,7 @@ void render_entities(struct Level *level, vec2 pos, float size)
         vec2 size_vec = {size, size};
         vec2 pos_offset;
         pos_offset[0] = (float)(ent.position[0]) * size - width_2;
-        pos_offset[1] = (float)(level->height-ent.position[1]) * size - height_2;
+        pos_offset[1] = (float)(level_get_height(level)-ent.position[1]) * size - height_2;
         glm_vec2_add(pos, pos_offset, pos_offset);
         compute_transform(transform, pos_offset, size_vec);
         draw_transformed_quad(program, transform, color);
@@ -178,56 +186,61 @@ void render_entities(struct Level *level, vec2 pos, float size)
 
 void resize_level(struct Level *level, int new_width, int new_height)
 {
+    //TODO: Resize the tilemap too
     int new_size = new_height*new_width;
-    TileMap new_tilemap = malloc(sizeof(struct Tile)*new_size);
-    if(!new_tilemap)
+    enum TileSolidity *new_solidmap = malloc(sizeof(enum TileSolidity)*new_size);
+    if(!new_solidmap)
     {
         printf("Error while allocating resized level");
         exit(1);
     }
     for(int i = 0; i < new_size; ++i)
     {
-        new_tilemap[i].type = TILE_WALL;
+        new_solidmap[i] = STILE_SOLID;
     }
     //memset(new_tilemap, TILE_WALL, sizeof(struct Tile)*new_size);
-    int copy_width = level->width, copy_height = level->height;
+    int copy_width = level_get_width(level), copy_height = level_get_height(level);
     if(copy_width > new_width) copy_width = new_width;
     if(copy_height > new_height) copy_height = new_height;
     for(int h = 0; h < copy_height; ++h)
     {
-        int original_index = h * level->width;
+        int original_index = h * level_get_width(level);
         int new_index = h * new_width;
-        memcpy(new_tilemap+new_index, level->tilemap+original_index, sizeof(struct Tile)*copy_width);
+        memcpy(new_solidmap+new_index, level->tilemap.solidity+original_index, sizeof(enum TileSolidity)*copy_width);
     }
-    free(level->tilemap);
-    level->tilemap = new_tilemap;
-    level->width = new_width;
-    level->height = new_height;
+    free(level->tilemap.solidity);
+    level->tilemap.solidity = new_solidmap;
+    level_set_width(level, new_width);
+    level_set_height(level, new_height);
 }
 
 void render_level(struct Level *level)
 {
     vec2 pos = {0,0};
     float size = 1;
-    render_tilemap(level->tilemap, level->width, level->height, pos, size);
+    if(level->tilemap.layer_count > 0)
+    {
+        tilemap_render_layer(&level->tilemap, 0, pos, size);
+    }
+    render_solidmap(level->tilemap.solidity, level_get_width(level), level_get_height(level), pos, size);
     render_entities(level, pos, size);
 }
 
 void compute_position_from_index(struct Level *level, int index, ivec2 out_position)
 {
-    out_position[1] = index / level->height;
-    out_position[0] = index - out_position[1]* level->width;
+    out_position[1] = index / level_get_height(level);
+    out_position[0] = index - out_position[1]* level_get_width(level);
     glm_ivec2_print(out_position, stdout);
 }
 
 int compute_index_from_coordinate(struct Level *level, int x, int y)
 {
-    if(x<0 || x >= level->width || y < 0 || y >+ level->height)
+    if(x<0 || x >= level_get_width(level) || y < 0 || y >+ level_get_height(level))
     {
         perror("Coordinate out of bounds");
         exit(1);
     }
-    return x + y * level->width;
+    return x + y * level_get_width(level);
 }
 
 int compute_index_from_position(struct Level *level, ivec2 position)
@@ -237,7 +250,7 @@ int compute_index_from_position(struct Level *level, ivec2 position)
 
 int is_tilemap_solid_at(struct Level *level, ivec2 position)
 {
-   return level->tilemap[compute_index_from_position(level, position)].type == TILE_WALL;
+   return level->tilemap.solidity[compute_index_from_position(level, position)] == STILE_SOLID;
 }
 
 char tile_print[] = {' ', 'X'}; 

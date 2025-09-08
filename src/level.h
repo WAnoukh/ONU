@@ -66,18 +66,36 @@ struct Entity
 
 struct Level 
 {
-    TileMap tilemap;
-    struct Entity entities[30];
-    struct KeyBlockData key_block_data[10];
-    struct SlotData slot_data[10];
+    struct TileMap tilemap;
+    struct Entity entities[100];
+    struct KeyBlockData key_block_data[50];
+    struct SlotData slot_data[50];
     int entity_count;
     int key_block_data_count;
     int slot_data_count;
     int is_door_opened;
     int is_door_reached;
-    int width;
-    int height;
 };
+
+static inline int level_get_width(const struct Level *level)
+{
+    return level->tilemap.width;
+}
+
+static inline int level_get_height(const struct Level *level)
+{
+    return level->tilemap.height;
+}
+
+static inline void level_set_width(struct Level *level, int width)
+{
+    level->tilemap.width = width;
+}
+
+static inline void level_set_height(struct Level *level, int height)
+{
+    level->tilemap.height = height;
+}
 
 const char *get_entity_name(enum EntityType type);
 

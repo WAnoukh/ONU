@@ -4,7 +4,7 @@
 struct Level;
 struct Game;
 
-int serialize_level(struct Level level, const char* path);
+int serialize_level(const struct Level *level, const char* path);
 
 int deserialize_level_into_game(struct Game *game, const char *path);
 

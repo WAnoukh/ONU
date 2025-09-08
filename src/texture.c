@@ -7,7 +7,8 @@
 GLuint texture_slot;
 GLuint texture_key;
 
-struct TextureAtlas font_atlas;
+struct TextureAtlas atlas_font;
+struct TextureAtlas atlas_tilemap;
 
 unsigned int get_texture_slot()
 {
@@ -21,7 +22,12 @@ unsigned int get_texture_key()
 
 struct TextureAtlas get_texture_font_atlas()
 {
-    return font_atlas;
+    return atlas_font;
+}
+
+struct TextureAtlas get_atlas_tilemap()
+{
+    return atlas_tilemap;
 }
 
 GLuint texture_load(char* path)
@@ -54,10 +60,13 @@ GLuint texture_load(char* path)
 
 void load_default_images()
 {
-   texture_slot = texture_load("resources\\sprite\\slot.png");
-   texture_key = texture_load("resources\\sprite\\key.png");
-   font_atlas.texture_id = texture_load("resources\\sprite\\font.png");
-   font_atlas.width = 10;
-   font_atlas.height = 5;
+    texture_slot = texture_load("resources\\sprite\\slot.png");
+    texture_key = texture_load("resources\\sprite\\key.png");
+    atlas_font.texture_id = texture_load("resources\\sprite\\font.png");
+    atlas_font.width = 10;
+    atlas_font.height = 5;
+    atlas_tilemap.texture_id = texture_load("resources\\sprite\\TileMap.png");
+    atlas_tilemap.width = 20;
+    atlas_tilemap.height = 20;
 }
 

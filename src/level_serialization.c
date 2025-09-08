@@ -7,7 +7,7 @@
 
 #define S_ERROR(msg) printf("%s, %d, Serialization error: %s", __FILE__, __LINE__, msg)
 
-int serialize_level(struct Level level, const char* path)
+int serialize_level(const struct Level *level, const char* path)
 {
     FILE *file=fopen(path, "wb");
     if(file == NULL)
@@ -16,22 +16,26 @@ int serialize_level(struct Level level, const char* path)
         return 0;
     }
 
-    fwrite(&level.width, sizeof(level.width), 1, file);
-    fwrite(&level.height, sizeof(level.height), 1, file);
+    int level_width = level_get_width(level);
+    int level_height = level_get_height(level);
 
-    for(int i = 0; i < level.height * level.width; ++i)
+    fwrite(&level_width, sizeof(level_width), 1, file);
+    fwrite(&level_height, sizeof(level_height), 1, file);
+
+    //TODO : Save the tilemap too
+    for(int i = 0; i < level_height * level_width; ++i)
     {
-        fwrite(level.tilemap + i, sizeof(struct Tile), 1, file);
+        fwrite(level->tilemap.solidity + i, sizeof(enum TileSolidity), 1, file);
     }
     
-    fwrite(&level.entity_count, sizeof(int), 1, file);
-    fwrite(level.entities, sizeof(struct Entity)*level.entity_count, 1, file);
+    fwrite(&level->entity_count, sizeof(int), 1, file);
+    fwrite(level->entities, sizeof(struct Entity)*level->entity_count, 1, file);
 
-    fwrite(&level.key_block_data_count, sizeof(level.key_block_data_count), 1, file);
-    fwrite(level.key_block_data, sizeof(struct KeyBlockData)*level.key_block_data_count, 1, file);
+    fwrite(&level->key_block_data_count, sizeof(level->key_block_data_count), 1, file);
+    fwrite(level->key_block_data, sizeof(struct KeyBlockData)*level->key_block_data_count, 1, file);
 
-    fwrite(&level.slot_data_count, sizeof(level.slot_data_count), 1, file);
-    fwrite(level.slot_data, sizeof(struct SlotData)*level.slot_data_count, 1, file);
+    fwrite(&level->slot_data_count, sizeof(level->slot_data_count), 1, file);
+    fwrite(level->slot_data, sizeof(struct SlotData)*level->slot_data_count, 1, file);
 
     fclose(file);
     return 1;
@@ -39,7 +43,8 @@ int serialize_level(struct Level level, const char* path)
 
 int deserialize_level_into_game(struct Game *game, const char *path)
 {
-    free(game->level.tilemap);
+    //TODO : Adapt to new tilemap
+    free(game->level.tilemap.solidity);
     int result = deserialize_level(&game->level_start, path);
     if(result)
     {
@@ -60,12 +65,13 @@ int deserialize_level(struct Level *out_level, const char *path)
         return 0;
     }
 
-    level.tilemap = malloc(sizeof(struct Tile)*500);
+    //TODO : Adapt to new tilemap
+    level.tilemap.solidity = malloc(sizeof(enum TileSolidity)*500);
 
-    fread(&level.width, sizeof(level.width), 1, file);
-    fread(&level.height, sizeof(level.height), 1, file);
+    fread(&level.tilemap.width, sizeof(level.tilemap.width), 1, file);
+    fread(&level.tilemap.height, sizeof(level.tilemap.height), 1, file);
 
-    fread(level.tilemap, sizeof(struct Tile)*level.height*level.width, 1, file);
+    fread(level.tilemap.solidity, sizeof(enum TileSolidity)*level.tilemap.height*level.tilemap.width, 1, file);
 
     fread(&level.entity_count, sizeof(int), 1, file);
     fread(level.entities, sizeof(struct Entity)*level.entity_count, 1, file);

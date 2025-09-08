@@ -1,11 +1,15 @@
-﻿#include "game.h"
+﻿#define EDITOR
+
+#include "game.h"
 #include "level.h"
 #include "level_serialization.h"
 #include "texture.h"
 #include "window/input.h"
 #include "window/window.h"
 #include "rendering/rendering.h"
+#ifdef EDITOR
 #include "editor/editor.h"
+#endif
 
 #include <stdio.h>
 #include <glad/glad.h>
@@ -90,7 +94,6 @@ int main()
 {
     int do_ser = 0;
     int do_deser = 0;
-    int editor = 1;
 
     GLFWwindow* window;
     if (!initGl(&window) || window == NULL)
@@ -99,11 +102,14 @@ int main()
         return 1;
     }
 
+#ifdef EDITOR
     if(!editor_initialize(window))
     {
         printf("Editor Error : failed to initialize the editor.\n");
         exit(1);
     }
+    int editor = 1;
+#endif
 
     const char* level_path="resources/level/test.level";
 
@@ -121,7 +127,9 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
+#ifdef EDITOR
         editor_new_frame();
+#endif
         GLenum err;
         while ((err = glGetError()) != GL_NO_ERROR) {
             printf("OpenGL error: 0x%X\n", err);
@@ -144,14 +152,16 @@ int main()
             load_level(&game, game.level_start);
         }
 
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.f, 0.f, 0.f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         render_level(&game.level);
 
+#ifdef EDITOR
         if(editor) editor_update(&game, window);
-
         editor_render();
+#endif
+
         glfwSwapBuffers(window);
         i_clear_pressed();
         glfwPollEvents();
@@ -159,9 +169,11 @@ int main()
 
     if(do_ser)
     {
-        serialize_level(game.level, level_path);
+        serialize_level(&game.level, level_path);
     }
+#ifdef EDITOR
     editor_destroy();
+#endif
     glfwTerminate();
     return 0;
 }
