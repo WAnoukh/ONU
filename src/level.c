@@ -214,16 +214,22 @@ void resize_level(struct Level *level, int new_width, int new_height)
     level_set_height(level, new_height);
 }
 
-void render_level(struct Level *level)
+void render_level(struct Level *level, int layer_mask)
 {
     vec2 pos = {0,0};
     float size = 1;
-    if(level->tilemap.layer_count > 0)
+    if(level->tilemap.layer_count > 0 && (layer_mask & 0b100))
     {
         tilemap_render_layer(&level->tilemap, 0, pos, size);
     }
-    render_solidmap(level->tilemap.solidity, level_get_width(level), level_get_height(level), pos, size);
-    render_entities(level, pos, size);
+    if(layer_mask & 0b1)
+    {
+        render_solidmap(level->tilemap.solidity, level_get_width(level), level_get_height(level), pos, size);
+    }
+    if(layer_mask & 0b10)
+    {
+        render_entities(level, pos, size);
+    }
 }
 
 void compute_position_from_index(struct Level *level, int index, ivec2 out_position)

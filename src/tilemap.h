@@ -34,4 +34,5 @@ static inline Tile *tilemap_get_layer_by_index(struct TileMap *tilemap, int inde
 void tilemap_render_layer(struct TileMap *tilemap, int layer, vec2 pos, float size);
 
 void render_solidmap(const enum TileSolidity *solidmap, int tm_width, int tm_height, vec2 pos, float size);
+
 #endif

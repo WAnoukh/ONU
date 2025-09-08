@@ -86,6 +86,7 @@ struct Game initialize_game()
     game.camera.zoom = 0.2f;
     game.camera.pan[0] = 0;
     game.camera.pan[1] = 0;
+    game.tilemap_layer_mask = -1;
     camera_compute_view(&game.camera);
     return game;
 }
@@ -155,7 +156,7 @@ int main()
         glClearColor(0.f, 0.f, 0.f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        render_level(&game.level);
+        render_level(&game.level, game.tilemap_layer_mask);
 
 #ifdef EDITOR
         if(editor) editor_update(&game, window);

@@ -24,7 +24,27 @@ struct Game
     double last_time;
     double new_time;
     float delta_time;
+    int tilemap_layer_mask;
 };
+
+static inline void layer_set_visibility(struct Game *game, int layer, int visibility)
+{
+    printf("visibility : %d\n", game->tilemap_layer_mask);
+    if(visibility)
+    {
+        game->tilemap_layer_mask |= 0b1 << layer;
+    }
+    else
+    {
+        game->tilemap_layer_mask &= ~(0b1 << layer);
+    }
+}
+
+static inline int layer_get_visibility(struct Game *game, int layer)
+{
+    printf("visibility : %d\n", game->tilemap_layer_mask);
+    return game->tilemap_layer_mask & 0b1 << layer;
+}
 
 int history_register(struct Game *game);
 

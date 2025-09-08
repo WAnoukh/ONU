@@ -24,6 +24,7 @@ const char *window_deletion = "Comfirm deletion";
 const char *window_edition = "Edit";
 const char *window_saving = "Save";
 const char *window_opening = "Opening";
+const char *floating_tilemap = "Tilemap Editor";
 
 ImGuiContext* ctx;
 bool editing_tilemap = false;
@@ -39,6 +40,8 @@ enum ActionType creation_action = ACTION_NONE;
 int creation_action_target = 0;
 
 int deletion_index = -1;
+
+int tilemap_selected_layer = -1;
 
 struct Entity *edition_entity = NULL;
 
@@ -168,6 +171,29 @@ void menu_bar(struct Game *game)
     }
 }
 
+void tilemap_ig_layer(struct Game *game, char *title, int layer)
+{
+    igSetNextItemAllowOverlap();
+    if (igSelectable_Bool("##selectable", tilemap_selected_layer == layer, ImGuiSelectableFlags_SpanAvailWidth, (struct ImVec2){0,0}))
+    {
+        tilemap_selected_layer = layer;
+    }
+
+    igSameLine(0, 0);
+
+    int visible = layer_get_visibility(game, layer);
+    printf("Layer %d, visible %s\n", layer, (visible ? "true" : "false"));
+    if (igSmallButton(visible ? "O" : "_"))
+    {
+        layer_set_visibility(game, layer, !visible);
+    }
+    ImVec2 spacing = igGetStyle()->ItemSpacing;
+
+    igSameLine(0, spacing.x);
+
+    igText(title);
+}
+
 void editor_update(struct Game *game, GLFWwindow *window)
 {
     int camera_view_changed = 0;
@@ -189,6 +215,11 @@ void editor_update(struct Game *game, GLFWwindow *window)
             camera_pan(&game->camera, mouse_delta_x/(float)width, -mouse_delta_y/(float)height);
             camera_view_changed = 1;
         }
+    }
+
+    if(igIsKeyPressed_Bool(ImGuiKey_Tab, false))
+    {
+        editing_tilemap = !editing_tilemap;
     }
 
     if(camera_view_changed)
@@ -231,6 +262,29 @@ void editor_update(struct Game *game, GLFWwindow *window)
 
         compute_transform(transform, cursor_grid_pos, size);
         draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.8f);
+
+        igPushID_Str("tilemap");
+        igBegin(floating_tilemap, NULL, 0);
+        igText("Layers:");
+        igSeparator();
+        igPushID_Int(0);
+        tilemap_ig_layer(game, "Collisions", 0);
+        igPopID();
+        igPushID_Int(1);
+        tilemap_ig_layer(game, "Entities", 1);
+        igPopID();
+        for (int i = 2; i < level->tilemap.layer_count+2; i++)
+        {
+            igPushID_Int(i);
+            char selectable_title [10] = "Layer ";
+            char number[3];
+            itoa(i-2, number, 10);
+            strcat(selectable_title, number);
+            tilemap_ig_layer(game, selectable_title, i);
+            igPopID();
+        }
+        igEnd();
+        igPopID();
     }
 
     menu_bar(game);
