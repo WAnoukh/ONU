@@ -174,16 +174,14 @@ void draw_quad()
     GLCheckError();
 }
 
-void draw_transformed_quad(unsigned int program, mat3 transform, vec3 color)
+void draw_transformed_quad(unsigned int program, mat3 transform, vec3 color, float alpha)
 {
     mat3 result;
     glm_mat3_mul(main_camera->view, transform, result);
     //glm_mat3_mul(transform, camera->view, result);
-    GLCheckError();
     shader_set_mat3(program, "view", result);
-    GLCheckError();
     shader_set_vec3(program, "color", color);
-    GLCheckError();
+    shader_set_float(program, "alpha", alpha);
     draw_quad();
 }
 

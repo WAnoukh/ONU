@@ -41,4 +41,10 @@ static inline void shader_set_int(const GLuint program, const char *loc_name, in
     const int loc = glGetUniformLocation(program, loc_name);
     glUniform1i(loc, number);
 }
+
+static inline void shader_set_float(const GLuint program, const char *loc_name, float number)
+{
+    const int loc = glGetUniformLocation(program, loc_name);
+    glUniform1f(loc, number);
+}
 #endif //SHADER_H

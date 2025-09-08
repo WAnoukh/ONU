@@ -124,7 +124,7 @@ void render_entities(struct Level *level, vec2 pos, float size)
         pos_offset[1] = (float)(level_get_height(level)-ent.position[1]) * size - height_2;
         glm_vec2_add(pos, pos_offset, pos_offset);
         compute_transform(transform, pos_offset, size_vec);
-        draw_transformed_quad(program, transform, color);
+        draw_transformed_quad(program, transform, color, 1);
     }
 
 
@@ -167,7 +167,7 @@ void render_entities(struct Level *level, vec2 pos, float size)
         pos_offset[1] = (float)(level_get_height(level)-ent.position[1]) * size - height_2;
         glm_vec2_add(pos, pos_offset, pos_offset);
         compute_transform(transform, pos_offset, size_vec);
-        draw_transformed_quad(program, transform, color);
+        draw_transformed_quad(program, transform, color, 1);
         if(ent.type == ENTITY_KEY)
         {
             int x, y;
@@ -179,7 +179,7 @@ void render_entities(struct Level *level, vec2 pos, float size)
             size_vec[0] *= 0.3f;
             size_vec[1] *= 0.6f;
             compute_transform(transform, pos_offset, size_vec);
-            draw_transformed_quad(program, transform, color);
+            draw_transformed_quad(program, transform, color, 1);
         }
     }
 }

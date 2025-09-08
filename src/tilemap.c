@@ -22,7 +22,6 @@ void tilemap_render_layer(struct TileMap *tilemap, int layer, vec2 pos, float si
     const float tm_width_2 = (float)width * size/2;
     const float tm_height_2 = (float)height * size/2;
     unsigned int program = shaders_use_default();
-    printf("Drawind Tiles\n");
     for (int i = 0; i < height * width; ++i)
     {
         Tile tile = tiles[i];
@@ -40,7 +39,7 @@ void tilemap_render_layer(struct TileMap *tilemap, int layer, vec2 pos, float si
         program = shaders_use_atlas(atlas, tile_x, tile_y);
         color[0] = 1; color[1] = 1; color[2] = 1; 
         compute_transform(transform, pos_offset, size_vec);
-        draw_transformed_quad(program, transform, color);
+        draw_transformed_quad(program, transform, color, 1);
         ++x;
         if (x>=width)
         {
@@ -71,7 +70,7 @@ void render_solidmap(const enum TileSolidity *solidmap, int tm_width, int tm_hei
             pos_offset[1] = (float)y * size - tm_height_2;
             glm_vec2_add(pos, pos_offset, pos_offset);
             compute_transform(transform, pos_offset, size_vec);
-            draw_transformed_quad(program, transform, *color);
+            draw_transformed_quad(program, transform, *color, 0.6f);
         }
         ++x;
         if (x>=tm_width)

@@ -230,7 +230,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
         cursor_grid_pos[1] = roundf(cursor_pos[1]-((float)level_height)/2)+(float)(level_height)/2;
 
         compute_transform(transform, cursor_grid_pos, size);
-        draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f});
+        draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.8f);
     }
 
     menu_bar(game);
