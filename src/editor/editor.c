@@ -238,6 +238,7 @@ int tilemap_ig_tile_selector(struct TextureAtlas atlas, int *out_index, struct I
         *out_pos = (struct ImVec2i){tile_x, tile_y};
         return 1;
     }
+    ImTextureRef_destroy(ref);
     return 0;
 }
 
