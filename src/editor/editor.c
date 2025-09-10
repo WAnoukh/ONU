@@ -293,7 +293,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
         cursor_grid_ipos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2);
         cursor_grid_ipos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2);
         int is_inside = cursor_grid_ipos[0] >= 0 && cursor_grid_ipos[0] < level_width
-                    && cursor_grid_ipos[1] >= 0 && cursor_grid_ipos[0] < level_height;
+                    && cursor_grid_ipos[1] >= 0 && cursor_grid_ipos[1] < level_height;
 
         if(edition && layer_selected == 0)
         {
