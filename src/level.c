@@ -191,12 +191,22 @@ void resize_level(struct Level *level, int new_width, int new_height)
     enum TileSolidity *new_solidmap = malloc(sizeof(enum TileSolidity)*new_size);
     if(!new_solidmap)
     {
-        printf("Error while allocating resized level");
+        printf("Error while allocating resized level collisions");
+        exit(1);
+    }
+    Tile *new_tiles = malloc(sizeof(Tile)*new_size*level->tilemap.layer_count);
+    if(!new_tiles)
+    {
+        printf("Error while allocating resized level tiles");
         exit(1);
     }
     for(int i = 0; i < new_size; ++i)
     {
         new_solidmap[i] = STILE_SOLID;
+    }
+    for(int i = 0; i < new_size*level->tilemap.layer_count; ++i)
+    {
+        new_tiles[i] = 0;
     }
     //memset(new_tilemap, TILE_WALL, sizeof(struct Tile)*new_size);
     int copy_width = level_get_width(level), copy_height = level_get_height(level);
@@ -207,9 +217,15 @@ void resize_level(struct Level *level, int new_width, int new_height)
         int original_index = h * level_get_width(level);
         int new_index = h * new_width;
         memcpy(new_solidmap+new_index, level->tilemap.solidity+original_index, sizeof(enum TileSolidity)*copy_width);
+        for(int layer =0; layer<level->tilemap.layer_count; ++layer)
+        {
+            memcpy(new_tiles+(layer*new_size)+new_index, level->tilemap.tile+original_index+(layer*level_get_width(level)*level_get_height(level)), sizeof(Tile)*copy_width);
+        }
     }
     free(level->tilemap.solidity);
     level->tilemap.solidity = new_solidmap;
+    free(level->tilemap.tile);
+    level->tilemap.tile = new_tiles;
     level_set_width(level, new_width);
     level_set_height(level, new_height);
 }
