@@ -92,6 +92,16 @@ int i_key_pressed(int key)
     return pressed_keys_contain(key);
 }
 
+int i_any_letter_pressed()
+{
+    return pressed_keys_count;
+}
+
+int i_any_letter_down()
+{
+    return down_keys_count;
+}
+
 //MOUSE BUTTON HANDLING
 void down_buttons_add(int button)
 {

@@ -62,8 +62,18 @@ void update_key_blocks(struct Game *game)
         if(ent->type != ENTITY_KEY) continue;
 
         struct KeyBlockData *key_data = game->level.key_block_data+ent->data_index;
-        key_data->is_pressed = i_key_down(key_data->key);
-        if(i_key_pressed(key_data->key))
+        int key_pressed;
+        if(key_data->key == GLFW_KEY_PERIOD)
+        {
+            key_data->is_pressed = i_any_letter_down();
+            key_pressed = i_any_letter_pressed();
+        }
+        else
+        {
+            key_data->is_pressed = i_key_down(key_data->key);
+            key_pressed = i_key_pressed(key_data->key);
+        }
+        if(key_pressed)
         {
             struct Entity *slot = get_slot_at(&game->level, ent->position);
             if(slot != NULL)

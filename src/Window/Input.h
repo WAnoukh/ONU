@@ -20,7 +20,11 @@ void register_mouse_move_state(double pos_x, double pos_y);
 
 int i_key_pressed(int key);
 
+int i_any_letter_pressed();
+
 int i_key_down(int key);
+
+int i_any_letter_down();
 
 int i_button_down(int button);
 

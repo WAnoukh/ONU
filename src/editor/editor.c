@@ -111,7 +111,7 @@ void edit_entity_key(int *key)
         {
             letter[0] = (char)(letter[0] + 'A' - 'a');
         }
-        if(letter[0] >= GLFW_KEY_A || letter[0] <= GLFW_KEY_Z)
+        if(letter[0] >= GLFW_KEY_A || letter[0] <= GLFW_KEY_Z || letter[0] == '.')
         {
             *key = (int)letter[0];
         }
