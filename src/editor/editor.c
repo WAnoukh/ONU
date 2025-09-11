@@ -56,6 +56,8 @@ int opening_failed = 0;
 int tile_index;
 struct ImVec2i tile_position;
 
+float ui_scale = 2.f;
+
 int editor_initialize(GLFWwindow *window)
 {
 
@@ -70,7 +72,6 @@ int editor_initialize(GLFWwindow *window)
     ImGuiIO* io = igGetIO_ContextPtr(ctx);
     ImGuiStyle* style = igGetStyle();
 
-    float ui_scale = 2.f;
     ImGuiStyle_ScaleAllSizes(style, ui_scale);
     style->FontScaleMain *= ui_scale;
 
@@ -167,6 +168,7 @@ void menu_bar(struct Game *game)
                 if(style->FontScaleMain < 1) style->FontScaleMain = 1;
                 if(style->FontScaleMain > 4) style->FontScaleMain = 4;
                 ImGuiStyle_ScaleAllSizes(style, style->FontScaleMain/old_scale);
+                ui_scale = style->FontScaleMain;
             }
             igEndMenu();
         }
@@ -463,7 +465,13 @@ void editor_update(struct Game *game, GLFWwindow *window)
     if(igBeginPopupModal(window_move, NULL, ImGuiWindowFlags_AlwaysAutoResize))
     {
         igText("Entity position:");
-        igInputInt2("Tilemap size: ", reposition_entity->position, ImGuiInputTextFlags_None);
+
+        float size = 100 * ui_scale; 
+        igSetNextItemWidth(size);
+        igInputInt("##X", reposition_entity->position, 1, 1, 0);
+        igSameLine(0, -1);
+        igSetNextItemWidth(size);
+        igInputInt("##Y", reposition_entity->position+1, 1, 1, 0);
         if(igButton("Comfirm", (struct ImVec2){0,0}))
         {
             reposition_entity = NULL; 
