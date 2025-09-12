@@ -50,6 +50,8 @@ int history_clear(struct Game *game);
 
 struct Level history_pop(struct Game *game);
 
+void history_drop_last(struct Game *game);
+
 void load_level(struct Game *game, struct Level level);
 
 void camera_pan(struct Camera *camera, float x_offset, float y_offset);

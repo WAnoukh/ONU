@@ -125,7 +125,7 @@ int is_tilemap_solid_at(struct Level *level, ivec2 position);
 
 struct Entity *get_player(struct Level *level);
     
-void push_entity(struct Level *level, struct Entity *entity, ivec2 offset);
+int push_entity(struct Level *level, struct Entity *entity, ivec2 offset);
 
 void remove_entity(struct Level *level, int index);
 

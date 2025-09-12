@@ -380,15 +380,15 @@ int try_push_entity(struct Level *level, struct Entity *entity, ivec2 offset)
     return 0;
 }
 
-void push_entity(struct Level *level, struct Entity *entity, ivec2 offset)
+int push_entity(struct Level *level, struct Entity *entity, ivec2 offset)
 {
-    if(glm_ivec2_eq(offset, 0)) return;
+    if(glm_ivec2_eq(offset, 0)) return 0;
     if(entity->solidity != SOLIDITY_MOVABLE)
     {
         perror("Moving a non movable entity\n");
-        return;
+        return 0;
     }
-    try_push_entity(level, entity, offset);
+    return try_push_entity(level, entity, offset);
 }
 
 void remove_entity(struct Level *level, int index)

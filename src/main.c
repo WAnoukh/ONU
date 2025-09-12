@@ -26,36 +26,38 @@ int process_targeted_action(struct Game *game, int entity_index, enum ActionType
     int dir_index = (int)(action_type - ACTION_UP);
     struct Entity *ent = game->level.entities+entity_index;
 
-    push_entity(&game->level, ent, directions[dir_index]);
-    return 1;
+    return push_entity(&game->level, ent, directions[dir_index]);
 }
 
-void request_new_turn(struct Game *game, struct Action action)
+int request_new_turn(struct Game *game, struct Action action)
 {
     if(action.type == ACTION_UNDO)
     {
+        history_drop_last(game);
         if(!history_clear(game))
         {
             game->level = history_pop(game); 
         }
-        return;
+        return 1;
     }
     if(action.type == ACTION_DOOR_OPEN)
     {
         game->level.is_door_opened = 1;
+        return 1;
     }
     if(action.type == ACTION_DOOR_CLOSE)
     {
         game->level.is_door_opened = 0;
+        return 1;
     }
 
-    history_register(game);
-
-    process_targeted_action(game, action.target_entity, action.type);
+    return process_targeted_action(game, action.target_entity, action.type);
 }
 
 void update_key_blocks(struct Game *game)
 {
+    int has_revelant_action_happended = 0;
+    int first_action = 0;
     for(int i = 0; i < game->level.entity_count; ++i)
     {
         struct Entity *ent = game->level.entities+i;
@@ -75,13 +77,26 @@ void update_key_blocks(struct Game *game)
         }
         if(key_pressed)
         {
+            if(!first_action)
+            {
+                history_register(game);
+                first_action = 1;
+            }
             struct Entity *slot = get_slot_at(&game->level, ent->position);
             if(slot != NULL)
             {
                 struct SlotData *slot_data = game->level.slot_data+slot->data_index;
-                request_new_turn(game, slot_data->action);
+                has_revelant_action_happended |= request_new_turn(game, slot_data->action);
             }
         }
+    }
+    if(first_action && !has_revelant_action_happended)
+    {
+        history_drop_last(game);
+    }
+    if(first_action)
+    {
+        printf(" revelant action \n");
     }
 }
 
