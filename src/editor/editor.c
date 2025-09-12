@@ -156,6 +156,7 @@ void menu_bar(struct Game *game)
             {
                 resize_level(&game->level, tilemapSize[0], tilemapSize[1]);
             }
+            igCheckbox("Door open", (_Bool *)(&game->level.is_door_opened));
             igEndMenu();
         }
 

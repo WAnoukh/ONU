@@ -44,6 +44,8 @@ int serialize_level(const struct Level *level, const char* path)
     fwrite(&level->slot_data_count, sizeof(level->slot_data_count), 1, file);
     fwrite(level->slot_data, sizeof(struct SlotData)*level->slot_data_count, 1, file);
 
+    fwrite(&level->is_door_opened, sizeof(level->is_door_opened), 1, file);
+
     fclose(file);
     return 1;
 }
@@ -92,6 +94,8 @@ int deserialize_level(struct Level *out_level, const char *path)
     
     fread(&level.slot_data_count, sizeof(level.slot_data_count), 1, file);
     fread(level.slot_data, sizeof(struct SlotData) * level.slot_data_count, 1, file);
+
+    fread(&level.is_door_opened, sizeof(level.is_door_opened), 1, file);
 
     *out_level = level;
 
