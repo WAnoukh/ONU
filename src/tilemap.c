@@ -37,21 +37,24 @@ void tilemap_render_layer(struct TileMap *tilemap, int layer, vec2 pos, float si
     for (int i = 0; i < height * width; ++i)
     {
         Tile tile = tiles[i];
-        mat3 transform;
-        vec2 size_vec = {size, size};
-        vec2 pos_offset;
-        vec3 color;
-        pos_offset[0] = (float)x * size - tm_width_2;
-        pos_offset[1] = (float)y * size - tm_height_2;
-        glm_vec2_add(pos, pos_offset, pos_offset);
-        compute_transform(transform, pos_offset, size_vec);
-        struct TextureAtlas atlas = get_atlas_tilemap();
-        int tile_x, tile_y;
-        atlas_index_to_coordinates(atlas, tile, &tile_x, &tile_y);
-        program = shaders_use_atlas(atlas, tile_x, tile_y);
-        color[0] = 1; color[1] = 1; color[2] = 1; 
-        compute_transform(transform, pos_offset, size_vec);
-        draw_transformed_quad(program, transform, color, 1);
+        if(tile)
+        {
+            mat3 transform;
+            vec2 size_vec = {size, size};
+            vec2 pos_offset;
+            vec3 color;
+            pos_offset[0] = ((float)x+0.5f) * size - tm_width_2;
+            pos_offset[1] = ((float)y-0.5f) * size - tm_height_2;
+            glm_vec2_add(pos, pos_offset, pos_offset);
+            compute_transform(transform, pos_offset, size_vec);
+            struct TextureAtlas atlas = get_atlas_tilemap();
+            int tile_x, tile_y;
+            atlas_index_to_coordinates(atlas, tile-1, &tile_x, &tile_y);
+            program = shaders_use_atlas(atlas, tile_x, tile_y);
+            color[0] = 1; color[1] = 1; color[2] = 1; 
+            compute_transform(transform, pos_offset, size_vec);
+            draw_transformed_quad(program, transform, color, 1);
+        }
         ++x;
         if (x>=width)
         {
@@ -61,12 +64,12 @@ void tilemap_render_layer(struct TileMap *tilemap, int layer, vec2 pos, float si
     }
 }
 
-void render_solidmap(const enum TileSolidity *solidmap, int tm_width, int tm_height, vec2 pos, float size)
+void tilemap_render_solidmap(const enum TileSolidity *solidmap, int tm_width, int tm_height, vec2 pos, float size)
 {
     int x = 0;
     int y = (int)tm_height;
-    const float tm_width_2 = (float)tm_width * size/2;
-    const float tm_height_2 = (float)tm_height * size/2;
+    const float tm_width_2 = (float)tm_width * size/2.f;
+    const float tm_height_2 = (float)tm_height * size/2.f;
     unsigned int program = shaders_use_default();
     for (int i = 0; i < tm_height * tm_width; ++i)
     {
@@ -78,8 +81,8 @@ void render_solidmap(const enum TileSolidity *solidmap, int tm_width, int tm_hei
             mat3 transform;
             vec2 size_vec = {size, size};
             vec2 pos_offset;
-            pos_offset[0] = (float)x * size - tm_width_2;
-            pos_offset[1] = (float)y * size - tm_height_2;
+            pos_offset[0] = ((float)x+0.5f) * size - tm_width_2;
+            pos_offset[1] = ((float)y-0.5f) * size - tm_height_2;
             glm_vec2_add(pos, pos_offset, pos_offset);
             compute_transform(transform, pos_offset, size_vec);
             draw_transformed_quad(program, transform, *color, 0.6f);
@@ -91,6 +94,16 @@ void render_solidmap(const enum TileSolidity *solidmap, int tm_width, int tm_hei
             --y;
         }
     }
+}
+
+void tilemap_render_background(const struct TileMap *tilemap, vec2 pos, float size)
+{
+    unsigned int program = shaders_use_default();
+    vec3 color = {0,0,0};
+    mat3 transform;
+    vec2 size_vec = {size*(float)tilemap->width, size*(float)tilemap->height};
+    compute_transform(transform, pos, size_vec);
+    draw_transformed_quad(program, transform, color, 0.6f);
 }
 
 void tilemap_shift_right(struct TileMap *tilemap, int amount)

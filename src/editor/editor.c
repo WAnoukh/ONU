@@ -352,8 +352,8 @@ void editor_update(struct Game *game, GLFWwindow *window)
         if(i_button_down(GLFW_MOUSE_BUTTON_2)) edition = -1;
 
         ivec2 cursor_grid_ipos;
-        cursor_grid_ipos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2);
-        cursor_grid_ipos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2);
+        cursor_grid_ipos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2-0.5f);
+        cursor_grid_ipos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2-0.5f);
         int is_inside = cursor_grid_ipos[0] >= 0 && cursor_grid_ipos[0] < level_width
                     && cursor_grid_ipos[1] >= 0 && cursor_grid_ipos[1] < level_height;
 
@@ -371,15 +371,22 @@ void editor_update(struct Game *game, GLFWwindow *window)
             {
                 Tile *layer = tilemap_get_layer_by_index(&level->tilemap, layer_selected - 2);
                 Tile *tile_to_draw = layer + cursor_grid_ipos[0] + cursor_grid_ipos[1] * level_width;
-                *tile_to_draw = tile_index; 
+                if(edition > 0)
+                {
+                    *tile_to_draw = tile_index + 1; 
+                }
+                else
+                {
+                    *tile_to_draw = 0;
+                }
             }
         }
         unsigned int program = shaders_use_default();
         mat3 transform;
         vec2 size = {0.2f, 0.2f};
         vec2 cursor_grid_pos;
-        cursor_grid_pos[0] = roundf(cursor_pos[0]-((float)level_width)/2)+(float)(level_width)/2;
-        cursor_grid_pos[1] = roundf(cursor_pos[1]-((float)level_height)/2)+(float)(level_height)/2;
+        cursor_grid_pos[0] = roundf(cursor_pos[0]-((float)level_width)/2+0.5f)+(float)(level_width)/2-0.5f;
+        cursor_grid_pos[1] = roundf(cursor_pos[1]-((float)level_height)/2+0.5f)+(float)(level_height)/2-0.5f;
 
         compute_transform(transform, cursor_grid_pos, size);
         draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.8f);
@@ -409,10 +416,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
         if(layer_selected >= 2)
         {
             igSeparatorText("Tiles:");
-            if(tilemap_ig_tile_selector(get_atlas_tilemap(), &tile_index, &tile_position))
-            {
-                
-            }
+            tilemap_ig_tile_selector(get_atlas_tilemap(), &tile_index, &tile_position);
         }
         igEnd();
         igPopID();

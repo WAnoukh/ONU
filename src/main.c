@@ -178,7 +178,7 @@ int main()
             load_level(&game, game.level_start);
         }
 
-        glClearColor(0.f, 0.f, 0.f, 1.0f);
+        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         render_level(&game.level, game.tilemap_layer_mask);

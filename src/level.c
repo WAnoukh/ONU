@@ -120,8 +120,8 @@ void render_entities(struct Level *level, vec2 pos, float size)
         mat3 transform;
         vec2 size_vec = {size, size};
         vec2 pos_offset;
-        pos_offset[0] = (float)(ent.position[0]) * size - width_2;
-        pos_offset[1] = (float)(level_get_height(level)-ent.position[1]) * size - height_2;
+        pos_offset[0] = ((float)(ent.position[0])+0.5f) * size - width_2;
+        pos_offset[1] = ((float)(level_get_height(level)-ent.position[1])-0.5f) * size - height_2;
         glm_vec2_add(pos, pos_offset, pos_offset);
         compute_transform(transform, pos_offset, size_vec);
         draw_transformed_quad(program, transform, color, 1);
@@ -163,8 +163,8 @@ void render_entities(struct Level *level, vec2 pos, float size)
         mat3 transform;
         vec2 size_vec = {size, size};
         vec2 pos_offset;
-        pos_offset[0] = (float)(ent.position[0]) * size - width_2;
-        pos_offset[1] = (float)(level_get_height(level)-ent.position[1]) * size - height_2;
+        pos_offset[0] = ((float)(ent.position[0])+0.5f) * size - width_2;
+        pos_offset[1] = ((float)(level_get_height(level)-ent.position[1])-0.5f) * size - height_2;
         glm_vec2_add(pos, pos_offset, pos_offset);
         compute_transform(transform, pos_offset, size_vec);
         draw_transformed_quad(program, transform, color, 1);
@@ -267,13 +267,16 @@ void render_level(struct Level *level, int layer_mask)
 {
     vec2 pos = {0,0};
     float size = 1;
+
+    tilemap_render_background(&level->tilemap, pos, size);
+
     if(level->tilemap.layer_count > 0 && (layer_mask & 0b100))
     {
         tilemap_render_layer(&level->tilemap, 0, pos, size);
     }
     if(layer_mask & 0b1)
     {
-        render_solidmap(level->tilemap.solidity, level_get_width(level), level_get_height(level), pos, size);
+        tilemap_render_solidmap(level->tilemap.solidity, level_get_width(level), level_get_height(level), pos, size);
     }
     if(layer_mask & 0b10)
     {
