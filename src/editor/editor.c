@@ -58,6 +58,11 @@ struct ImVec2i tile_position;
 
 float ui_scale = 2.f;
 
+int level_menu_opened = 0;
+ivec2 level_temp_size;
+int level_temp_size_changed = 0;
+ivec2 level_temp_shift;
+int level_temp_shift_changed = 0;
 int editor_initialize(GLFWwindow *window)
 {
 
@@ -130,6 +135,32 @@ void edit_entity_slot(struct Level *level, int *target, enum ActionType *type)
     igCombo_Str_arr("##action", (int*)type, get_action_names(), ACTION_COUNT, ACTION_COUNT);
 }
 
+int ig_position_input(const char *label, ivec2 pos)
+{
+    int value_changed = 0;
+    ImGuiStyle *style = igGetStyle();
+
+    igBeginGroup();
+    igPushID_Str(label);
+    igPushMultiItemsWidths(2, igCalcItemWidth());
+
+    igPushID_Str("x");
+    value_changed |= igInputInt("", pos, 1 ,1, 0);
+    igPopID();
+
+    igSameLine(0, style->ItemInnerSpacing.x);
+
+    igPushID_Str("y");
+    value_changed |= igInputInt("", pos+1, 1 ,1, 0);
+    igPopID();
+
+    igPopItemWidth();
+    igPopItemWidth();
+    igPopID();
+    igEndGroup();
+    return value_changed;
+}
+
 void menu_bar(struct Game *game)
 {
     if (igBeginMainMenuBar()) {
@@ -148,16 +179,44 @@ void menu_bar(struct Game *game)
         }
 
         if (igBeginMenu("Level", true)) {
-            igCheckbox("Show World Editor", &floating_editor_show);
-            ivec2 tilemapSize;
-            tilemapSize[0] = level_get_width(&game->level);
-            tilemapSize[1] = level_get_height(&game->level);
-            if(igInputInt2(": Tilemap size", tilemapSize, ImGuiInputTextFlags_None) && igIsKeyPressed_Bool(ImGuiKey_Enter, false))
+            if(!level_menu_opened)
             {
-                resize_level(&game->level, tilemapSize[0], tilemapSize[1]);
+                level_menu_opened = 1;
+                level_temp_size[0] = level_get_width(&game->level);
+                level_temp_size[1] = level_get_height(&game->level);
+                level_temp_size_changed = 0;
+                level_temp_shift[0] = 0;
+                level_temp_shift[1] = 0;
+                level_temp_shift_changed = 0;
             }
+            igCheckbox("Show World Editor", &floating_editor_show);
             igCheckbox("Door open", (_Bool *)(&game->level.is_door_opened));
+
+            igSeparator();
+            igText("Shift Level:");
+            level_temp_shift_changed |= ig_position_input("shift", level_temp_shift);
+            if(level_temp_shift_changed && igButton("Comfirm", (struct ImVec2){0,0}))
+            {
+                level_shift(&game->level, level_temp_shift);
+                level_temp_shift[0] = 0;
+                level_temp_shift[1] = 0;
+                level_temp_shift_changed = 0;
+            }
+
+            igSeparator();
+            igText("Level Size:");
+            level_temp_size_changed |= ig_position_input("levelSize", level_temp_size);
+            if(level_temp_size_changed && igButton("Comfirm", (struct ImVec2){0,0}))
+            {
+                resize_level(&game->level, level_temp_size[0], level_temp_size[1]);
+                level_temp_size_changed = 0;
+            }
+
             igEndMenu();
+        }
+        else
+        {
+            level_menu_opened = 0;
         }
 
         if(igBeginMenu("Options", true))
@@ -467,12 +526,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
     {
         igText("Entity position:");
 
-        float size = 100 * ui_scale; 
-        igSetNextItemWidth(size);
-        igInputInt("##X", reposition_entity->position, 1, 1, 0);
-        igSameLine(0, -1);
-        igSetNextItemWidth(size);
-        igInputInt("##Y", reposition_entity->position+1, 1, 1, 0);
+        ig_position_input("entPos", reposition_entity->position);
         if(igButton("Comfirm", (struct ImVec2){0,0}))
         {
             reposition_entity = NULL; 

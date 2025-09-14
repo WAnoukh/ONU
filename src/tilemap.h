@@ -31,7 +31,20 @@ static inline Tile *tilemap_get_layer_by_index(struct TileMap *tilemap, int inde
     return tilemap->tile+(index * tilemap->width * tilemap->height);
 }
 
+int tilemap_get_default_tile();
+
+int tilemap_get_default_tile_solidity();
+
 void tilemap_render_layer(struct TileMap *tilemap, int layer, vec2 pos, float size);
 
 void render_solidmap(const enum TileSolidity *solidmap, int tm_width, int tm_height, vec2 pos, float size);
+
+void tilemap_shift_right(struct TileMap *tilemap, int amount);
+
+void tilemap_shift_left(struct TileMap *tilemap, int amount);
+
+void tilemap_shift_up(struct TileMap *tilemap, int amount);
+
+void tilemap_shift_down(struct TileMap *tilemap, int amount);
+
 #endif

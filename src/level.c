@@ -195,7 +195,6 @@ void render_entities(struct Level *level, vec2 pos, float size)
 
 void resize_level(struct Level *level, int new_width, int new_height)
 {
-    //TODO: Resize the tilemap too
     int new_size = new_height*new_width;
     enum TileSolidity *new_solidmap = malloc(sizeof(enum TileSolidity)*new_size);
     if(!new_solidmap)
@@ -211,13 +210,13 @@ void resize_level(struct Level *level, int new_width, int new_height)
     }
     for(int i = 0; i < new_size; ++i)
     {
-        new_solidmap[i] = STILE_SOLID;
+        new_solidmap[i] = tilemap_get_default_tile_solidity();
     }
     for(int i = 0; i < new_size*level->tilemap.layer_count; ++i)
     {
-        new_tiles[i] = 0;
+        new_tiles[i] = tilemap_get_default_tile();
     }
-    //memset(new_tilemap, TILE_WALL, sizeof(struct Tile)*new_size);
+
     int copy_width = level_get_width(level), copy_height = level_get_height(level);
     if(copy_width > new_width) copy_width = new_width;
     if(copy_height > new_height) copy_height = new_height;
@@ -237,6 +236,31 @@ void resize_level(struct Level *level, int new_width, int new_height)
     level->tilemap.tile = new_tiles;
     level_set_width(level, new_width);
     level_set_height(level, new_height);
+}
+
+void level_shift(struct Level *level, ivec2 offset)
+{
+    int x = offset[0];
+    if(x < 0) 
+    {
+        tilemap_shift_left(&level->tilemap, -x);
+    }else if(x > 0)
+    {
+        tilemap_shift_right(&level->tilemap, x);
+    }
+    int y = offset[1];
+    if(y < 0) 
+    {
+        tilemap_shift_up(&level->tilemap, -y);
+    }else if(y > 0)
+    {
+        tilemap_shift_down(&level->tilemap, y);
+    }
+    for(int i = 0; i < level->entity_count; ++i)
+    {
+        ivec2 *pos = &level->entities[i].position;
+        glm_ivec2_add(*pos, offset, *pos);
+    }
 }
 
 void render_level(struct Level *level, int layer_mask)

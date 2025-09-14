@@ -111,6 +111,8 @@ void get_default_level(struct Level *level);
 
 void resize_level(struct Level *level, int new_width, int new_height);
 
+void level_shift(struct Level *level, ivec2 offset);
+
 void render_level(struct Level *level, int layer_mask);
 
 void print_level(struct Level *level);
@@ -118,6 +120,8 @@ void print_level(struct Level *level);
 int get_player_position_in_level(struct Level *level, ivec2 out_position);
 
 struct Entity *get_slot_at(struct Level *level, ivec2 at);
+
+int compute_index_from_coordinate(struct Level *level, int x, int y);
 
 int compute_index_from_position(struct Level *level, ivec2 position);
 
