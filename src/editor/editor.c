@@ -7,6 +7,7 @@
 #include "editor.h"
 #include "GLFW/glfw3.h"
 #include "cglm/types.h"
+#include "cglm/vec2.h"
 #include "game.h"
 #include "level.h"
 #include "level_serialization.h"
@@ -19,9 +20,14 @@
 #include "cimgui.h"
 #include "cimgui_impl.h"
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 const char *window_create = "Create entity";
 const char *window_move = "Move entity";
+const char *window_move_selection = "Move selection";
 const char *window_deletion = "Comfirm deletion";
+const char *window_deletion_selection = "Comfirm selection deletion";
 const char *window_edition = "Edit";
 const char *window_saving = "Save";
 const char *window_opening = "Opening";
@@ -33,6 +39,8 @@ ivec2 popup_last_clicked_pos;
 _Bool floating_editor_show = 0;
 
 struct Entity *reposition_entity = NULL;
+int reposition_selection = 0;
+ivec2 reposition_selection_delta;
 
 enum EntityType creation_type = ENTITY_NONE;
 ivec2 creation_position;
@@ -41,8 +49,16 @@ enum ActionType creation_action = ACTION_NONE;
 int creation_action_target = 0;
 
 int deletion_index = -1;
+int deletion_selection = 0;
 
 int layer_selected = 1;
+int layer_last_selected = 0;
+
+int selection_started = 0;
+vec2 selection_pos_start;
+#define selection_ents_max 30
+int selection_ents[selection_ents_max];
+int selection_ents_count = 0;
 
 struct Entity *edition_entity = NULL;
 
@@ -63,6 +79,7 @@ ivec2 level_temp_size;
 int level_temp_size_changed = 0;
 ivec2 level_temp_shift;
 int level_temp_shift_changed = 0;
+
 int editor_initialize(GLFWwindow *window)
 {
 
@@ -276,6 +293,10 @@ int tilemap_ig_tile_selector(struct TextureAtlas atlas, int *out_index, struct I
     unsigned int texture_id = atlas.texture_id;
     struct ImTextureRef *ref =ImTextureRef_ImTextureRef_TextureID(texture_id);
     struct ImVec2 image_size = {(float)(32*atlas.width), (float)(32*atlas.height)};
+
+    struct ImVec2 window_size;
+    igGetWindowSize(&window_size);
+
     struct ImVec2 pos; 
     igGetCursorScreenPos(&pos);
 
@@ -283,11 +304,15 @@ int tilemap_ig_tile_selector(struct TextureAtlas atlas, int *out_index, struct I
 
     tilemap_ig_selection(pos, 32);
 
+    struct ImVec2 selectable_size;
+    selectable_size.x = MIN(window_size.x, image_size.x + pos.x);
+    selectable_size.y = MIN(window_size.y, image_size.y + pos.y);
+
     struct ImVec2 mouse;
     igGetMousePos(&mouse);
     if (mouse.x >= pos.x && mouse.y >= pos.y &&
-            mouse.x <= pos.x + image_size.x &&
-            mouse.y <= pos.y + image_size.y &&
+            mouse.x <= selectable_size.x &&
+            mouse.y <= selectable_size.y &&
             igIsKeyPressed_Bool(ImGuiKey_MouseLeft, false)) 
     {
         float u = (mouse.x - pos.x) / image_size.x;
@@ -302,6 +327,21 @@ int tilemap_ig_tile_selector(struct TextureAtlas atlas, int *out_index, struct I
     }
     ImTextureRef_destroy(ref);
     return 0;
+}
+
+void selection_draw(vec2 mouse_pos)
+{
+    unsigned int program = shaders_use_default();
+    mat3 transform;
+    vec2 size;
+    glm_vec2_sub(selection_pos_start, mouse_pos, size);
+    vec2 pos;
+    glm_vec2_add(selection_pos_start, mouse_pos, pos);
+    glm_vec2_scale(pos, 0.5f, pos);
+
+
+    compute_transform(transform, pos, size);
+    draw_transformed_quad_screen_space(program, transform, (vec3){0.f, 1.f, 0.2f}, 0.2f);
 }
 
 void editor_update(struct Game *game, GLFWwindow *window)
@@ -330,6 +370,19 @@ void editor_update(struct Game *game, GLFWwindow *window)
     if(igIsKeyPressed_Bool(ImGuiKey_Tab, false))
     {
          floating_editor_show = !floating_editor_show;
+         if(floating_editor_show)
+         {
+            layer_selected = layer_last_selected;
+         }
+    }
+
+    if(!floating_editor_show)
+    {
+        layer_selected = 1;
+    }
+    else
+    {
+        layer_last_selected = layer_selected;
     }
 
     if(camera_view_changed)
@@ -383,7 +436,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
         }
         unsigned int program = shaders_use_default();
         mat3 transform;
-        vec2 size = {0.2f, 0.2f};
+        vec2 size = {0.8f, 0.8f};
         vec2 cursor_grid_pos;
         cursor_grid_pos[0] = roundf(cursor_pos[0]-((float)level_width)/2+0.5f)+(float)(level_width)/2-0.5f;
         cursor_grid_pos[1] = roundf(cursor_pos[1]-((float)level_height)/2+0.5f)+(float)(level_height)/2-0.5f;
@@ -424,18 +477,76 @@ void editor_update(struct Game *game, GLFWwindow *window)
 
     menu_bar(game);
 
-    if(layer_selected == 1 && igIsMouseClicked_Bool(ImGuiMouseButton_Right, false))
+    if(layer_selected == 1)
     {
-        ivec2 cursor_grid_pos;
-        cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2);
-        cursor_grid_pos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2);
-        if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level_width
-                && cursor_grid_pos[1] >= 0 && cursor_grid_pos[0] < level_height)
+        if(igIsMouseClicked_Bool(ImGuiMouseButton_Right, false))
         {
-            igOpenPopup_Str("Menu", 0);
-            glm_ivec2_copy(cursor_grid_pos, popup_last_clicked_pos);
+            ivec2 cursor_grid_pos;
+            cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2-0.5f);
+            cursor_grid_pos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2-0.5f);
+            if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level_width
+                    && cursor_grid_pos[1] >= 0 && cursor_grid_pos[0] < level_height)
+            {
+                igOpenPopup_Str("Menu", 0);
+                glm_ivec2_copy(cursor_grid_pos, popup_last_clicked_pos);
+            }
+        }
+        ImGuiIO *io = igGetIO_Nil();
+        if(igIsMouseDown_Nil(ImGuiMouseButton_Left) && !io->WantCaptureMouse)
+        {
+            if(!selection_started)
+            {
+                glm_vec2_copy(mouse_pos, selection_pos_start);
+                selection_started = 1;
+            }
+        }
+        else
+        {
+            selection_started = 0;
+        }
+        if(selection_started)
+        {
+            selection_draw(mouse_pos);
+            selection_ents_count = 0;
+            vec2 world_pos_start;
+            vec2 world_mouse_pos;
+            camera_screen_to_world(&game->camera, selection_pos_start, world_pos_start);
+            camera_screen_to_world(&game->camera, mouse_pos, world_mouse_pos);
+            world_pos_start[0] = world_pos_start[0]+(float)level->tilemap.width/2-0.5f;
+            world_pos_start[1] = -world_pos_start[1]+(float)level->tilemap.height/2-0.5f;
+            world_mouse_pos[0] = world_mouse_pos[0]+(float)level->tilemap.width/2-0.5f;
+            world_mouse_pos[1] = -world_mouse_pos[1]+(float)level->tilemap.height/2-0.5f;
+
+            float bound_min_x = MIN(world_pos_start[0], world_mouse_pos[0]);
+            float bound_max_x = MAX(world_pos_start[0], world_mouse_pos[0]);
+            float bound_min_y = MIN(world_pos_start[1], world_mouse_pos[1]);
+            float bound_max_y = MAX(world_pos_start[1], world_mouse_pos[1]);
+            for(int i = 0; i < level->entity_count; ++i)
+            {
+                struct Entity *ent = level->entities+i;
+                int inside_x = bound_min_x < (float)ent->position[0] && (float)ent->position[0] < bound_max_x;
+                int inside_y = bound_min_y < (float)ent->position[1] && (float)ent->position[1] < bound_max_y;
+                if(inside_x && inside_y)
+                {
+                    selection_ents[selection_ents_count++] = i; 
+                }
+            }
+        }
+        unsigned int program = shaders_use_default();
+        for(int i = 0; i < selection_ents_count; ++i)
+        {
+            struct Entity *ent = level->entities+(selection_ents[i]);
+            mat3 transform;
+            vec2 size = {1.1f, 1.1f};
+            vec2 pos;
+            pos[0] = (float)ent->position[0]-(float)level->tilemap.width/2+0.5f;
+            pos[1] = (float)level->tilemap.height/2-(float)ent->position[1]-0.5f;
+
+            compute_transform(transform, pos, size);
+            draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.2f);
         }
     }
+
     ImGuiPopupFlags flags = ImGuiPopupFlags_None;
     if(igBeginPopupContextItem("Menu", flags))
     {
@@ -475,7 +586,31 @@ void editor_update(struct Game *game, GLFWwindow *window)
                 }
             }
         }
-        if(!found)
+        if(selection_ents_count)
+        {
+            const int number_max_char = 3;
+            char str_name[30] = "Selection (";
+            char str_number[number_max_char];
+            itoa(selection_ents_count, str_number, 10);
+            strcat(str_name, str_number);
+            strcat(str_name, " ents)");
+            igPushID_Str("Selection");
+            if(igBeginMenu(str_name, true))
+            {
+                if(igSelectable_Bool("Move", false, 0, (struct ImVec2){0,0}))
+                {
+                    reposition_selection = 1;
+                    glm_ivec2_zero(reposition_selection_delta);
+                }
+                if(igSelectable_Bool("Remove", false, 0, (struct ImVec2){0,0}))
+                {
+                    deletion_selection = 1;
+                }
+                igEndMenu();
+            }
+            igPopID();
+        }
+        if(!found && !selection_ents_count)
         {
             igText("No entity here.");
         }
@@ -519,9 +654,72 @@ void editor_update(struct Game *game, GLFWwindow *window)
     {
         igOpenPopup_Str(window_opening, 0);
     }
+    else if(reposition_selection)
+    {
+        igOpenPopup_Str(window_move_selection, 0);
+    }
+    else if(deletion_selection)
+    {
+        igOpenPopup_Str(window_deletion_selection, 0);
+    }
     struct ImVec2 center;
     ImGuiViewport_GetCenter(&center, igGetMainViewport());
     igSetNextWindowPos(center, ImGuiCond_Appearing, (struct ImVec2){0.5f,0.5f});
+
+    //////////////////////
+    //  SELECTION MOVE  //
+    //////////////////////
+    if(igBeginPopupModal(window_move_selection, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        igText("Entity position:");
+
+        ivec2 old_delta;
+        glm_ivec2_copy(reposition_selection_delta, old_delta);
+
+        if(ig_position_input("entPos", reposition_selection_delta))
+        {
+            ivec2 deltas_delta;
+            glm_ivec2_sub(reposition_selection_delta, old_delta, deltas_delta);
+            for(int i = 0; i < selection_ents_count; ++i)
+            {
+                struct Entity *ent = level->entities+(selection_ents[i]);
+                glm_ivec2_add(ent->position, deltas_delta, ent->position);
+            }
+        }
+        if(igButton("Comfirm", (struct ImVec2){0,0}))
+        {
+            reposition_selection = 0;
+            igCloseCurrentPopup();
+        }
+        igEndPopup();
+    }
+    
+    //////////////////////////
+    //  SELECTION DELETION  //
+    //////////////////////////
+    if(igBeginPopupModal(window_deletion_selection, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        igText("Are you sure you want to delete the selected entities?");
+        igSeparator();
+        if(igButton("Yes", (struct ImVec2){0,0}))
+        {
+            for(int i = selection_ents_count-1; i>=0; --i)
+            {
+                remove_entity(level, selection_ents[i]);
+            }
+            selection_ents_count = 0;
+            deletion_selection = 0;
+            igCloseCurrentPopup();
+        }
+        igSameLine(0,-1);
+        if(igButton("No", (struct ImVec2){0,0}))
+        {
+            deletion_selection = 0;
+            igCloseCurrentPopup();
+        }
+
+        igEndPopup();
+    }
     
     ///////////////////
     //  ENTITY MOVE  //

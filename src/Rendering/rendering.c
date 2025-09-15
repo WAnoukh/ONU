@@ -34,6 +34,8 @@ GLuint shader_program_default, shader_program_sprite, shader_program_atlas;
 unsigned int triangle_VBO = 0;
 unsigned int triangle_VAO = 0;
 
+mat3 screen_space_view;
+
 float triangle_vertices[] = {
     -0.5f, -0.5f, 0.0f,
     0.5f, -0.5f, 0.0f,
@@ -62,11 +64,21 @@ void initialize_default_shader_program();
 
 void initialize_triangle();
 
+void initialize_screen_space_view()
+{
+    glm_mat3_zero(screen_space_view);
+    screen_space_view[0][0] = 2;
+    screen_space_view[1][1] = 2;
+    screen_space_view[2][0] = -1;
+    screen_space_view[2][1] = -1;
+}
+
 void initialize_renderer(struct Camera *new_main_camera)
 {
     initialize_default_shader_program();
     initialize_quad();
     initialize_triangle();
+    initialize_screen_space_view();
     main_camera = new_main_camera;
 }
 
@@ -178,6 +190,17 @@ void draw_transformed_quad(unsigned int program, mat3 transform, vec3 color, flo
 {
     mat3 result;
     glm_mat3_mul(main_camera->view, transform, result);
+    //glm_mat3_mul(transform, camera->view, result);
+    shader_set_mat3(program, "view", result);
+    shader_set_vec3(program, "color", color);
+    shader_set_float(program, "alpha", alpha);
+    draw_quad();
+}
+
+void draw_transformed_quad_screen_space(unsigned int program, mat3 transform, vec3 color, float alpha)
+{
+    mat3 result;
+    glm_mat3_mul(screen_space_view, transform, result);
     //glm_mat3_mul(transform, camera->view, result);
     shader_set_mat3(program, "view", result);
     shader_set_vec3(program, "color", color);
