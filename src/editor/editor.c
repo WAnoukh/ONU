@@ -346,6 +346,8 @@ void selection_draw(vec2 mouse_pos)
 
 void editor_update(struct Game *game, GLFWwindow *window)
 {
+    ImGuiIO *io = igGetIO_Nil();
+
     int camera_view_changed = 0;
     float scroll = i_get_scroll_y();
     if(scroll != 0.f)
@@ -369,11 +371,11 @@ void editor_update(struct Game *game, GLFWwindow *window)
 
     if(igIsKeyPressed_Bool(ImGuiKey_Tab, false))
     {
-         floating_editor_show = !floating_editor_show;
-         if(floating_editor_show)
-         {
+        floating_editor_show = !floating_editor_show;
+        if(floating_editor_show)
+        {
             layer_selected = layer_last_selected;
-         }
+        }
     }
 
     if(!floating_editor_show)

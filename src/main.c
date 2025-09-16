@@ -58,6 +58,21 @@ void update_key_blocks(struct Game *game)
 {
     int has_revelant_action_happended = 0;
     int first_action = 0;
+    int any_non_universal_key_pressed = 0;
+    int any_non_universal_key_down = 0;
+    for(int i =0; i < game->level.key_block_data_count; ++i)
+    {
+        struct KeyBlockData *key_data = game->level.key_block_data+i;
+
+        if(i_key_pressed(key_data->key))
+        {
+            any_non_universal_key_down = 1;
+            any_non_universal_key_pressed =1;
+            break;
+        }
+        any_non_universal_key_down |= i_key_down(key_data->key);
+    }
+
     for(int i = 0; i < game->level.entity_count; ++i)
     {
         struct Entity *ent = game->level.entities+i;
@@ -67,8 +82,8 @@ void update_key_blocks(struct Game *game)
         int key_pressed;
         if(key_data->key == GLFW_KEY_PERIOD)
         {
-            key_data->is_pressed = i_any_letter_down();
-            key_pressed = i_any_letter_pressed();
+            key_data->is_pressed = any_non_universal_key_down; 
+            key_pressed = any_non_universal_key_pressed; 
         }
         else
         {
