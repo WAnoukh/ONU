@@ -87,6 +87,10 @@ void update_key_blocks(struct Game *game)
             {
                 struct SlotData *slot_data = game->level.slot_data+slot->data_index;
                 has_revelant_action_happended |= request_new_turn(game, slot_data->action);
+                if(slot_data->action.type == ACTION_UNDO)
+                {
+                    break;
+                }
             }
         }
     }
