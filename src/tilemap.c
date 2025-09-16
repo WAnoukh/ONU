@@ -40,7 +40,7 @@ void tilemap_render_layer(struct TileMap *tilemap, int layer, vec2 pos, float si
         if(tile)
         {
             mat3 transform;
-            vec2 size_vec = {size, size};
+            vec2 size_vec = {size+0.001f, size+0.001f}; // TODO: Find a real solution for rounding error causing seams
             vec2 pos_offset;
             vec3 color;
             pos_offset[0] = ((float)x+0.5f) * size - tm_width_2;
