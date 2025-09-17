@@ -1,6 +1,7 @@
 ﻿#define EDITOR
 
 #include "game.h"
+#include "gamestate.h"
 #include "level.h"
 #include "level_serialization.h"
 #include "texture.h"
@@ -24,13 +25,15 @@ int process_targeted_action(struct Game *game, int entity_index, enum ActionType
         return 0;
     }
     int dir_index = (int)(action_type - ACTION_UP);
-    struct Entity *ent = game->level.entities+entity_index;
+    struct GameState *gamestate = get_current_gamestate(game);
+    struct Entity *ent = gamestate->entities+entity_index;
 
-    return push_entity(&game->level, ent, directions[dir_index]);
+    return push_entity(gamestate, get_current_tilemap(game), ent, directions[dir_index]);
 }
 
 int request_new_turn(struct Game *game, struct Action action)
 {
+    struct GameState *gamestate = get_current_gamestate(game);
     if(action.type == ACTION_UNDO)
     {
         history_drop_last(game);
@@ -42,12 +45,12 @@ int request_new_turn(struct Game *game, struct Action action)
     }
     if(action.type == ACTION_DOOR_OPEN)
     {
-        game->level.is_door_opened = 1;
+        gamestate->is_door_opened = 1;
         return 1;
     }
     if(action.type == ACTION_DOOR_CLOSE)
     {
-        game->level.is_door_opened = 0;
+        gamestate->is_door_opened = 0;
         return 1;
     }
 
@@ -56,13 +59,14 @@ int request_new_turn(struct Game *game, struct Action action)
 
 void update_key_blocks(struct Game *game)
 {
+    struct GameState *gamestate = get_current_gamestate(game);
     int has_revelant_action_happended = 0;
     int first_action = 0;
     int any_non_universal_key_pressed = 0;
     int any_non_universal_key_down = 0;
-    for(int i =0; i < game->level.key_block_data_count; ++i)
+    for(int i =0; i < gamestate->key_block_data_count; ++i)
     {
-        struct KeyBlockData *key_data = game->level.key_block_data+i;
+        struct KeyBlockData *key_data = gamestate->key_block_data+i;
 
         if(i_key_pressed(key_data->key))
         {
@@ -73,12 +77,12 @@ void update_key_blocks(struct Game *game)
         any_non_universal_key_down |= i_key_down(key_data->key);
     }
 
-    for(int i = 0; i < game->level.entity_count; ++i)
+    for(int i = 0; i < gamestate->entity_count; ++i)
     {
-        struct Entity *ent = game->level.entities+i;
+        struct Entity *ent = gamestate->entities+i;
         if(ent->type != ENTITY_KEY) continue;
 
-        struct KeyBlockData *key_data = game->level.key_block_data+ent->data_index;
+        struct KeyBlockData *key_data = gamestate->key_block_data+ent->data_index;
         int key_pressed;
         if(key_data->key == GLFW_KEY_PERIOD)
         {
@@ -97,10 +101,10 @@ void update_key_blocks(struct Game *game)
                 history_register(game);
                 first_action = 1;
             }
-            struct Entity *slot = get_slot_at(&game->level, ent->position);
+            struct Entity *slot = get_slot_at(gamestate, ent->position);
             if(slot != NULL)
             {
-                struct SlotData *slot_data = game->level.slot_data+slot->data_index;
+                struct SlotData *slot_data = gamestate->slot_data+slot->data_index;
                 has_revelant_action_happended |= request_new_turn(game, slot_data->action);
                 if(slot_data->action.type == ACTION_UNDO)
                 {
@@ -192,7 +196,8 @@ int main()
         i_process(window);
         update_key_blocks(&game);
 
-        if(game.level.is_door_reached)
+        struct GameState *gamestate = get_current_gamestate(&game);
+        if(gamestate->is_door_reached)
         {
             load_level(&game, game.level_start);
         }

@@ -1,6 +1,7 @@
 ﻿#include <cglm/vec3.h>
 
 #include "tilemap.h"
+#include "cglm/io.h"
 #include "rendering/rendering.h"
 #include "texture.h"
 #include "transform.h"
@@ -275,3 +276,31 @@ void tilemap_shift_up(struct TileMap *tilemap, int amount)
         }
     }
 }
+
+void compute_position_from_index(struct TileMap *tilemap, int index, ivec2 out_position)
+{
+    out_position[1] = index / tilemap->height;
+    out_position[0] = index - out_position[1] * tilemap->width; 
+    glm_ivec2_print(out_position, stdout);
+}
+
+int compute_index_from_coordinate(struct TileMap *tilemap, int x, int y)
+{
+    if(x<0 || x >= tilemap->width || y < 0 || y >+ tilemap->height)
+    {
+        perror("Coordinate out of bounds");
+        exit(1);
+    }
+    return x + y * tilemap->width;
+}
+
+int compute_index_from_position(struct TileMap *level, ivec2 position)
+{
+    return compute_index_from_coordinate(level, position[0], position[1]);
+}
+
+int is_tilemap_solid_at(struct TileMap *tilemap, ivec2 position)
+{
+   return tilemap->solidity[compute_index_from_position(tilemap, position)] == STILE_SOLID;
+}
+

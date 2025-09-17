@@ -44,6 +44,16 @@ static inline int layer_get_visibility(struct Game *game, int layer)
     return game->tilemap_layer_mask & 0b1 << layer;
 }
 
+static inline struct GameState *get_current_gamestate(struct Game *game)
+{
+    return &game->level.gamestate;
+}
+
+static inline struct TileMap *get_current_tilemap(struct Game *game)
+{
+    return &game->level.tilemap;
+}
+
 int history_register(struct Game *game);
 
 int history_clear(struct Game *game);

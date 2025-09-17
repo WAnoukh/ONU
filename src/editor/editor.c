@@ -140,13 +140,13 @@ void edit_entity_key(int *key)
     }
 }
 
-void edit_entity_slot(struct Level *level, int *target, enum ActionType *type)
+void edit_entity_slot(struct GameState *gamestate, int *target, enum ActionType *type)
 {
     igText("Target:");
     if(igInputInt("##target", target, 1, 1, 0))
     {
         if(*target < -1) *target = -1;
-        if(*target >= level->entity_count) *target = level->entity_count-1;
+        if(*target >= gamestate->entity_count) *target = gamestate->entity_count-1;
     } 
     igText("Action:");
     igCombo_Str_arr("##action", (int*)type, get_action_names(), ACTION_COUNT, ACTION_COUNT);
@@ -180,6 +180,7 @@ int ig_position_input(const char *label, ivec2 pos)
 
 void menu_bar(struct Game *game)
 {
+    struct GameState *gamestate = get_current_gamestate(game);
     if (igBeginMainMenuBar()) {
         if (igBeginMenu("File", true)) {
             if (igMenuItem_Bool("New", NULL, false, true)) {
@@ -207,7 +208,7 @@ void menu_bar(struct Game *game)
                 level_temp_shift_changed = 0;
             }
             igCheckbox("Show World Editor", &floating_editor_show);
-            igCheckbox("Door open", (_Bool *)(&game->level.is_door_opened));
+            igCheckbox("Door open", (_Bool *)(&gamestate->is_door_opened));
 
             igSeparator();
             igText("Shift Level:");
@@ -347,6 +348,11 @@ void selection_draw(vec2 mouse_pos)
 void editor_update(struct Game *game, GLFWwindow *window)
 {
     ImGuiIO *io = igGetIO_Nil();
+    struct GameState *gamestate = get_current_gamestate(game);
+    struct TileMap *tilemap = get_current_tilemap(game);
+
+    int level_width = tilemap->width;
+    int level_height = tilemap->height;
 
     int camera_view_changed = 0;
     float scroll = i_get_scroll_y();
@@ -396,10 +402,6 @@ void editor_update(struct Game *game, GLFWwindow *window)
     i_get_mouse_pos_normalize(mouse_pos, mouse_pos+1);
     camera_screen_to_world(&game->camera, mouse_pos, cursor_pos);
 
-    struct Level *level = &game->level;
-    int level_width = level_get_width(level);
-    int level_height = level_get_height(level);
-
     if(layer_selected != 1)
     {
         int edition = 0;
@@ -424,7 +426,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
         {
             if(is_inside)
             {
-                Tile *layer = tilemap_get_layer_by_index(&level->tilemap, layer_selected - 2);
+                Tile *layer = tilemap_get_layer_by_index(tilemap, layer_selected - 2);
                 Tile *tile_to_draw = layer + cursor_grid_ipos[0] + cursor_grid_ipos[1] * level_width;
                 if(edition > 0)
                 {
@@ -458,7 +460,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
         igPushID_Int(1);
         tilemap_ig_layer(game, "Entities", 1);
         igPopID();
-        for (int i = 2; i < level->tilemap.layer_count+2; i++)
+        for (int i = 2; i < tilemap->layer_count+2; i++)
         {
             igPushID_Int(i);
             char selectable_title [10] = "Layer ";
@@ -514,18 +516,18 @@ void editor_update(struct Game *game, GLFWwindow *window)
             vec2 world_mouse_pos;
             camera_screen_to_world(&game->camera, selection_pos_start, world_pos_start);
             camera_screen_to_world(&game->camera, mouse_pos, world_mouse_pos);
-            world_pos_start[0] = world_pos_start[0]+(float)level->tilemap.width/2-0.5f;
-            world_pos_start[1] = -world_pos_start[1]+(float)level->tilemap.height/2-0.5f;
-            world_mouse_pos[0] = world_mouse_pos[0]+(float)level->tilemap.width/2-0.5f;
-            world_mouse_pos[1] = -world_mouse_pos[1]+(float)level->tilemap.height/2-0.5f;
+            world_pos_start[0] = world_pos_start[0]+(float)tilemap->width/2-0.5f;
+            world_pos_start[1] = -world_pos_start[1]+(float)tilemap->height/2-0.5f;
+            world_mouse_pos[0] = world_mouse_pos[0]+(float)tilemap->width/2-0.5f;
+            world_mouse_pos[1] = -world_mouse_pos[1]+(float)tilemap->height/2-0.5f;
 
             float bound_min_x = MIN(world_pos_start[0], world_mouse_pos[0]);
             float bound_max_x = MAX(world_pos_start[0], world_mouse_pos[0]);
             float bound_min_y = MIN(world_pos_start[1], world_mouse_pos[1]);
             float bound_max_y = MAX(world_pos_start[1], world_mouse_pos[1]);
-            for(int i = 0; i < level->entity_count; ++i)
+            for(int i = 0; i < gamestate->entity_count; ++i)
             {
-                struct Entity *ent = level->entities+i;
+                struct Entity *ent = gamestate->entities+i;
                 int inside_x = bound_min_x < (float)ent->position[0] && (float)ent->position[0] < bound_max_x;
                 int inside_y = bound_min_y < (float)ent->position[1] && (float)ent->position[1] < bound_max_y;
                 if(inside_x && inside_y)
@@ -537,12 +539,12 @@ void editor_update(struct Game *game, GLFWwindow *window)
         unsigned int program = shaders_use_default();
         for(int i = 0; i < selection_ents_count; ++i)
         {
-            struct Entity *ent = level->entities+(selection_ents[i]);
+            struct Entity *ent = gamestate->entities+(selection_ents[i]);
             mat3 transform;
             vec2 size = {1.1f, 1.1f};
             vec2 pos;
-            pos[0] = (float)ent->position[0]-(float)level->tilemap.width/2+0.5f;
-            pos[1] = (float)level->tilemap.height/2-(float)ent->position[1]-0.5f;
+            pos[0] = (float)ent->position[0]-(float)tilemap->width/2+0.5f;
+            pos[1] = (float)tilemap->height/2-(float)ent->position[1]-0.5f;
 
             compute_transform(transform, pos, size);
             draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.2f);
@@ -553,9 +555,9 @@ void editor_update(struct Game *game, GLFWwindow *window)
     if(igBeginPopupContextItem("Menu", flags))
     {
         int found = 0;
-        for(int entity_index = 0; entity_index < level->entity_count; ++entity_index)
+        for(int entity_index = 0; entity_index < gamestate->entity_count; ++entity_index)
         {
-            struct Entity *ent = level->entities+entity_index;
+            struct Entity *ent = gamestate->entities+entity_index;
             if(glm_ivec2_eqv(popup_last_clicked_pos, ent->position))
             {
                 ++found;
@@ -563,7 +565,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
                 char str_name[30];
                 char str_number[number_max_char];
                 strcpy(str_name, get_entity_name(ent->type));
-                itoa(get_entity_index(level, ent), str_number, 10);
+                itoa(get_entity_index(gamestate, ent), str_number, 10);
                 strcat(str_name, " (");
                 strcat(str_name, str_number);
                 strcat(str_name, ")");
@@ -582,7 +584,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
                     }
                     if(igSelectable_Bool("Remove", false, 0, (struct ImVec2){0,0}))
                     {
-                        deletion_index = get_entity_index(level, ent);
+                        deletion_index = get_entity_index(gamestate, ent);
                     }
                     igEndMenu();
                 }
@@ -684,7 +686,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
             glm_ivec2_sub(reposition_selection_delta, old_delta, deltas_delta);
             for(int i = 0; i < selection_ents_count; ++i)
             {
-                struct Entity *ent = level->entities+(selection_ents[i]);
+                struct Entity *ent = gamestate->entities+(selection_ents[i]);
                 glm_ivec2_add(ent->position, deltas_delta, ent->position);
             }
         }
@@ -707,7 +709,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
         {
             for(int i = selection_ents_count-1; i>=0; --i)
             {
-                remove_entity(level, selection_ents[i]);
+                remove_entity(gamestate, selection_ents[i]);
             }
             selection_ents_count = 0;
             deletion_selection = 0;
@@ -754,7 +756,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
         }
         if(creation_type == ENTITY_SLOT)
         {
-            edit_entity_slot(level, &creation_action_target, &creation_action);
+            edit_entity_slot(gamestate, &creation_action_target, &creation_action);
         }
         if(igButton("Comfirm", (struct ImVec2){0,0}))
         {
@@ -763,16 +765,16 @@ void editor_update(struct Game *game, GLFWwindow *window)
                 case ENTITY_NONE:
                     break;
                 case ENTITY_KEY:
-                    create_key_block_at(level, creation_position[0], creation_position[1], creation_key);
+                    create_key_block_at(gamestate, creation_position[0], creation_position[1], creation_key);
                     break;
                 case ENTITY_SLOT:
-                    create_slot_at(level, creation_position[0], creation_position[1], creation_action, creation_action_target);
+                    create_slot_at(gamestate, creation_position[0], creation_position[1], creation_action, creation_action_target);
                     break;
                 case ENTITY_DOOR:
-                    create_door_at(level, creation_position[0], creation_position[1]);
+                    create_door_at(gamestate, creation_position[0], creation_position[1]);
                     break;
                 default:
-                    create_movable_at(level, creation_position[0], creation_position[1], creation_type);
+                    create_movable_at(gamestate, creation_position[0], creation_position[1], creation_type);
                     break;
             }
             creation_type = 0;
@@ -790,7 +792,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
         igSeparator();
         if(igButton("Yes", (struct ImVec2){0,0}))
         {
-            remove_entity(level, deletion_index);
+            remove_entity(gamestate, deletion_index);
             deletion_index = -1;
             igCloseCurrentPopup();
         }
@@ -813,14 +815,14 @@ void editor_update(struct Game *game, GLFWwindow *window)
         {
             case ENTITY_KEY:
                 {
-                    struct KeyBlockData *key = level->key_block_data+edition_entity->data_index;
+                    struct KeyBlockData *key = gamestate->key_block_data+edition_entity->data_index;
                     edit_entity_key(&key->key);
                 }
                 break;
             case ENTITY_SLOT:
                 {
-                    struct SlotData *slot = level->slot_data+edition_entity->data_index;
-                    edit_entity_slot(level, &slot->action.target_entity, &slot->action.type);
+                    struct SlotData *slot = gamestate->slot_data+edition_entity->data_index;
+                    edit_entity_slot(gamestate, &slot->action.target_entity, &slot->action.type);
                 }
                 break;
             default:
@@ -859,7 +861,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
         }
         if(igButton("Comfirm", (struct ImVec2){0,0}))
         {
-            serialize_level(level, path);
+            serialize_level(&game->level, path);
             saving = 0;
             igCloseCurrentPopup();
         }

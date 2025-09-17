@@ -49,4 +49,6 @@ void tilemap_shift_up(struct TileMap *tilemap, int amount);
 
 void tilemap_shift_down(struct TileMap *tilemap, int amount);
 
+int is_tilemap_solid_at(struct TileMap *tilemap, ivec2 position);
+
 #endif

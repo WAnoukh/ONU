@@ -7,6 +7,20 @@
 
 #define S_ERROR(msg) printf("%s, %d, Serialization error: %s", __FILE__, __LINE__, msg)
 
+void serialize_gamestate(const struct GameState *gamestate, FILE *file)
+{
+    fwrite(&gamestate->entity_count, sizeof(int), 1, file);
+    fwrite(gamestate->entities, sizeof(struct Entity)*gamestate->entity_count, 1, file);
+
+    fwrite(&gamestate->key_block_data_count, sizeof(gamestate->key_block_data_count), 1, file);
+    fwrite(gamestate->key_block_data, sizeof(struct KeyBlockData)*gamestate->key_block_data_count, 1, file);
+
+    fwrite(&gamestate->slot_data_count, sizeof(gamestate->slot_data_count), 1, file);
+    fwrite(gamestate->slot_data, sizeof(struct SlotData)*gamestate->slot_data_count, 1, file);
+
+    fwrite(&gamestate->is_door_opened, sizeof(gamestate->is_door_opened), 1, file);
+}
+
 int serialize_level(const struct Level *level, const char* path)
 {
     FILE *file=fopen(path, "wb");
@@ -35,16 +49,7 @@ int serialize_level(const struct Level *level, const char* path)
         fwrite(level->tilemap.tile+i, sizeof(Tile), 1, file);
     }
 
-    fwrite(&level->entity_count, sizeof(int), 1, file);
-    fwrite(level->entities, sizeof(struct Entity)*level->entity_count, 1, file);
-
-    fwrite(&level->key_block_data_count, sizeof(level->key_block_data_count), 1, file);
-    fwrite(level->key_block_data, sizeof(struct KeyBlockData)*level->key_block_data_count, 1, file);
-
-    fwrite(&level->slot_data_count, sizeof(level->slot_data_count), 1, file);
-    fwrite(level->slot_data, sizeof(struct SlotData)*level->slot_data_count, 1, file);
-
-    fwrite(&level->is_door_opened, sizeof(level->is_door_opened), 1, file);
+    serialize_gamestate(&level->gamestate, file);
 
     fclose(file);
     return 1;
@@ -62,10 +67,23 @@ int deserialize_level_into_game(struct Game *game, const char *path)
     return result;
 }
 
+void deserialize_gamestate(struct GameState *out_gamestate, FILE *file)
+{
+    fread(&out_gamestate->entity_count, sizeof(int), 1, file);
+    fread(out_gamestate->entities, sizeof(struct Entity)*out_gamestate->entity_count, 1, file);
+
+    fread(&out_gamestate->key_block_data_count, sizeof(out_gamestate->key_block_data_count), 1, file);
+    fread(&out_gamestate->key_block_data, sizeof(struct KeyBlockData)* out_gamestate->key_block_data_count, 1, file);
+    
+    fread(&out_gamestate->slot_data_count, sizeof(out_gamestate->slot_data_count), 1, file);
+    fread(out_gamestate->slot_data, sizeof(struct SlotData) * out_gamestate->slot_data_count, 1, file);
+
+    fread(&out_gamestate->is_door_opened, sizeof(out_gamestate->is_door_opened), 1, file);
+}
+
 int deserialize_level(struct Level *out_level, const char *path)
 {
     struct Level level;  
-    level.is_door_reached = 0;
 
     FILE *file=fopen(path, "r");
     if(file == NULL)
@@ -86,16 +104,7 @@ int deserialize_level(struct Level *out_level, const char *path)
 
     fread(level.tilemap.tile, sizeof(Tile)*level.tilemap.height*level.tilemap.width*level.tilemap.layer_count, 1, file);
 
-    fread(&level.entity_count, sizeof(int), 1, file);
-    fread(level.entities, sizeof(struct Entity)*level.entity_count, 1, file);
-
-    fread(&level.key_block_data_count, sizeof(level.key_block_data_count), 1, file);
-    fread(&level.key_block_data, sizeof(struct KeyBlockData)* level.key_block_data_count, 1, file);
-    
-    fread(&level.slot_data_count, sizeof(level.slot_data_count), 1, file);
-    fread(level.slot_data, sizeof(struct SlotData) * level.slot_data_count, 1, file);
-
-    fread(&level.is_door_opened, sizeof(level.is_door_opened), 1, file);
+    deserialize_gamestate(&level.gamestate, file);
 
     *out_level = level;
 
