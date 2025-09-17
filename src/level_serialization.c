@@ -57,8 +57,8 @@ int serialize_level(const struct Level *level, const char* path)
 
 int deserialize_level_into_game(struct Game *game, const char *path)
 {
-    //TODO : Adapt to new tilemap
     free(game->level.tilemap.solidity);
+    free(game->level.tilemap.tile);
     int result = deserialize_level(&game->level_start, path);
     if(result)
     {
@@ -69,6 +69,8 @@ int deserialize_level_into_game(struct Game *game, const char *path)
 
 void deserialize_gamestate(struct GameState *out_gamestate, FILE *file)
 {
+    out_gamestate->is_door_reached = 0;
+
     fread(&out_gamestate->entity_count, sizeof(int), 1, file);
     fread(out_gamestate->entities, sizeof(struct Entity)*out_gamestate->entity_count, 1, file);
 
