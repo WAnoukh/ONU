@@ -96,7 +96,28 @@ void camera_screen_to_world(struct Camera *camera, const vec2 screen_pos, vec2 o
 
 void game_setup_default_level(struct Game *game)
 {
+    game->gamemode = GM_LEVEL;
     get_default_level(&game->level);
     load_gamestate(game, game->level.gamestate);
     history_clear(game);
+}
+
+void game_set_sequence(struct Game *game, struct Sequence sequence)
+{
+    game->gamemode = GM_SEQUENCE;
+    game->sequence_index = 0;
+    game->sequence = sequence;
+}
+
+int game_load_default_sequence(struct Game *game)
+{
+    struct PathSequence path_seq = get_default_path_sequence();
+    struct Sequence loaded_seq;
+    if(sequence_load_path_sequence(path_seq, &loaded_seq))
+    {
+        game->sequence = loaded_seq;
+        game_set_sequence(game, loaded_seq);
+        return 1;
+    }
+    return 0;
 }

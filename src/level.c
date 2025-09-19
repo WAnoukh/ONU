@@ -28,6 +28,12 @@ enum TileSolidity default_solidmap[DEFAULT_LEVEL_GRID_SIZE] =
     STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID,
 };
 
+void level_deinit(struct Level *level)
+{
+    free(level->tilemap.solidity);
+    free(level->tilemap.tile);
+}
+
 void get_default_level(struct Level *level)
 {
     //TILEMAP

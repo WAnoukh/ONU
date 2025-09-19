@@ -193,6 +193,13 @@ void menu_bar(struct Game *game)
             if (igMenuItem_Bool("Save", NULL, false, true)) {
                 saving = 1;             
             }
+            if (igMenuItem_Bool("Load Demo", NULL, false, true)) {
+                if(!game_load_default_sequence(game))
+                {
+                    printf("Error while loading demo\n");
+                }
+                load_level(game, *get_current_level(game));
+            }
             igEndMenu();
         }
 

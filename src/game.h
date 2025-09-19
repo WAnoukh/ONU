@@ -2,9 +2,16 @@
 #define GAME_H
 
 #include "level.h"
+#include "level_sequence.h"
 #include "rendering/rendering.h"
 
 #define HISTORY_MAX_SIZE 100
+
+enum GameMode
+{
+    GM_LEVEL,
+    GM_SEQUENCE,
+};
 
 struct Camera
 {
@@ -18,11 +25,14 @@ struct Game
 {
     struct Camera camera;
     struct Level level;
+    struct Sequence sequence;
     struct GameState gamestate_current;
     struct GameState history[HISTORY_MAX_SIZE];
-    int history_size;
+    enum GameMode gamemode;
     double last_time;
     double new_time;
+    int sequence_index;
+    int history_size;
     float delta_time;
     int tilemap_layer_mask;
 };
@@ -54,9 +64,22 @@ static inline void load_gamestate(struct Game *game, struct GameState gamestate)
     game->gamestate_current = gamestate;
 }
 
+static inline struct Level *get_current_level(struct Game *game)
+{
+    switch(game->gamemode)
+    {
+        case GM_LEVEL:
+            return &game->level;
+        case GM_SEQUENCE:
+            return game->sequence.levels+game->sequence_index;
+        default:
+            return NULL;
+    }
+}
+
 static inline struct TileMap *get_current_tilemap(struct Game *game)
 {
-    return &game->level.tilemap;
+    return &get_current_level(game)->tilemap;
 }
 
 int history_register(struct Game *game);
@@ -80,4 +103,6 @@ void camera_compute_view(struct Camera *camera);
 void camera_screen_to_world(struct Camera *camera, const vec2 screen_pos, vec2 out_world);
 
 void game_setup_default_level(struct Game *game);
+
+int game_load_default_sequence(struct Game *game);
 #endif // GAME_H

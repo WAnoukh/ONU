@@ -198,13 +198,21 @@ int main()
         struct GameState *gamestate = get_current_gamestate(&game);
         if(gamestate->is_door_reached)
         {
-            load_level(&game, game.level);
+            if(game.gamemode == GM_SEQUENCE)
+            {
+                game.sequence_index++;
+                if(game.sequence_index >= game.sequence.levels_count)
+                {
+                    game.sequence_index = 0;
+                }
+            }
+            load_level(&game, *get_current_level(&game));
         }
 
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        render_level(&game.level, &game.gamestate_current, game.tilemap_layer_mask);
+        render_level(get_current_level(&game), &game.gamestate_current, game.tilemap_layer_mask);
 
 #ifdef EDITOR
         if(editor) editor_update(&game, window);

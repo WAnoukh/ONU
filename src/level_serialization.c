@@ -57,8 +57,7 @@ int serialize_level(const struct Level *level, const char* path)
 
 int deserialize_level_into_game(struct Game *game, const char *path)
 {
-    free(game->level.tilemap.solidity);
-    free(game->level.tilemap.tile);
+    level_deinit(&game->level);
     int result = deserialize_level(&game->level, path);
     if(result)
     {
@@ -90,7 +89,7 @@ int deserialize_level(struct Level *out_level, const char *path)
     FILE *file=fopen(path, "r");
     if(file == NULL)
     {
-        S_ERROR("unable to read the file.");
+        S_ERROR("unable to read the file.\n");
         return 0;
     }
 

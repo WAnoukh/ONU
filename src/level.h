@@ -39,6 +39,8 @@ static inline void level_set_height(struct Level *level, int height)
     level->tilemap.height = height;
 }
 
+void level_deinit(struct Level *level);
+
 void get_default_level(struct Level *level);
 
 void resize_level(struct Level *level, int new_width, int new_height);
