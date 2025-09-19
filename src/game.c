@@ -93,3 +93,10 @@ void camera_screen_to_world(struct Camera *camera, const vec2 screen_pos, vec2 o
     out_world[0] = world_pos[0];
     out_world[1] = world_pos[1];
 }
+
+void game_setup_default_level(struct Game *game)
+{
+    get_default_level(&game->level);
+    load_gamestate(game, game->level.gamestate);
+    history_clear(game);
+}

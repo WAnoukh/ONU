@@ -128,9 +128,7 @@ struct Game initialize_game()
 {
     struct Game game;
 
-    get_default_level(&game.level);
-    load_gamestate(&game, game.level.gamestate);
-    history_clear(&game);
+    game_setup_default_level(&game);
 
     game.last_time = glfwGetTime();
     game.camera.zoom = 0.2f;

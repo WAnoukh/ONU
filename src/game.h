@@ -79,4 +79,5 @@ void camera_compute_view(struct Camera *camera);
 
 void camera_screen_to_world(struct Camera *camera, const vec2 screen_pos, vec2 out_world);
 
+void game_setup_default_level(struct Game *game);
 #endif // GAME_H
