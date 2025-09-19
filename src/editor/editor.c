@@ -10,7 +10,7 @@
 #include "cglm/vec2.h"
 #include "game.h"
 #include "level.h"
-#include "level_serialization.h"
+#include "serialization.h"
 #include "texture.h"
 #include "transform.h"
 #include "window/input.h"
@@ -31,6 +31,7 @@ const char *window_deletion_selection = "Comfirm selection deletion";
 const char *window_edition = "Edit";
 const char *window_saving = "Save";
 const char *window_opening = "Opening";
+const char *window_sequence_opening = "Sequence Opening";
 const char *floating_editor = "World Editor";
 
 ImGuiContext* ctx;
@@ -62,12 +63,18 @@ int selection_ents_count = 0;
 
 struct Entity *edition_entity = NULL;
 
+char resources_path[] = "resources/level/";
+
 char file_suffix[] = ".level";
 char file_current[100] = "NewFile";
-char file_path[] = "resources/level/";
 int saving = 0;
 int opening = 0;
 int opening_failed = 0;
+
+char sequence_suffix[] = ".seq";
+char sequence_current[100] = "demo";
+int sequence_opening = 0;
+int sequence_opening_failed = 0;
 
 int tile_index;
 struct ImVec2i tile_position;
@@ -193,12 +200,10 @@ void menu_bar(struct Game *game)
             if (igMenuItem_Bool("Save", NULL, false, true)) {
                 saving = 1;             
             }
-            if (igMenuItem_Bool("Load Demo", NULL, false, true)) {
-                if(!game_load_default_sequence(game))
-                {
-                    printf("Error while loading demo\n");
-                }
-                load_level(game, *get_current_level(game));
+            igSeparator();
+            if (igMenuItem_Bool("Open Sequence", NULL, false, true)) {
+                sequence_opening = 1;
+                opening_failed = 0;
             }
             igEndMenu();
         }
@@ -350,6 +355,91 @@ void selection_draw(vec2 mouse_pos)
 
     compute_transform(transform, pos, size);
     draw_transformed_quad_screen_space(program, transform, (vec3){0.f, 1.f, 0.2f}, 0.2f);
+}
+
+int ig_save_path_input_popup(const char *popup_id, char *input_buffer, char *out_path, const char *base_path, const char *suffix)
+{
+    int result = 0;
+    if(igBeginPopupModal(popup_id, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        igText("File name:");
+        igInputText("##input", input_buffer, 100, 0, NULL, NULL);
+
+        char path[150];
+        strcpy(path, base_path);
+        strcat(path, input_buffer);
+        unsigned long long path_len = strlen(path);
+        unsigned long long suffix_len = strlen(suffix);
+        if(strcmp(path + path_len - suffix_len, suffix) != 0) 
+        {
+            strcat(path, suffix);
+        }
+        if(access(path, F_OK)==0)  
+        {
+            igText("/!\\/!\\ This file already exist, it will be overwrited !");
+        }
+        if(igButton("Comfirm", (struct ImVec2){0,0}))
+        {
+            strcpy(out_path, path);
+            igCloseCurrentPopup();
+            result = 1;
+        }
+        igSameLine(0,-1);
+        if(igButton("Cancel", (struct ImVec2){0,0}))
+        {
+            saving = 0;
+            igCloseCurrentPopup();
+            result = -1;
+        }
+
+        igEndPopup();
+    }
+    return result;
+}
+
+int ig_open_path_input_popup(const char *popup_id, char *input_buffer, char *out_path, const char *base_path, const char *suffix)
+{
+    int result = 0;
+    if(igBeginPopupModal(popup_id, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        igText("File name:");
+        igInputText("##input2", input_buffer, 100, 0, NULL, NULL);
+
+        char path[150];
+        strcpy(path, base_path);
+        strcat(path, input_buffer);
+        unsigned long long path_len = strlen(path);
+        unsigned long long suffix_len = strlen(suffix);
+        if(strcmp(path + path_len - suffix_len, suffix) != 0) 
+        {
+            strcat(path, suffix);
+        }
+        if(opening_failed)
+        {
+            igText("/!\\/!\\ This file don't exist !");
+        }
+        if(igButton("Comfirm", (struct ImVec2){0,0}))
+        {
+            if(access(path, F_OK)!=0)  
+            {
+                opening_failed = 1;
+            }
+            else 
+            {
+                strcpy(out_path, path);
+                result = 1;
+                igCloseCurrentPopup();
+            }
+        }
+        igSameLine(0,-1);
+        if(igButton("Cancel", (struct ImVec2){0,0}))
+        {
+            result = -1;
+            igCloseCurrentPopup();
+        }
+        igEndPopup();
+    }
+    return result;
 }
 
 void editor_update(struct Game *game, GLFWwindow *window)
@@ -665,6 +755,10 @@ void editor_update(struct Game *game, GLFWwindow *window)
     {
         igOpenPopup_Str(window_opening, 0);
     }
+    else if(sequence_opening)
+    {
+        igOpenPopup_Str(window_sequence_opening, 0);
+    }
     else if(reposition_selection)
     {
         igOpenPopup_Str(window_move_selection, 0);
@@ -848,81 +942,48 @@ void editor_update(struct Game *game, GLFWwindow *window)
     ///////////////
     //  SAVING   //
     ///////////////
-    if(igBeginPopupModal(window_saving, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    char save_path[150];
+    int save_result = ig_save_path_input_popup(window_saving, file_current, save_path, resources_path, file_suffix);
+    if(save_result > 0)
     {
-        igText("File name:");
-        igInputText("##input", file_current, 100, 0, NULL, NULL);
-
-        char path[150];
-        strcpy(path, file_path);
-        strcat(path, file_current);
-        unsigned long long path_len = strlen(path);
-        unsigned long long suffix_len = strlen(file_suffix);
-        if(strcmp(path + path_len - suffix_len, file_suffix) != 0) 
-        {
-            strcat(path, file_suffix);
-        }
-        if(access(path, F_OK)==0)  
-        {
-            igText("/!\\/!\\ This file already exist, it will be overwrited !");
-        }
-        if(igButton("Comfirm", (struct ImVec2){0,0}))
-        {
-            serialize_level(&game->level, path);
-            saving = 0;
-            igCloseCurrentPopup();
-        }
-        igSameLine(0,-1);
-        if(igButton("Cancel", (struct ImVec2){0,0}))
-        {
-            saving = 0;
-            igCloseCurrentPopup();
-        }
-
-        igEndPopup();
+        struct Level level_to_save = *get_current_level(game);
+        level_to_save.gamestate = *get_current_gamestate(game);
+        serialize_level(&level_to_save, save_path);
+        saving = 0;
     }
-
+    else if(save_result < 0)
+    {
+        saving = 0;
+    }
 
     ////////////////
     //  OPENING   //
     ////////////////
-    if(igBeginPopupModal(window_opening, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    char opening_path[150];
+    int opening_result = ig_open_path_input_popup(window_opening, file_current, opening_path, resources_path, file_suffix);
+    if(opening_result > 0)
     {
-        igText("File name:");
-        igInputText("##input2", file_current, 100, 0, NULL, NULL);
+        opening = 0;
+        deserialize_level_into_game(game, opening_path);
+    }
+    else if(opening_result < 0)
+    {
+        opening = 0;
+    }
 
-        char path[150];
-        strcpy(path, file_path);
-        strcat(path, file_current);
-        unsigned long long path_len = strlen(path);
-        unsigned long long suffix_len = strlen(file_suffix);
-        if(strcmp(path + path_len - suffix_len, file_suffix) != 0) 
-        {
-            strcat(path, file_suffix);
-        }
-        if(opening_failed)
-        {
-            igText("/!\\/!\\ This file don't exist !");
-        }
-        if(igButton("Comfirm", (struct ImVec2){0,0}))
-        {
-            if(access(path, F_OK)!=0)  
-            {
-                opening_failed = 1;
-            }
-            else 
-            {
-                deserialize_level_into_game(game, path);
-                opening = 0;
-                igCloseCurrentPopup();
-            }
-        }
-        igSameLine(0,-1);
-        if(igButton("Cancel", (struct ImVec2){0,0}))
-        {
-            opening = 0;
-            igCloseCurrentPopup();
-        }
-        igEndPopup();
+    /////////////////////////
+    //  OPENING SEQUENCE   //
+    /////////////////////////
+    char opening_sequence_path[150];
+    int opening_sequence_result = ig_open_path_input_popup(window_sequence_opening, sequence_current, opening_sequence_path, resources_path, sequence_suffix);
+    if(opening_sequence_result > 0)
+    {
+         
+        deserialize_sequence_into_game(game, opening_sequence_path);
+        sequence_opening = 0;
+    }
+    else if(opening_sequence_result < 0)
+    {
+        sequence_opening = 0;
     }
 }

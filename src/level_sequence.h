@@ -13,7 +13,8 @@ struct Sequence
     int levels_count;
 };
 
-struct PathSequence get_default_path_sequence();
-
 int sequence_load_path_sequence(struct PathSequence path_seq, struct Sequence *out_sequence);
+
+void path_sequence_deinit(struct PathSequence *path_seq);
+
 #endif // LEVEL_SEQUENCE_H

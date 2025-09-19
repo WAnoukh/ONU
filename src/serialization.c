@@ -1,7 +1,9 @@
+#include <string.h>
 #include <stdio.h>
 
-#include "level_serialization.h"
+#include "serialization.h"
 #include "level.h"
+#include "level_sequence.h"
 #include "tilemap.h"
 #include "game.h"
 
@@ -57,11 +59,13 @@ int serialize_level(const struct Level *level, const char* path)
 
 int deserialize_level_into_game(struct Game *game, const char *path)
 {
-    level_deinit(&game->level);
-    int result = deserialize_level(&game->level, path);
+    game->gamemode = GM_LEVEL;
+    struct Level level;
+    int result = deserialize_level(&level, path);
     if(result)
     {
-        load_level(game, game->level);
+        level_deinit(&game->level);
+        load_level(game, level);
     }
     return result;
 }
@@ -110,5 +114,88 @@ int deserialize_level(struct Level *out_level, const char *path)
     *out_level = level;
 
     fclose(file);
+    return 1;
+}
+
+int serialize_path_sequence(struct PathSequence path_seq, const char *path)
+{
+    FILE *file=fopen(path, "wb");
+    if(file == NULL)
+    {
+        printf("Error");
+        return 0;
+    }
+    for(int i = 0; i < path_seq.pathes_count; ++i)
+    {
+        char *seq_path = path_seq.pathes[i];
+        unsigned long long seq_path_size = strlen(seq_path);
+        fwrite(seq_path, sizeof(char)*seq_path_size, 1, file);
+        if(i < path_seq.pathes_count - 1)
+        {
+            putc('\n', file);
+        }
+    }
+    return 1;
+}
+
+int deserialize_path_sequence(struct PathSequence *out_path_seq, const char *path)
+{
+    struct PathSequence path_seq;  
+
+    FILE *file=fopen(path, "r");
+    if(file == NULL)
+    {
+        S_ERROR("unable to read the file.\n");
+        return 0;
+    }
+
+    char cur_char = 'A';
+    char buffer[260];
+    int buffer_index = 0;
+    char *pathes[100];
+    int pathes_index = 0;
+    while(cur_char != EOF)
+    {
+        cur_char = (char)fgetc(file);
+        if((cur_char == '\n' || cur_char == EOF) && buffer_index)
+        {
+            buffer[buffer_index] = '\0';
+            pathes[pathes_index] = malloc(sizeof(char)*buffer_index);
+            strcpy(pathes[pathes_index], buffer);
+            ++pathes_index;
+            buffer_index = 0;
+        }
+        else
+        {
+            buffer[buffer_index++] = cur_char;
+        }
+    }
+
+    path_seq.pathes = malloc(sizeof(char*) * pathes_index);
+    path_seq.pathes_count = pathes_index;
+
+    for(int i = 0; i < pathes_index; ++i)
+    {
+        path_seq.pathes[i] = pathes[i];
+    }
+    *out_path_seq = path_seq;
+    return 1;
+}
+
+int deserialize_sequence_into_game(struct Game *game, char *path)
+{
+    struct PathSequence path_seq;
+    if(!deserialize_path_sequence(&path_seq, path))
+    {   
+        return 0;
+    }
+    struct Sequence sequence;
+    if(!sequence_load_path_sequence(path_seq, &sequence))
+    {
+        return 0;
+    }
+    path_sequence_deinit(&path_seq);
+    game_set_sequence(game, sequence);
+    load_level(game, *get_current_level(game));
     return 1;
 }

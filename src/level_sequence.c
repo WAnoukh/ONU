@@ -1,17 +1,6 @@
 #include "level.h"
 #include "level_sequence.h"
-#include "level_serialization.h"
-
-#define DEFAULT_PATHES_COUNT 3
-char *default_pathes[] = {"resources/level/level1.level", "resources/level/level2.level", "resources/level/level3.level"};
-
-struct PathSequence get_default_path_sequence()
-{
-    struct PathSequence path_seq;
-    path_seq.pathes = default_pathes;
-    path_seq.pathes_count = DEFAULT_PATHES_COUNT;
-    return path_seq;
-}
+#include "serialization.h"
 
 int sequence_load_path_sequence(struct PathSequence path_seq, struct Sequence *out_sequence)
 {
@@ -39,4 +28,13 @@ int sequence_load_path_sequence(struct PathSequence path_seq, struct Sequence *o
     }
     *out_sequence = sequence;
     return 1;
+}
+
+void path_sequence_deinit(struct PathSequence *path_seq)
+{
+    for(int i = 0; i < path_seq->pathes_count; ++i)
+    {
+        free(path_seq->pathes[i]);
+    }
+    free(path_seq->pathes);
 }

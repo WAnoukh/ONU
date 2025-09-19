@@ -3,7 +3,7 @@
 #include "game.h"
 #include "gamestate.h"
 #include "level.h"
-#include "level_serialization.h"
+#include "serialization.h"
 #include "texture.h"
 #include "window/input.h"
 #include "window/window.h"
@@ -171,6 +171,16 @@ int main()
     if(do_deser && deserialize_level(&loaded_level, level_path))
     {
         load_level(&game, loaded_level);
+    }
+
+    struct PathSequence path_seq;
+    deserialize_path_sequence(&path_seq, "resources/level/demo.seq");
+    struct Sequence loaded_seq;
+    if(sequence_load_path_sequence(path_seq, &loaded_seq))
+    {
+        game.sequence = loaded_seq;
+        game_set_sequence(&game, loaded_seq);
+        load_gamestate(&game, get_current_level(&game)->gamestate);
     }
 
     while (!glfwWindowShouldClose(window))
