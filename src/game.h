@@ -18,8 +18,8 @@ struct Game
 {
     struct Camera camera;
     struct Level level;
-    struct Level level_start;
-    struct Level history[HISTORY_MAX_SIZE];
+    struct GameState gamestate_current;
+    struct GameState history[HISTORY_MAX_SIZE];
     int history_size;
     double last_time;
     double new_time;
@@ -46,7 +46,12 @@ static inline int layer_get_visibility(struct Game *game, int layer)
 
 static inline struct GameState *get_current_gamestate(struct Game *game)
 {
-    return &game->level.gamestate;
+    return &game->gamestate_current;
+}
+
+static inline void load_gamestate(struct Game *game, struct GameState gamestate)
+{
+    game->gamestate_current = gamestate;
 }
 
 static inline struct TileMap *get_current_tilemap(struct Game *game)
@@ -56,11 +61,13 @@ static inline struct TileMap *get_current_tilemap(struct Game *game)
 
 int history_register(struct Game *game);
 
-int history_clear(struct Game *game);
+int history_is_empty(struct Game *game);
 
-struct Level history_pop(struct Game *game);
+struct GameState history_pop(struct Game *game);
 
 void history_drop_last(struct Game *game);
+
+void history_clear(struct Game *game);
 
 void load_level(struct Game *game, struct Level level);
 

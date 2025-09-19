@@ -45,5 +45,5 @@ void resize_level(struct Level *level, int new_width, int new_height);
 
 void level_shift(struct Level *level, ivec2 offset);
 
-void render_level(struct Level *level, int layer_mask);
+void render_level(struct Level *level, struct GameState *gamestate, int layer_mask);
 #endif // LEVEL_H

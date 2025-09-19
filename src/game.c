@@ -9,16 +9,16 @@ int history_register(struct Game *game)
         printf("History full\n");
         return 0;
     }
-    game->history[game->history_size++] = game->level;
+    game->history[game->history_size++] = game->gamestate_current;
     return 1;
 }
 
-int history_clear(struct Game *game)
+int history_is_empty(struct Game *game)
 {
     return game->history_size <= 0;
 }
 
-struct Level history_pop(struct Game *game)
+struct GameState history_pop(struct Game *game)
 {
    if(game->history_size <= 0) 
    {
@@ -38,9 +38,15 @@ void history_drop_last(struct Game *game)
    --game->history_size;
 }
 
+void history_clear(struct Game *game)
+{
+    game->history_size = 0;
+}
+
 void load_level(struct Game *game, struct Level level)
 {
     game->level = level;
+    game->gamestate_current = level.gamestate;
     game->history_size = 0;
 }
 

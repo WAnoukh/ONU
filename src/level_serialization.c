@@ -59,10 +59,10 @@ int deserialize_level_into_game(struct Game *game, const char *path)
 {
     free(game->level.tilemap.solidity);
     free(game->level.tilemap.tile);
-    int result = deserialize_level(&game->level_start, path);
+    int result = deserialize_level(&game->level, path);
     if(result)
     {
-        load_level(game, game->level_start);
+        load_level(game, game->level);
     }
     return result;
 }

@@ -184,7 +184,7 @@ void menu_bar(struct Game *game)
     if (igBeginMainMenuBar()) {
         if (igBeginMenu("File", true)) {
             if (igMenuItem_Bool("New", NULL, false, true)) {
-                load_level(game, game->level_start);
+                load_level(game, game->level);
             }
             if (igMenuItem_Bool("Open", NULL, false, true)) {
                 opening = 1;

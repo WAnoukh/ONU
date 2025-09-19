@@ -37,9 +37,9 @@ int request_new_turn(struct Game *game, struct Action action)
     if(action.type == ACTION_UNDO)
     {
         history_drop_last(game);
-        if(!history_clear(game))
+        if(!history_is_empty(game))
         {
-            game->level = history_pop(game); 
+            load_gamestate(game, history_pop(game));
         }
         return 1;
     }
@@ -128,7 +128,9 @@ struct Game initialize_game()
 {
     struct Game game;
 
-    get_default_level(&game.level_start);
+    get_default_level(&game.level);
+    load_gamestate(&game, game.level.gamestate);
+    history_clear(&game);
 
     game.last_time = glfwGetTime();
     game.camera.zoom = 0.2f;
@@ -170,9 +172,8 @@ int main()
     struct Level loaded_level;
     if(do_deser && deserialize_level(&loaded_level, level_path))
     {
-        //game.level_start = loaded_level;
+        load_level(&game, loaded_level);
     }
-    load_level(&game, game.level_start);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -199,13 +200,13 @@ int main()
         struct GameState *gamestate = get_current_gamestate(&game);
         if(gamestate->is_door_reached)
         {
-            load_level(&game, game.level_start);
+            load_level(&game, game.level);
         }
 
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        render_level(&game.level, game.tilemap_layer_mask);
+        render_level(&game.level, &game.gamestate_current, game.tilemap_layer_mask);
 
 #ifdef EDITOR
         if(editor) editor_update(&game, window);

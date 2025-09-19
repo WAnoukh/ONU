@@ -69,7 +69,7 @@ void get_default_level(struct Level *level)
     gamestate->is_door_opened = 0;
 }
 
-void render_level(struct Level *level, int layer_mask)
+void render_level(struct Level *level, struct GameState *gamestate, int layer_mask)
 {
     vec2 pos = {0,0};
     float size = 1;
@@ -90,7 +90,7 @@ void render_level(struct Level *level, int layer_mask)
 
     if(layer_mask & 0b10)
     {
-        render_entities(&level->gamestate, ent_pos, size);
+        render_entities(gamestate, ent_pos, size);
     }
 }
 
