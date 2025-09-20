@@ -45,13 +45,27 @@ int request_new_turn(struct Game *game, struct Action action)
     }
     if(action.type == ACTION_DOOR_OPEN)
     {
-        gamestate->is_door_opened = 1;
-        return 1;
+        if(!gamestate->is_door_opened)
+        {
+            gamestate->is_door_opened = 1;
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
     }
     if(action.type == ACTION_DOOR_CLOSE)
     {
-        gamestate->is_door_opened = 0;
-        return 1;
+        if(gamestate->is_door_opened)
+        {
+            gamestate->is_door_opened = 0;
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     return process_targeted_action(game, action.target_entity, action.type);
@@ -122,7 +136,6 @@ void update_key_blocks(struct Game *game)
         printf(" revelant action \n");
     }
 }
-
 
 struct Game initialize_game()
 {
