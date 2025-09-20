@@ -91,12 +91,13 @@ void render_level(struct Level *level, struct GameState *gamestate, int layer_ma
         tilemap_render_solidmap(level->tilemap.solidity, level_get_width(level), level_get_height(level), pos, size);
     }
     vec2 ent_offset = {-0.5f*size*(float)level->tilemap.width, 0.5f*size*(float)level->tilemap.height};
-    vec2 ent_pos;
-    glm_vec2_add(pos, ent_offset, ent_pos);
+    vec2 ents_pos;
+    glm_vec2_add(pos, ent_offset, ents_pos);
 
     if(layer_mask & 0b10)
     {
-        render_entities(gamestate, ent_pos, size);
+        render_repeaters_range(gamestate, &level->tilemap, ents_pos, size);
+        render_entities(gamestate, ents_pos, size);
     }
 }
 

@@ -26,9 +26,24 @@ int process_targeted_action(struct Game *game, int entity_index, enum ActionType
     }
     int dir_index = (int)(action_type - ACTION_UP);
     struct GameState *gamestate = get_current_gamestate(game);
+    struct TileMap *tilemap = get_current_tilemap(game);
     struct Entity *ent = gamestate->entities+entity_index;
 
-    return push_entity(gamestate, get_current_tilemap(game), ent, directions[dir_index]);
+    if(ent->type == ENTITY_REPEATER)
+    {
+        int result = 0;
+        for(int i = 0; i < gamestate->entity_count; ++i)
+        {
+            struct Entity *other = gamestate->entities+i;
+            if(other->position[0] == ent->position[0] || other->position[1] == ent->position[1])
+            {
+                result |= push_entity(gamestate, tilemap, other, directions[dir_index]);
+            }
+        }
+        return result;
+    }
+
+    return push_entity(gamestate, tilemap, ent, directions[dir_index]);
 }
 
 int request_new_turn(struct Game *game, struct Action action)
@@ -198,7 +213,6 @@ int main()
         game.new_time = get_time();
         game.delta_time = (float)(game.new_time - game.last_time);
         game.last_time = game.new_time;
-
         if(is_framebuffer_resized())
         {
             camera_compute_view(&game.camera);

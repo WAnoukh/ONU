@@ -6,8 +6,12 @@
 #include "tilemap.h"
 #include "transform.h"
 
+const char *entity_names[] = {"None","Player","Box","Key","Slot","Door","Repeater"};
+const char *action_names[] = {"None","Up","Down","Left","Right","Undo","DoorOpen","DoorClose"};
 
-const char *entity_names[] = {"None","Player","Box","Key","Slot","Door"};
+vec3 color_key_block_activated = {203.f, 214.f, 0.f};
+vec3 color_door_open = {0.f,1.f,0.f};
+vec3 entities_color[] = {{0.f,0.f,0.f}, {0.5f,0.1f,0.3f},{0.2f,0.2f,0.2f},{0.1f,0.6f,0.6f},{0.9f,0.9f,0.9f},{0.f,0.f,0.f},{0.9f,0.3f,0.4f}};
 
 const char *get_entity_name(enum EntityType type)
 {
@@ -18,8 +22,6 @@ const char * const*get_entity_names()
 {
     return entity_names;
 }
-
-const char *action_names[] = {"None","Up","Down","Left","Right","Undo","DoorOpen","DoorClose"};
 
 const char *get_action_name(enum ActionType type)
 {
@@ -36,9 +38,48 @@ int get_entity_index(struct GameState *gamestate, struct Entity *entity)
     return (int)(entity - gamestate->entities);
 }
 
-vec3 color_key_block_activated = {203.f, 214.f, 0.f};
-vec3 color_door_open = {0.f,1.f,0.f};
-vec3 entities_color[] = {{0.f,0.f,0.f}, {0.5f,0.1f,0.3f},{0.2f,0.2f,0.2f},{0.1f,0.6f,0.6f},{0.9f,0.9f,0.9f},{0.f,0.f,0.f}};
+void render_repeater_range_tile(unsigned int program, const ivec2 pos, vec2 offset, float size)
+{
+    mat3 transform;
+    vec2 size_vec = {size, size};
+    vec2 pos_offseted;
+    pos_offseted[0] = ((float)pos[0]+0.5f) * size;
+    pos_offseted[1] = (-(float)pos[1]-0.5f) * size;
+    glm_vec2_add(offset, pos_offseted, pos_offseted);
+    compute_transform(transform, pos_offseted, size_vec);
+    draw_transformed_quad(program, transform, entities_color[ENTITY_REPEATER], 0.2f);
+}
+
+void render_repeaters_range(struct GameState *gamestate, struct TileMap *tilemap, vec2 pos, float size)
+{
+    for(int i = 0; i < gamestate->entity_count; ++i)
+    {
+        struct Entity ent = gamestate->entities[i];
+        if(ent.type != ENTITY_REPEATER) continue;
+        {
+            for(int x = 0; x < tilemap->width; ++x)
+            {
+                ivec2 tile_pos = {x, ent.position[1]};
+                if(is_tilemap_solid_at(tilemap, tile_pos))
+                {
+                    continue;
+                }
+                unsigned int program = shaders_use_default();
+                render_repeater_range_tile(program, tile_pos, pos, size);
+            }
+            for(int y = 0; y < tilemap->width; ++y)
+            {
+                ivec2 tile_pos = {ent.position[0], y};
+                if(is_tilemap_solid_at(tilemap, tile_pos))
+                {
+                    continue;
+                }
+                unsigned int program = shaders_use_default();
+                render_repeater_range_tile(program, tile_pos, pos, size);
+            }
+        }
+    }
+}
 
 void render_entities(struct GameState *gamestate, vec2 pos, float size)
 {
@@ -61,7 +102,6 @@ void render_entities(struct GameState *gamestate, vec2 pos, float size)
         compute_transform(transform, pos_offset, size_vec);
         draw_transformed_quad(program, transform, color, 1);
     }
-
 
     //Render the rest
     for(int i = 0; i < gamestate->entity_count; ++i)

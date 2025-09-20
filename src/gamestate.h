@@ -39,6 +39,7 @@ struct DoorData
 {
     int is_opened;
 };
+
 enum EntityType
 {
     ENTITY_NONE,
@@ -47,6 +48,7 @@ enum EntityType
     ENTITY_KEY,
     ENTITY_SLOT,
     ENTITY_DOOR,
+    ENTITY_REPEATER,
     ENTITY_COUNT,
 };
 
@@ -88,6 +90,8 @@ const char * const*get_action_names();
 int get_entity_index(struct GameState *gamestate, struct Entity *entity);
 
 int push_entity(struct GameState *gamestate, struct TileMap *tilemap, struct Entity *entity, ivec2 offset);
+
+void render_repeaters_range(struct GameState *gamestate, struct TileMap *tilemap, vec2 pos, float size);
 
 void render_entities(struct GameState *gamestate, vec2 pos, float size);
 
