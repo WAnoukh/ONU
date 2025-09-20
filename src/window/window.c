@@ -1,7 +1,7 @@
 ﻿#include "window/window.h"
 #include <stdio.h>
 #include <glad/glad.h>
-#include <glfw/glfw3.h>
+#include <GLFW/glfw3.h>
 #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
 #include "cimgui.h"
 #include "window/input.h"
@@ -13,6 +13,9 @@ int is_framebuffer_resized_flag = 0;
 float framebuffer_ratio = (float)SCR_WIDTH/(float)SCR_HEIGHT;
 int framebuffer_width = SCR_WIDTH, framebuffer_height = SCR_HEIGHT;
 
+float scale_x = 1;
+float scale_y = 1;
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -20,6 +23,13 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     framebuffer_width = width;
     framebuffer_height = height;
     is_framebuffer_resized_flag = 1;
+    ImGuiIO* io = igGetIO_Nil();
+    io->DisplayFramebufferScale.x = 1.0f;
+    io->DisplayFramebufferScale.y = 1.0f;
+    io->DisplaySize.x = (float)width;
+    io->DisplaySize.y = (float)height;
+
+    int win_w, win_h;
 }
 
 void scroll_callback(GLFWwindow* window, double x_offset, double y_offset)
@@ -79,7 +89,6 @@ int initGl(GLFWwindow **window)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE); 
 
-
     *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
     if (*window == NULL)
     {
@@ -115,6 +124,8 @@ int initGl(GLFWwindow **window)
     glDebugMessageCallback(glDebugOutput, 0);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_FALSE);
     return 1;
 }
 

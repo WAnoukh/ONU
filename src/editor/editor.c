@@ -1,6 +1,17 @@
 #include <string.h>
 
-#include <io.h>
+#ifdef _WIN32
+    #include <io.h>
+    #define my_itoa _itoa
+#else
+    #include <stdio.h>
+    #include <unistd.h>
+    char* my_itoa(int value, char* str, int base) {
+        if (base != 10) return NULL; // simple example, only base 10 supported
+        sprintf(str, "%d", value);
+        return str;
+    }
+#endif
 #include <stdio.h>
 #include <dirent.h>
 
@@ -106,7 +117,6 @@ int editor_initialize(GLFWwindow *window)
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 130");
-
     return 1;
 }
 
@@ -562,7 +572,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
             igPushID_Int(i);
             char selectable_title [10] = "Layer ";
             char number[3];
-            itoa(i-2, number, 10);
+            my_itoa(i-2, number, 10);
             strcat(selectable_title, number);
             tilemap_ig_layer(game, selectable_title, i);
             igPopID();
@@ -662,7 +672,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
                 char str_name[30];
                 char str_number[number_max_char];
                 strcpy(str_name, get_entity_name(ent->type));
-                itoa(get_entity_index(gamestate, ent), str_number, 10);
+                my_itoa(get_entity_index(gamestate, ent), str_number, 10);
                 strcat(str_name, " (");
                 strcat(str_name, str_number);
                 strcat(str_name, ")");
@@ -692,7 +702,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
             const int number_max_char = 3;
             char str_name[30] = "Selection (";
             char str_number[number_max_char];
-            itoa(selection_ents_count, str_number, 10);
+            my_itoa(selection_ents_count, str_number, 10);
             strcat(str_name, str_number);
             strcat(str_name, " ents)");
             igPushID_Str("Selection");

@@ -45,7 +45,7 @@ GLuint texture_load(char* path)
     }
     else
     {
-        perror( "Failed to load texture");
+        printf( "Failed to load texture %s\n", path);
         return 0;
     }
     stbi_image_free(data);
@@ -60,12 +60,12 @@ GLuint texture_load(char* path)
 
 void load_default_images()
 {
-    texture_slot = texture_load("resources\\sprite\\slot.png");
-    texture_key = texture_load("resources\\sprite\\key.png");
-    atlas_font.texture_id = texture_load("resources\\sprite\\font.png");
+    texture_slot = texture_load("resources/sprite/slot.png");
+    texture_key = texture_load("resources/sprite/key.png");
+    atlas_font.texture_id = texture_load("resources/sprite/font.png");
     atlas_font.width = 10;
     atlas_font.height = 5;
-    atlas_tilemap.texture_id = texture_load("resources\\sprite\\TileMap.png");
+    atlas_tilemap.texture_id = texture_load("resources/sprite/TileMap.png");
     atlas_tilemap.width = 20;
     atlas_tilemap.height = 20;
 }
