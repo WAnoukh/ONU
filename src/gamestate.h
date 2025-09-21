@@ -79,6 +79,26 @@ struct GameState
     int is_door_reached;
 };
 
+struct MoveRequest
+{
+    int entity;
+    ivec2 from;
+    ivec2 to;
+};
+
+struct Transaction
+{
+    struct MoveRequest moves[20];
+    int moves_count;
+};
+
+struct TransactionList
+{
+    struct Transaction *transactions;
+    int count;
+    int capacity;
+};
+
 const char *get_entity_name(enum EntityType type);
 
 const char * const*get_entity_names();
@@ -98,6 +118,10 @@ void render_entities(struct GameState *gamestate, vec2 pos, float size);
 void remove_entity(struct GameState *gamestate, int index);
 
 struct Entity *get_slot_at(struct GameState *gamestate, ivec2 at);
+
+int is_door_at(struct GameState *gamestate, ivec2 at);
+
+int is_player_on_door(struct GameState *gamestate);
 
 static inline void create_movable_at(struct GameState *gs, int x, int y, enum EntityType type)
 {
@@ -145,4 +169,13 @@ static inline void create_door_at(struct GameState *gs, int x, int y)
         -1,
     };
 }
+
+struct TransactionList transactionlist_init();
+
+void transactionlist_deinit(struct TransactionList *list);
+
+void transactionlist_append(struct TransactionList *list, struct Transaction transaction);
+
+int transactionlist_is_empty(struct TransactionList *transactions);
+
 #endif // GAMESTATE_H

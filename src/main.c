@@ -86,10 +86,90 @@ int request_new_turn(struct Game *game, struct Action action)
     return process_targeted_action(game, action.target_entity, action.type);
 }
 
+struct Transaction compute_transaction_from_move(struct GameState *gamestate, struct MoveRequest move)
+{
+    struct Transaction tr;
+    tr.moves[0] = move;
+    tr.moves_count = 1;
+    int cur_move_index = 0; 
+    ivec2 dir;
+    glm_ivec2_sub(move.to, move.from, dir);
+    while(cur_move_index < tr.moves_count)
+    {
+        struct MoveRequest cur_move = tr.moves[cur_move_index];
+        struct Entity *moving_ent = gamestate->entities+cur_move.entity;
+        for(int i = 0; i < gamestate->entity_count; ++i)
+        {
+            struct Entity *other = gamestate->entities+i; 
+            if(!glm_ivec2_eqv(other->position, cur_move.to)) continue;
+            if(other->solidity == SOLIDITY_STATIC)
+            {
+                tr.moves_count = 0;            
+                return tr;
+            }
+            if(other->solidity == SOLIDITY_MOVABLE)
+            {
+                struct MoveRequest other_move;
+                other_move.entity = i;
+                glm_ivec2_copy(other->position, other_move.from);
+                glm_ivec2_add(other_move.from, dir, other_move.to);
+                tr.moves[tr.moves_count++] = other_move;
+            }
+        }
+        ++cur_move_index;
+    }
+    return tr;
+}
+
+void reduce_colliding_transactions(struct TransactionList *tr_ls, struct GameState *gamestate,  struct TileMap *tilemap)
+{
+    for(int i = tr_ls->count-1; i >= 0 ; --i)
+    {
+        struct Transaction *tr = tr_ls->transactions+i;
+        int valid = 1;
+        for(int j = 0; j < tr->moves_count; ++j)
+        {
+            struct MoveRequest move = tr->moves[j];
+            struct Entity *ent = gamestate->entities+move.entity;
+            if(ent->type == ENTITY_PLAYER && is_door_at(gamestate, move.to) && gamestate->is_door_opened)
+            {
+                continue;
+            }
+            if(is_tilemap_solid_at(tilemap, move.to))
+            {
+                valid = 0;
+                break;
+            }
+        }
+        if(valid) continue;
+        tr_ls->transactions[i] = tr_ls->transactions[tr_ls->count--];
+    }
+}
+
+struct Transaction compute_transaction(struct GameState *gamestate, enum ActionType type, int target_index)
+{
+    struct Entity *target = gamestate->entities+target_index;
+    struct Transaction transaction;
+    int dir_index = (int)(type - ACTION_UP);
+    if(target->solidity == SOLIDITY_MOVABLE)
+    {
+        struct MoveRequest move;
+        move.entity = target_index;
+        glm_ivec2_copy(target->position, move.from);
+        glm_ivec2_add(move.from, directions[dir_index], move.to);
+        transaction = compute_transaction_from_move(gamestate, move);
+    }
+    else
+    {
+        transaction.moves_count = 0;
+    }
+    return transaction;
+}
+
 void update_key_blocks(struct Game *game)
 {
     struct GameState *gamestate = get_current_gamestate(game);
-    int has_revelant_action_happended = 0;
+    struct TileMap *tilemap = get_current_tilemap(game);
     int first_action = 0;
     int any_non_universal_key_pressed = 0;
     int any_non_universal_key_down = 0;
@@ -106,50 +186,96 @@ void update_key_blocks(struct Game *game)
         any_non_universal_key_down |= i_key_down(key_data->key);
     }
 
-    for(int i = 0; i < gamestate->entity_count; ++i)
+    int door_conflict = 0;
+    int door_action = 0;
+    int undo = 0;
+    struct TransactionList transactionlist = transactionlist_init(); 
+    
+    for(int i = 0; i <= gamestate->entity_count; ++i)
     {
-        struct Entity *ent = gamestate->entities+i;
-        if(ent->type != ENTITY_KEY) continue;
-
-        struct KeyBlockData *key_data = gamestate->key_block_data+ent->data_index;
-        int key_pressed;
-        if(key_data->key == GLFW_KEY_PERIOD)
+        struct Entity *key = gamestate->entities+i;
+        if(key->type != ENTITY_KEY) continue;
+        struct KeyBlockData *key_data = gamestate->key_block_data+key->data_index;
+        key_data->is_pressed = i_key_down(key_data->key)||(key_data->key == '.' && any_non_universal_key_down);
+        if(i_key_pressed(key_data->key) || (key_data->key == '.' && any_non_universal_key_pressed))
         {
-            key_data->is_pressed = any_non_universal_key_down; 
-            key_pressed = any_non_universal_key_pressed; 
-        }
-        else
-        {
-            key_data->is_pressed = i_key_down(key_data->key);
-            key_pressed = i_key_pressed(key_data->key);
-        }
-        if(key_pressed)
-        {
-            if(!first_action)
+            for(int j = 0; j <= gamestate->entity_count; ++j)
             {
-                history_register(game);
-                first_action = 1;
-            }
-            struct Entity *slot = get_slot_at(gamestate, ent->position);
-            if(slot != NULL)
-            {
+                struct Entity *slot = gamestate->entities+j;
+                if(!glm_ivec2_eqv(slot->position, key->position)) continue;
+                if(slot->type != ENTITY_SLOT) continue;
                 struct SlotData *slot_data = gamestate->slot_data+slot->data_index;
-                has_revelant_action_happended |= request_new_turn(game, slot_data->action);
-                if(slot_data->action.type == ACTION_UNDO)
+                switch(slot_data->action.type)
                 {
-                    break;
+                    case ACTION_DOOR_OPEN:
+                        if(door_conflict) continue;
+                        if(door_action && door_action != 1) door_conflict = 1;
+                        door_action = 1;
+                        continue;
+                        break;
+                    case ACTION_DOOR_CLOSE:
+                        if(door_conflict) continue;
+                        if(door_action && door_action != -1) door_conflict = -1;
+                        door_action = -1;
+                        continue;
+                        break;
+                    case ACTION_UNDO:
+                        undo = 1;
+                        break;
+                    case ACTION_UP:
+                    case ACTION_DOWN:
+                    case ACTION_LEFT:
+                    case ACTION_RIGHT:
+                        {
+                            struct Transaction tr = compute_transaction(gamestate, slot_data->action.type, slot_data->action.target_entity);
+                            transactionlist_append(&transactionlist, tr);
+                        }
+                        break;
+                    default:
+                        break;
                 }
+                if(undo) break;
             }
+            if(undo) break;
         }
     }
-    if(first_action && !has_revelant_action_happended)
+
+    if(undo)
     {
-        history_drop_last(game);
+        transactionlist_deinit(&transactionlist);
+        if(!history_is_empty(game))
+        {
+            game->gamestate_current = history_pop(game);
+        }
+        return;
     }
-    if(first_action)
+    int history_registered = 0;
+    int door_need_modification = door_action && !door_conflict && 
+        ((door_action < 0 && gamestate->is_door_opened) || (door_action > 0 && !gamestate->is_door_opened));
+    if(door_need_modification)
     {
-        printf(" revelant action \n");
+        history_register(game);
+        gamestate->is_door_opened = door_action > 0;
+        history_registered = 1;
     }
+    reduce_colliding_transactions(&transactionlist, gamestate, tilemap);
+    if(transactionlist.count && !history_registered)    
+    {
+        history_register(game);
+        history_registered = 1;
+    }
+    for(int i = 0; i < transactionlist.count; ++i)
+    {
+        struct Transaction tr = transactionlist.transactions[i];
+        for(int j = 0; j < tr.moves_count; ++j)
+        {
+            struct MoveRequest move = tr.moves[j];
+            struct Entity *target = gamestate->entities+move.entity;
+            glm_ivec2_copy(move.to, target->position);
+        }
+    }
+    transactionlist_deinit(&transactionlist);
+    gamestate->is_door_reached = is_player_on_door(gamestate);
 }
 
 struct Game initialize_game()

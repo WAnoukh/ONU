@@ -206,6 +206,32 @@ struct Entity *get_slot_at(struct GameState *gamestate, ivec2 at)
     return NULL;
 }
 
+int is_door_at(struct GameState *gamestate, ivec2 at)
+{
+    for(int i = 0 ; i < gamestate->entity_count ; ++i)
+    {
+        if(gamestate->entities[i].type != ENTITY_DOOR) continue;
+        if(glm_ivec2_eqv(gamestate->entities[i].position, at))
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int is_player_on_door(struct GameState *gamestate)
+{
+    for(int i = 0 ; i < gamestate->entity_count ; ++i)
+    {
+        if(gamestate->entities[i].type != ENTITY_PLAYER) continue;
+        if(is_door_at(gamestate, gamestate->entities[i].position))
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 struct Entity *get_player(struct GameState *gamestate)
 {
     for(int i = 0 ; i < gamestate->entity_count ; ++i)
@@ -287,4 +313,49 @@ void remove_entity(struct GameState *gamestate, int index)
         }
     }
     gamestate->entities[index] = gamestate->entities[--gamestate->entity_count];
+}
+
+struct TransactionList transactionlist_init()
+{
+    struct TransactionList list;
+    list.transactions = NULL;
+    list.count = 0;
+    list.capacity = 0;
+    return list;
+}
+
+void transactionlist_deinit(struct TransactionList *list)
+{
+    if(list->capacity)
+    {
+        free(list->transactions);
+    }
+}
+
+void transactionlist_append(struct TransactionList *list, struct Transaction transaction)
+{
+    if(list->capacity <= list->count) 
+    {
+        if(list->capacity <= 0)
+        {
+            list->capacity = 1;
+        }
+        else
+        {
+            list->capacity *= 2;
+        }
+        struct Transaction *new_list = malloc(sizeof(struct Transaction)*list->capacity);
+        for(int i = 0; i < list->count; ++i)
+        {
+            new_list[i] = list->transactions[i];
+        }
+        free(list->transactions);
+        list->transactions = new_list;
+    }
+    list->transactions[list->count++] = transaction;
+}
+
+int transactionlist_is_empty(struct TransactionList *transactions)
+{
+    return !transactions->count;
 }
