@@ -323,7 +323,7 @@ void tilemap_ig_selection(struct ImVec2 pos, float size)
     ImDrawList_AddRectFilled(draw_list, rect_min, rect_max, color, 0.0f, 0);
 }
 
-int tilemap_ig_tile_selector(struct TextureAtlas atlas, int *out_index, struct ImVec2i *out_pos)
+void tilemap_ig_tile_selector(struct TextureAtlas atlas, int *out_index, struct ImVec2i *out_pos)
 {
     unsigned int texture_id = atlas.texture_id;
     struct ImTextureRef *ref =ImTextureRef_ImTextureRef_TextureID(texture_id);
@@ -343,6 +343,7 @@ int tilemap_ig_tile_selector(struct TextureAtlas atlas, int *out_index, struct I
     selectable_size.x = MIN(window_size.x, image_size.x + pos.x);
     selectable_size.y = MIN(window_size.y, image_size.y + pos.y);
 
+    int tile_x, tile_y;
     struct ImVec2 mouse;
     igGetMousePos(&mouse);
     if (mouse.x >= pos.x && mouse.y >= pos.y &&
@@ -353,15 +354,17 @@ int tilemap_ig_tile_selector(struct TextureAtlas atlas, int *out_index, struct I
         float u = (mouse.x - pos.x) / image_size.x;
         float v = (mouse.y - pos.y) / image_size.y;
 
-        int tile_x = (int)(u * (float)atlas.width);
-        int tile_y = (int)(v * (float)atlas.height);
-
+        tile_x = (int)(u * (float)atlas.width);
+        tile_y = (int)(v * (float)atlas.height);
         *out_index = tile_y * atlas.width + tile_x;
-        *out_pos = (struct ImVec2i){tile_x, tile_y};
-        return 1;
+    }
+    else
+    {
+        tile_y = *out_index / atlas.width;
+        tile_x = *out_index - (tile_y * atlas.width);
     }
     ImTextureRef_destroy(ref);
-    return 0;
+    *out_pos = (struct ImVec2i){tile_x, tile_y};
 }
 
 void selection_draw(vec2 mouse_pos)
@@ -526,6 +529,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
         int edition = 0;
         if(i_button_down(GLFW_MOUSE_BUTTON_1)) edition = 1;
         if(i_button_down(GLFW_MOUSE_BUTTON_2)) edition = -1;
+        int alt = igIsKeyDown_Nil(ImGuiKey_LeftAlt);
 
         ivec2 cursor_grid_ipos;
         cursor_grid_ipos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2-0.5f);
@@ -549,7 +553,14 @@ void editor_update(struct Game *game, GLFWwindow *window)
                 Tile *tile_to_draw = layer + cursor_grid_ipos[0] + cursor_grid_ipos[1] * level_width;
                 if(edition > 0)
                 {
-                    *tile_to_draw = tile_index + 1; 
+                    if(alt)
+                    {
+                        tile_index = *tile_to_draw - 1; 
+                    }
+                    else
+                    {
+                        *tile_to_draw = tile_index + 1; 
+                    }
                 }
                 else
                 {
