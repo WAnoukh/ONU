@@ -277,8 +277,10 @@ void menu_bar(struct Game *game)
     }
 }
 
-void tilemap_ig_layer(struct Game *game, char *title, int layer)
+void tilemap_ig_layer(struct Game *game, char *title, int layer, int show_visibility)
 {
+    ImVec2 spacing = igGetStyle()->ItemSpacing;
+
     igSetNextItemAllowOverlap();
     if (igSelectable_Bool("##selectable", layer_selected == layer, ImGuiSelectableFlags_SpanAvailWidth, (struct ImVec2){0,0}))
     {
@@ -287,14 +289,24 @@ void tilemap_ig_layer(struct Game *game, char *title, int layer)
 
     igSameLine(0, 0);
 
-    int visible = layer_get_visibility(game, layer);
-    if (igSmallButton(visible ? "O" : "_"))
+    if(show_visibility)
     {
-        layer_set_visibility(game, layer, !visible);
+        int visible = layer_get_visibility(game, layer);
+        if (igSmallButton(visible ? "O" : "_"))
+        {
+            layer_set_visibility(game, layer, !visible);
+        }
+        igSameLine(0, spacing.x);
     }
-    ImVec2 spacing = igGetStyle()->ItemSpacing;
+    else
+    {
+        layer_set_visibility(game, layer, layer_selected == layer);
 
-    igSameLine(0, spacing.x);
+        char* single_char = "0";
+        ImVec2 text_size; igCalcTextSize(&text_size, single_char, single_char+1, 0, 0);
+        float small_button_size =  text_size.x + igGetStyle()->FramePadding.x * 2.0f + spacing.x;
+        igSameLine(0, small_button_size);
+    }
 
     igText(title);
 }
@@ -562,10 +574,10 @@ void editor_update(struct Game *game, GLFWwindow *window)
         igBegin(floating_editor, NULL, 0);
         igSeparatorText("Layers:");
         igPushID_Int(0);
-        tilemap_ig_layer(game, "Collisions", 0);
+        tilemap_ig_layer(game, "Collisions", 0, 0);
         igPopID();
         igPushID_Int(1);
-        tilemap_ig_layer(game, "Entities", 1);
+        tilemap_ig_layer(game, "Entities", 1, 1);
         igPopID();
         for (int i = 2; i < tilemap->layer_count+2; i++)
         {
@@ -574,7 +586,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
             char number[3];
             my_itoa(i-2, number, 10);
             strcat(selectable_title, number);
-            tilemap_ig_layer(game, selectable_title, i);
+            tilemap_ig_layer(game, selectable_title, i, 1);
             igPopID();
         }
         if(layer_selected >= 2)
