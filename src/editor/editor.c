@@ -907,6 +907,12 @@ void editor_update(struct Game *game, GLFWwindow *window)
                 case ENTITY_DOOR:
                     create_door_at(gamestate, creation_position[0], creation_position[1]);
                     break;
+                case ENTITY_BUTTON:
+                    create_button_at(gamestate, creation_position[0], creation_position[1]);
+                    break;
+                case ENTITY_ANTIBUTTON:
+                    create_antibutton_at(gamestate, creation_position[0], creation_position[1]);
+                    break;
                 default:
                     create_movable_at(gamestate, creation_position[0], creation_position[1], creation_type);
                     break;

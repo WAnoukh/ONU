@@ -49,6 +49,8 @@ enum EntityType
     ENTITY_SLOT,
     ENTITY_DOOR,
     ENTITY_REPEATER,
+    ENTITY_BUTTON,
+    ENTITY_ANTIBUTTON,
     ENTITY_COUNT,
 };
 
@@ -140,6 +142,26 @@ static inline void create_door_at(struct GameState *gs, int x, int y)
 {
     gs->entities[gs->entity_count++] = (struct Entity){
         ENTITY_DOOR,
+        SOLIDITY_NONE,
+        {x, y},
+        -1,
+    };
+}
+
+static inline void create_button_at(struct GameState *gamestate, int x, int y)
+{
+    gamestate->entities[gamestate->entity_count++] = (struct Entity){
+        ENTITY_BUTTON,
+        SOLIDITY_NONE,
+        {x, y},
+        -1,
+    };
+}
+
+static inline void create_antibutton_at(struct GameState *gamestate, int x, int y)
+{
+    gamestate->entities[gamestate->entity_count++] = (struct Entity){
+        ENTITY_ANTIBUTTON,
         SOLIDITY_NONE,
         {x, y},
         -1,

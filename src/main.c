@@ -86,6 +86,42 @@ int request_new_turn(struct Game *game, struct Action action)
     return process_targeted_action(game, action.target_entity, action.type);
 }
 
+void process_buttons(struct GameState *gamestate)
+{
+    int are_button_in_scene = 0;
+    int are_all_button_correct = 1;
+    for(int i = 0; i < gamestate->entity_count; ++i)
+    {
+        struct Entity *ent = gamestate->entities+i;
+        if(ent->type != ENTITY_BUTTON && ent->type != ENTITY_ANTIBUTTON) continue;
+        are_button_in_scene = 1;
+        
+        // Searching boxes at the same location
+        int box_found = 0;
+        for(int j = 0; j < gamestate->entity_count; ++j)
+        {
+            struct Entity *other_ent = gamestate->entities+j;
+            if(other_ent->type != ENTITY_BOX) continue;
+
+            if(glm_ivec2_eqv(ent->position, other_ent->position))
+            {
+                box_found = 1;
+                break;
+            }
+        }
+        if((ent->type == ENTITY_BUTTON && !box_found) || (ent->type == ENTITY_ANTIBUTTON && box_found))
+        {
+            are_all_button_correct = 0;
+            break;
+        }
+    }
+
+    if(are_button_in_scene)
+    {
+        gamestate->is_door_opened = are_all_button_correct;
+    }
+}
+
 void update_key_blocks(struct Game *game)
 {
     struct GameState *gamestate = get_current_gamestate(game);
@@ -146,9 +182,10 @@ void update_key_blocks(struct Game *game)
     {
         history_drop_last(game);
     }
-    if(first_action)
+    if(first_action && has_revelant_action_happended)
     {
         printf(" revelant action \n");
+        process_buttons(gamestate);
     }
 }
 
@@ -222,6 +259,7 @@ int main()
         i_process(window);
         update_key_blocks(&game);
 
+        //Checkin if player reached the end door
         struct GameState *gamestate = get_current_gamestate(&game);
         if(gamestate->is_door_reached)
         {

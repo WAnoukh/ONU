@@ -6,12 +6,22 @@
 #include "tilemap.h"
 #include "transform.h"
 
-const char *entity_names[] = {"None","Player","Box","Key","Slot","Door","Repeater"};
+const char *entity_names[] = {"None","Player","Box","Key","Slot","Door","Repeater","Button", "Anti-button"};
 const char *action_names[] = {"None","Up","Down","Left","Right","Undo","DoorOpen","DoorClose"};
 
 vec3 color_key_block_activated = {203.f, 214.f, 0.f};
 vec3 color_door_open = {0.f,1.f,0.f};
-vec3 entities_color[] = {{0.f,0.f,0.f}, {0.5f,0.1f,0.3f},{0.2f,0.2f,0.2f},{0.1f,0.6f,0.6f},{0.9f,0.9f,0.9f},{0.f,0.f,0.f},{0.9f,0.3f,0.4f}};
+vec3 entities_color[] = {
+    {0.f,0.f,0.f},          
+    {0.5f,0.1f,0.3f},       //Player
+    {0.82f,0.56f,0.16f},    //Box
+    {0.1f,0.6f,0.6f},       //Key
+    {0.9f,0.9f,0.9f},       //Slot
+    {0.f,0.f,0.f},          //Door
+    {0.9f,0.3f,0.4f},        //Repeater
+    {0.1f,0.9f,0.1f},        //Button
+    {0.9f,0.1f,0.1f},        //Button
+};
 
 const char *get_entity_name(enum EntityType type)
 {
@@ -83,11 +93,11 @@ void render_repeaters_range(struct GameState *gamestate, struct TileMap *tilemap
 
 void render_entities(struct GameState *gamestate, vec2 pos, float size)
 {
-    //Render slot first
+    //Render slot/buttons first
     for(int i = 0; i < gamestate->entity_count; ++i)
     {
         struct Entity ent = gamestate->entities[i];
-        if(ent.type != ENTITY_SLOT) continue;
+        if(ent.type != ENTITY_SLOT && ent.type != ENTITY_BUTTON && ent.type != ENTITY_ANTIBUTTON) continue;
         vec3 color;
         glm_vec3_copy(entities_color[(int)ent.type], color);
         unsigned int program;
@@ -107,7 +117,7 @@ void render_entities(struct GameState *gamestate, vec2 pos, float size)
     for(int i = 0; i < gamestate->entity_count; ++i)
     {
         struct Entity ent = gamestate->entities[i];
-        if(ent.type == ENTITY_SLOT) continue;
+        if(ent.type == ENTITY_SLOT || ent.type == ENTITY_BUTTON || ent.type == ENTITY_ANTIBUTTON) continue;
         vec3 color;
         glm_vec3_copy(entities_color[(int)ent.type], color);
         if(ent.type == ENTITY_KEY)
