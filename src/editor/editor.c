@@ -476,14 +476,156 @@ int ig_open_path_input_popup(const char *popup_id, char *input_buffer, char *out
     return result;
 }
 
+void handle_editor_window(struct Game *game)
+{
+    struct TileMap *tilemap = get_current_tilemap(game);
+    int level_width = tilemap->width, level_height = tilemap->height;
+
+    igPushID_Str("Layers");
+    igBegin(floating_editor, NULL, 0);
+    igSeparatorText("Layers:");
+    for (int i = 0; i < tilemap->layer_count; i++)
+    {
+        igPushID_Int(i);
+        char selectable_title [10] = "Layer ";
+        char number[3];
+        my_itoa(i, number, 10);
+        strcat(selectable_title, number);
+        tilemap_ig_layer(game, selectable_title, i);
+        igPopID();
+    }
+    igSeparatorText("Tiles:");
+    tilemap_ig_tile_selector(get_atlas_tilemap(), &tile_index, &tile_position);
+    igEnd();
+    igPopID();
+
+    //Tilemap edition
+    int edition = 0;
+    if(i_button_down(GLFW_MOUSE_BUTTON_1)) edition = 1;
+    if(i_button_down(GLFW_MOUSE_BUTTON_2)) edition = -1;
+    int alt = igIsKeyDown_Nil(ImGuiKey_LeftAlt);
+
+    ivec2 cursor_grid_ipos;
+    cursor_grid_ipos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2-0.5f);
+    cursor_grid_ipos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2-0.5f);
+    int is_inside = cursor_grid_ipos[0] >= 0 && cursor_grid_ipos[0] < level_width
+        && cursor_grid_ipos[1] >= 0 && cursor_grid_ipos[1] < level_height;
+
+    if(edition)
+    {
+        if(is_inside)
+        {
+            Tile *layer = tilemap_get_layer_by_index(tilemap, layer_selected);
+            Tile *tile_to_draw = layer + cursor_grid_ipos[0] + cursor_grid_ipos[1] * level_width;
+            if(edition > 0)
+            {
+                if(alt)
+                {
+                    tile_index = *tile_to_draw - 1; 
+                }
+                else
+                {
+                    *tile_to_draw = tile_index + 1; 
+                }
+            }
+            else
+            {
+                *tile_to_draw = 0;
+            }
+        }
+    }
+    unsigned int program = shaders_use_default();
+    mat3 transform;
+    vec2 size = {0.8f, 0.8f};
+    vec2 cursor_grid_pos;
+    cursor_grid_pos[0] = roundf(cursor_pos[0]-((float)level_width)/2+0.5f)+(float)(level_width)/2-0.5f;
+    cursor_grid_pos[1] = roundf(cursor_pos[1]-((float)level_height)/2+0.5f)+(float)(level_height)/2-0.5f;
+
+    compute_transform(transform, cursor_grid_pos, size);
+    draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.8f);
+}
+
+void handle_entity_edition(struct Game *game, vec2 mouse_pos)
+{
+    struct TileMap *tilemap = get_current_tilemap(game);
+    struct GameState *gamestate = get_current_gamestate(game);
+    int level_width = tilemap->width, level_height = tilemap->height;
+
+
+    // Entity edition
+    if(igIsMouseClicked_Bool(ImGuiMouseButton_Right, false))
+    {
+        ivec2 cursor_grid_pos;
+        cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2-0.5f);
+        cursor_grid_pos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2-0.5f);
+        if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level_width
+                && cursor_grid_pos[1] >= 0 && cursor_grid_pos[0] < level_height)
+        {
+            igOpenPopup_Str("Menu", 0);
+            glm_ivec2_copy(cursor_grid_pos, popup_last_clicked_pos);
+        }
+    }
+    ImGuiIO *io = igGetIO_Nil();
+    if(igIsMouseDown_Nil(ImGuiMouseButton_Left) && !io->WantCaptureMouse)
+    {
+        if(!selection_started)
+        {
+            glm_vec2_copy(mouse_pos, selection_pos_start);
+            selection_started = 1;
+        }
+    }
+    else
+    {
+        selection_started = 0;
+    }
+    if(selection_started)
+    {
+        selection_draw(mouse_pos);
+        selection_ents_count = 0;
+        vec2 world_pos_start;
+        vec2 world_mouse_pos;
+        camera_screen_to_world(&game->camera, selection_pos_start, world_pos_start);
+        camera_screen_to_world(&game->camera, mouse_pos, world_mouse_pos);
+        world_pos_start[0] = world_pos_start[0]+(float)tilemap->width/2-0.5f;
+        world_pos_start[1] = -world_pos_start[1]+(float)tilemap->height/2-0.5f;
+        world_mouse_pos[0] = world_mouse_pos[0]+(float)tilemap->width/2-0.5f;
+        world_mouse_pos[1] = -world_mouse_pos[1]+(float)tilemap->height/2-0.5f;
+
+        float bound_min_x = MIN(world_pos_start[0], world_mouse_pos[0]);
+        float bound_max_x = MAX(world_pos_start[0], world_mouse_pos[0]);
+        float bound_min_y = MIN(world_pos_start[1], world_mouse_pos[1]);
+        float bound_max_y = MAX(world_pos_start[1], world_mouse_pos[1]);
+        for(int i = 0; i < gamestate->entity_count; ++i)
+        {
+            struct Entity *ent = gamestate->entities+i;
+            int inside_x = bound_min_x < (float)ent->position[0] && (float)ent->position[0] < bound_max_x;
+            int inside_y = bound_min_y < (float)ent->position[1] && (float)ent->position[1] < bound_max_y;
+            if(inside_x && inside_y)
+            {
+                selection_ents[selection_ents_count++] = i; 
+            }
+        }
+    }
+    unsigned int program = shaders_use_default();
+    for(int i = 0; i < selection_ents_count; ++i)
+    {
+        struct Entity *ent = gamestate->entities+(selection_ents[i]);
+        mat3 transform;
+        vec2 size = {1.1f, 1.1f};
+        vec2 pos;
+        pos[0] = (float)ent->position[0]-(float)tilemap->width/2+0.5f;
+        pos[1] = (float)tilemap->height/2-(float)ent->position[1]-0.5f;
+
+        compute_transform(transform, pos, size);
+        draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.2f);
+    }
+
+}
+
 void editor_update(struct Game *game, GLFWwindow *window)
 {
-    ImGuiIO *io = igGetIO_Nil();
+    //ImGuiIO *io = igGetIO_Nil();
     struct GameState *gamestate = get_current_gamestate(game);
-    struct TileMap *tilemap = get_current_tilemap(game);
-
-    int level_width = tilemap->width;
-    int level_height = tilemap->height;
 
     int camera_view_changed = 0;
     float scroll = i_get_scroll_y();
@@ -511,150 +653,22 @@ void editor_update(struct Game *game, GLFWwindow *window)
         floating_editor_show = !floating_editor_show;
     }
 
+    vec2 mouse_pos;
+    i_get_mouse_pos_normalize(mouse_pos, mouse_pos+1);
+    camera_screen_to_world(&game->camera, mouse_pos, cursor_pos);
 
     if(camera_view_changed)
     {
         camera_compute_view(&game->camera);
     }
 
-    vec2 mouse_pos;
-    i_get_mouse_pos_normalize(mouse_pos, mouse_pos+1);
-    camera_screen_to_world(&game->camera, mouse_pos, cursor_pos);
-
     if(floating_editor_show)
     {
-        igPushID_Str("Layers");
-        igBegin(floating_editor, NULL, 0);
-        igSeparatorText("Layers:");
-        for (int i = 0; i < tilemap->layer_count; i++)
-        {
-            igPushID_Int(i);
-            char selectable_title [10] = "Layer ";
-            char number[3];
-            my_itoa(i, number, 10);
-            strcat(selectable_title, number);
-            tilemap_ig_layer(game, selectable_title, i);
-            igPopID();
-        }
-        igSeparatorText("Tiles:");
-        tilemap_ig_tile_selector(get_atlas_tilemap(), &tile_index, &tile_position);
-        igEnd();
-        igPopID();
-
-        //Tilemap edition
-        int edition = 0;
-        if(i_button_down(GLFW_MOUSE_BUTTON_1)) edition = 1;
-        if(i_button_down(GLFW_MOUSE_BUTTON_2)) edition = -1;
-        int alt = igIsKeyDown_Nil(ImGuiKey_LeftAlt);
-
-        ivec2 cursor_grid_ipos;
-        cursor_grid_ipos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2-0.5f);
-        cursor_grid_ipos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2-0.5f);
-        int is_inside = cursor_grid_ipos[0] >= 0 && cursor_grid_ipos[0] < level_width
-                    && cursor_grid_ipos[1] >= 0 && cursor_grid_ipos[1] < level_height;
-
-        if(edition)
-        {
-            if(is_inside)
-            {
-                Tile *layer = tilemap_get_layer_by_index(tilemap, layer_selected);
-                Tile *tile_to_draw = layer + cursor_grid_ipos[0] + cursor_grid_ipos[1] * level_width;
-                if(edition > 0)
-                {
-                    if(alt)
-                    {
-                        tile_index = *tile_to_draw - 1; 
-                    }
-                    else
-                    {
-                        *tile_to_draw = tile_index + 1; 
-                    }
-                }
-                else
-                {
-                    *tile_to_draw = 0;
-                }
-            }
-        }
-        unsigned int program = shaders_use_default();
-        mat3 transform;
-        vec2 size = {0.8f, 0.8f};
-        vec2 cursor_grid_pos;
-        cursor_grid_pos[0] = roundf(cursor_pos[0]-((float)level_width)/2+0.5f)+(float)(level_width)/2-0.5f;
-        cursor_grid_pos[1] = roundf(cursor_pos[1]-((float)level_height)/2+0.5f)+(float)(level_height)/2-0.5f;
-
-        compute_transform(transform, cursor_grid_pos, size);
-        draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.8f);
+        handle_editor_window(game);
     }
     else
     {
-        // Entity edition
-        if(igIsMouseClicked_Bool(ImGuiMouseButton_Right, false))
-        {
-            ivec2 cursor_grid_pos;
-            cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2-0.5f);
-            cursor_grid_pos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2-0.5f);
-            if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level_width
-                    && cursor_grid_pos[1] >= 0 && cursor_grid_pos[0] < level_height)
-            {
-                igOpenPopup_Str("Menu", 0);
-                glm_ivec2_copy(cursor_grid_pos, popup_last_clicked_pos);
-            }
-        }
-        ImGuiIO *io = igGetIO_Nil();
-        if(igIsMouseDown_Nil(ImGuiMouseButton_Left) && !io->WantCaptureMouse)
-        {
-            if(!selection_started)
-            {
-                glm_vec2_copy(mouse_pos, selection_pos_start);
-                selection_started = 1;
-            }
-        }
-        else
-        {
-            selection_started = 0;
-        }
-        if(selection_started)
-        {
-            selection_draw(mouse_pos);
-            selection_ents_count = 0;
-            vec2 world_pos_start;
-            vec2 world_mouse_pos;
-            camera_screen_to_world(&game->camera, selection_pos_start, world_pos_start);
-            camera_screen_to_world(&game->camera, mouse_pos, world_mouse_pos);
-            world_pos_start[0] = world_pos_start[0]+(float)tilemap->width/2-0.5f;
-            world_pos_start[1] = -world_pos_start[1]+(float)tilemap->height/2-0.5f;
-            world_mouse_pos[0] = world_mouse_pos[0]+(float)tilemap->width/2-0.5f;
-            world_mouse_pos[1] = -world_mouse_pos[1]+(float)tilemap->height/2-0.5f;
-
-            float bound_min_x = MIN(world_pos_start[0], world_mouse_pos[0]);
-            float bound_max_x = MAX(world_pos_start[0], world_mouse_pos[0]);
-            float bound_min_y = MIN(world_pos_start[1], world_mouse_pos[1]);
-            float bound_max_y = MAX(world_pos_start[1], world_mouse_pos[1]);
-            for(int i = 0; i < gamestate->entity_count; ++i)
-            {
-                struct Entity *ent = gamestate->entities+i;
-                int inside_x = bound_min_x < (float)ent->position[0] && (float)ent->position[0] < bound_max_x;
-                int inside_y = bound_min_y < (float)ent->position[1] && (float)ent->position[1] < bound_max_y;
-                if(inside_x && inside_y)
-                {
-                    selection_ents[selection_ents_count++] = i; 
-                }
-            }
-        }
-        unsigned int program = shaders_use_default();
-        for(int i = 0; i < selection_ents_count; ++i)
-        {
-            struct Entity *ent = gamestate->entities+(selection_ents[i]);
-            mat3 transform;
-            vec2 size = {1.1f, 1.1f};
-            vec2 pos;
-            pos[0] = (float)ent->position[0]-(float)tilemap->width/2+0.5f;
-            pos[1] = (float)tilemap->height/2-(float)ent->position[1]-0.5f;
-
-            compute_transform(transform, pos, size);
-            draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.2f);
-        }
+        handle_entity_edition(game, mouse_pos);
     }
 
     menu_bar(game);
@@ -663,6 +677,30 @@ void editor_update(struct Game *game, GLFWwindow *window)
     if(igBeginPopupContextItem("Menu", flags))
     {
         int found = 0;
+        if(selection_ents_count)
+        {
+            const int number_max_char = 3;
+            char str_name[30] = "Selection (";
+            char str_number[number_max_char];
+            my_itoa(selection_ents_count, str_number, 10);
+            strcat(str_name, str_number);
+            strcat(str_name, " ents)");
+            igPushID_Str("Selection");
+            if(igBeginMenu(str_name, true))
+            {
+                if(igSelectable_Bool("Move", false, 0, (struct ImVec2){0,0}))
+                {
+                    reposition_selection = 1;
+                    glm_ivec2_zero(reposition_selection_delta);
+                }
+                if(igSelectable_Bool("Remove", false, 0, (struct ImVec2){0,0}))
+                {
+                    deletion_selection = 1;
+                }
+                igEndMenu();
+            }
+            igPopID();
+        }
         for(int entity_index = 0; entity_index < gamestate->entity_count; ++entity_index)
         {
             struct Entity *ent = gamestate->entities+entity_index;
@@ -697,30 +735,6 @@ void editor_update(struct Game *game, GLFWwindow *window)
                     igEndMenu();
                 }
             }
-        }
-        if(selection_ents_count)
-        {
-            const int number_max_char = 3;
-            char str_name[30] = "Selection (";
-            char str_number[number_max_char];
-            my_itoa(selection_ents_count, str_number, 10);
-            strcat(str_name, str_number);
-            strcat(str_name, " ents)");
-            igPushID_Str("Selection");
-            if(igBeginMenu(str_name, true))
-            {
-                if(igSelectable_Bool("Move", false, 0, (struct ImVec2){0,0}))
-                {
-                    reposition_selection = 1;
-                    glm_ivec2_zero(reposition_selection_delta);
-                }
-                if(igSelectable_Bool("Remove", false, 0, (struct ImVec2){0,0}))
-                {
-                    deletion_selection = 1;
-                }
-                igEndMenu();
-            }
-            igPopID();
         }
         if(!found && !selection_ents_count)
         {
