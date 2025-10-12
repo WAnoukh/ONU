@@ -9,39 +9,22 @@
 #include "rendering/rendering.h"
 #include "tilemap.h"
 #include "level.h"
+#include "transform.h"
 
 #define DEFAULT_LEVEL_SIZE 10
 #define DEFAULT_LEVEL_GRID_SIZE DEFAULT_LEVEL_SIZE * DEFAULT_LEVEL_SIZE
 
 
-enum TileSolidity default_solidmap[DEFAULT_LEVEL_GRID_SIZE] = 
-{
-    STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID,
-    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID, STILE_SOLID,
-    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID,
-    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID,
-    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID,
-    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID,
-    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID,
-    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID,
-    STILE_SOLID, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_EMPTY, STILE_SOLID,
-    STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID, STILE_SOLID,
-};
 
 void level_deinit(struct Level *level)
 {
-    free(level->tilemap.solidity);
     free(level->tilemap.tile);
 }
 
 void get_default_level(struct Level *level)
 {
     //TILEMAP
-    //solidity
-    int grid_size=sizeof(enum TileSolidity) * DEFAULT_LEVEL_GRID_SIZE;
-    level->tilemap.solidity = malloc(grid_size);
-    memcpy(level->tilemap.solidity, default_solidmap, grid_size);
-    level->tilemap.layer_count = 0;
+    int grid_size = DEFAULT_LEVEL_GRID_SIZE;
     //tiles
     level->tilemap.tile = malloc(sizeof(Tile) * grid_size);
     level->tilemap.layer_count = 1;
@@ -49,6 +32,9 @@ void get_default_level(struct Level *level)
     printf("Tiles init %d \n", level->tilemap.tile[0]);
     level_set_width(level, DEFAULT_LEVEL_SIZE);
     level_set_height(level, DEFAULT_LEVEL_SIZE);
+    //views
+    level->views_width = 0;
+    level->views_height = 0;
 
     struct GameState *gamestate = &level->gamestate;
     gamestate->entity_count = 0;
@@ -75,6 +61,33 @@ void get_default_level(struct Level *level)
     gamestate->is_door_opened = 0;
 }
 
+void draw_view_borders(struct Level *level, vec2 pos, float size)
+{
+    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    int level_width = level_get_width(level);
+    int level_height = level_get_height(level);
+    unsigned int program;
+    program = shaders_use_default(); 
+    vec3 color = {0.2f, 1, 0.2f};
+
+    for(int x = 0; x < level_width/level->views_width; x++)
+    {
+        for(int y = 0; y < level_height/level->views_height; y++)
+        {
+            mat3 transform;
+            vec2 pos_offset;
+            vec2 size_vec = {size*(float)level->views_width, size*(float)level->views_height};
+
+            pos_offset[0] = ((float)x + 0.5f) * size_vec[0];
+            pos_offset[1] = (-(float)y - 0.5f) * size_vec[1];
+            glm_vec2_add(pos, pos_offset, pos_offset);
+            compute_transform(transform, pos_offset, size_vec);
+            draw_transformed_quad(program, transform, color, 1);
+        }
+    }
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+}
+
 void render_level(struct Level *level, struct GameState *gamestate, int layer_mask)
 {
     vec2 pos = {0,0};
@@ -88,7 +101,7 @@ void render_level(struct Level *level, struct GameState *gamestate, int layer_ma
     }
     if(layer_mask & 0b1)
     {
-        tilemap_render_solidmap(level->tilemap.solidity, level_get_width(level), level_get_height(level), pos, size);
+        tilemap_render_solidmap(&level->tilemap, level_get_width(level), level_get_height(level), pos, size);
     }
     vec2 ent_offset = {-0.5f*size*(float)level->tilemap.width, 0.5f*size*(float)level->tilemap.height};
     vec2 ents_pos;
@@ -99,26 +112,21 @@ void render_level(struct Level *level, struct GameState *gamestate, int layer_ma
         render_repeaters_range(gamestate, &level->tilemap, ents_pos, size);
         render_entities(gamestate, ents_pos, size);
     }
+
+    if(level->views_height > 0 && level->views_width > 0)
+    {
+       draw_view_borders(level, ents_pos, size);
+    }
 }
 
 void resize_level(struct Level *level, int new_width, int new_height)
 {
     int new_size = new_height*new_width;
-    enum TileSolidity *new_solidmap = malloc(sizeof(enum TileSolidity)*new_size);
-    if(!new_solidmap)
-    {
-        printf("Error while allocating resized level collisions");
-        exit(1);
-    }
     Tile *new_tiles = malloc(sizeof(Tile)*new_size*level->tilemap.layer_count);
     if(!new_tiles)
     {
         printf("Error while allocating resized level tiles");
         exit(1);
-    }
-    for(int i = 0; i < new_size; ++i)
-    {
-        new_solidmap[i] = tilemap_get_default_tile_solidity();
     }
     for(int i = 0; i < new_size*level->tilemap.layer_count; ++i)
     {
@@ -132,14 +140,11 @@ void resize_level(struct Level *level, int new_width, int new_height)
     {
         int original_index = h * level_get_width(level);
         int new_index = h * new_width;
-        memcpy(new_solidmap+new_index, level->tilemap.solidity+original_index, sizeof(enum TileSolidity)*copy_width);
         for(int layer =0; layer<level->tilemap.layer_count; ++layer)
         {
             memcpy(new_tiles+(layer*new_size)+new_index, level->tilemap.tile+original_index+(layer*level_get_width(level)*level_get_height(level)), sizeof(Tile)*copy_width);
         }
     }
-    free(level->tilemap.solidity);
-    level->tilemap.solidity = new_solidmap;
     free(level->tilemap.tile);
     level->tilemap.tile = new_tiles;
     level_set_width(level, new_width);

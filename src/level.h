@@ -9,14 +9,8 @@ struct Level
 {
     struct TileMap tilemap;
     struct GameState gamestate;
-    /*struct Entity entities[100];
-    struct KeyBlockData key_block_data[50];
-    struct SlotData slot_data[50];
-    int entity_count;
-    int key_block_data_count;
-    int slot_data_count;
-    int is_door_opened;
-    int is_door_reached;*/
+    int views_width;
+    int views_height;
 };
 
 static inline int level_get_width(const struct Level *level)

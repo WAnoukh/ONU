@@ -6,22 +6,11 @@
 #include "texture.h"
 #include "transform.h"
 
-const enum TileSolidity DEFAULT_STILE = STILE_SOLID;
 const int DEFAULT_TILE = 0;
-
-vec3 tile_color[2] = {
-    {1.f,1.f,1.f},
-    {0.1f,0.5f,0.3f},
-};
 
 int tilemap_get_default_tile()
 {
     return DEFAULT_TILE;
-}
-
-int tilemap_get_default_tile_solidity()
-{
-    return DEFAULT_STILE;
 }
 
 void tilemap_render_layer(struct TileMap *tilemap, int layer, vec2 pos, float size)
@@ -65,7 +54,13 @@ void tilemap_render_layer(struct TileMap *tilemap, int layer, vec2 pos, float si
     }
 }
 
-void tilemap_render_solidmap(const enum TileSolidity *solidmap, int tm_width, int tm_height, vec2 pos, float size)
+int tilemap_is_tile_solid(Tile tile)
+{
+    if(tile == 4 || tile == 5 || tile == 24 || tile == 25 || tile == 44 || tile == 45) return 0;
+    return 1;
+}
+
+void tilemap_render_solidmap(struct TileMap *tilemap, int tm_width, int tm_height, vec2 pos, float size)
 {
     int x = 0;
     int y = (int)tm_height;
@@ -74,10 +69,9 @@ void tilemap_render_solidmap(const enum TileSolidity *solidmap, int tm_width, in
     unsigned int program = shaders_use_default();
     for (int i = 0; i < tm_height * tm_width; ++i)
     {
-        const enum TileSolidity solidity = solidmap[i];
-        if(solidity == STILE_SOLID) 
+        if(tilemap_is_tile_solid(tilemap->tile[i])) 
         {
-            vec3 *color =   (vec3*)tile_color[solidity];
+            vec3 color = {0.1f,0.5f,0.3f};
 
             mat3 transform;
             vec2 size_vec = {size, size};
@@ -86,7 +80,7 @@ void tilemap_render_solidmap(const enum TileSolidity *solidmap, int tm_width, in
             pos_offset[1] = ((float)y-0.5f) * size - tm_height_2;
             glm_vec2_add(pos, pos_offset, pos_offset);
             compute_transform(transform, pos_offset, size_vec);
-            draw_transformed_quad(program, transform, *color, 0.6f);
+            draw_transformed_quad(program, transform, color, 0.6f);
         }
         ++x;
         if (x>=tm_width)
@@ -114,22 +108,6 @@ void tilemap_shift_right(struct TileMap *tilemap, int amount)
         printf("Error: shifting right with a negative amount"); 
         return;
     }
-    // Collisions
-    for(int y = 0; y < tilemap->height; ++y)
-    {
-        
-        for(int x = tilemap->width - 1; x >= amount; --x)
-        {
-            int index = x + y * tilemap->width; 
-            tilemap->solidity[index] = tilemap->solidity[index-amount]; 
-        }
-        
-        for(int x = 0; x < amount; ++x)
-        {
-            int index = x + y * tilemap->width; 
-            tilemap->solidity[index] = tilemap_get_default_tile_solidity();
-        }
-    }
     // Tile Layers
     for(int layer_index = 0; layer_index < tilemap->layer_count; ++layer_index)
     {
@@ -156,21 +134,6 @@ void tilemap_shift_left(struct TileMap *tilemap, int amount)
     {
         printf("Error: shifting left with a negative amount"); 
         return;
-    }
-    // Collisions
-    for(int y = 0; y < tilemap->height; ++y)
-    {
-        int end = tilemap->width - amount;
-        for(int x = 0; x < end; ++x)
-        {
-            int index = x + y * tilemap->width; 
-            tilemap->solidity[index] = tilemap->solidity[index+amount]; 
-        }
-        for(int x = end; x < tilemap->width; ++x)
-        {
-            int index = x + y * tilemap->width; 
-            tilemap->solidity[index] = tilemap_get_default_tile_solidity();
-        }
     }
     // Tile Layers
     for(int layer_index = 0; layer_index < tilemap->layer_count; ++layer_index)
@@ -200,20 +163,6 @@ void tilemap_shift_down(struct TileMap *tilemap, int amount)
         printf("Error: shifting up with a negative amount"); 
         return;
     }
-    // Collisions
-    for(int x = 0; x < tilemap->width; ++x)
-    {
-        for(int y = tilemap->height-1; y >= amount; --y)
-        {
-            int index = x + y * tilemap->width; 
-            tilemap->solidity[index] = tilemap->solidity[index-(amount*tilemap->width)]; 
-        }
-        for(int y = 0; y < amount; ++y)
-        {
-            int index = x + y * tilemap->width; 
-            tilemap->solidity[index] = tilemap_get_default_tile_solidity();
-        }
-    }
     // Tile Layers
     for(int layer_index = 0; layer_index < tilemap->layer_count; ++layer_index)
     {
@@ -240,21 +189,6 @@ void tilemap_shift_up(struct TileMap *tilemap, int amount)
     { 
         printf("Error: shifting down with a negative amount"); 
         return;
-    }
-    // Collisions
-    for(int x = 0; x < tilemap->width; ++x)
-    {
-        int end = tilemap->height-amount;
-        for(int y = 0; y < end; ++y)
-        {
-            int index = x + y * tilemap->width; 
-            tilemap->solidity[index] = tilemap->solidity[index+(amount*tilemap->width)]; 
-        }
-        for(int y = end; y < tilemap->height; ++y)
-        {
-            int index = x + y * tilemap->width; 
-            tilemap->solidity[index] = tilemap_get_default_tile_solidity();
-        }
     }
     // Tile Layers
     for(int layer_index = 0; layer_index < tilemap->layer_count; ++layer_index)
@@ -301,6 +235,6 @@ int compute_index_from_position(struct TileMap *level, ivec2 position)
 
 int is_tilemap_solid_at(struct TileMap *tilemap, ivec2 position)
 {
-   return tilemap->solidity[compute_index_from_position(tilemap, position)] == STILE_SOLID;
+   return tilemap_is_tile_solid(tilemap->tile[compute_index_from_position(tilemap, position)]);
 }
 

@@ -109,7 +109,7 @@ int editor_initialize(GLFWwindow *window)
     {
         return 0;
     }
-    ImGuiIO* io = igGetIO_ContextPtr(ctx);
+    //ImGuiIO* io = igGetIO_ContextPtr(ctx);
     ImGuiStyle* style = igGetStyle();
 
     ImGuiStyle_ScaleAllSizes(style, ui_scale);
@@ -252,6 +252,15 @@ void menu_bar(struct Game *game)
                 level_temp_size_changed = 0;
             }
 
+            igSeparator();
+            igText("Views sizes:");
+            ivec2 views_size = {game->level.views_width, game->level.views_height};
+            if(ig_position_input("viewsSize", views_size))
+            {
+                game->level.views_width = views_size[0];
+                game->level.views_height = views_size[1];
+            }
+
             igEndMenu();
         }
         else
@@ -357,6 +366,7 @@ void tilemap_ig_tile_selector(struct TextureAtlas atlas, int *out_index, struct 
         tile_x = (int)(u * (float)atlas.width);
         tile_y = (int)(v * (float)atlas.height);
         *out_index = tile_y * atlas.width + tile_x;
+        printf("Selected tile n %d\n", *out_index);
     }
     else
     {
@@ -539,11 +549,6 @@ void editor_update(struct Game *game, GLFWwindow *window)
 
         if(edition && layer_selected == 0)
         {
-            if(is_inside)
-            {
-                int index =cursor_grid_ipos[0]+cursor_grid_ipos[1]*level_width;
-                game->level.tilemap.solidity[index] = edition > 0 ? STILE_SOLID : STILE_EMPTY;
-            }
         }
         if(edition && layer_selected >= 2)
         {

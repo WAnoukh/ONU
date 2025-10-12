@@ -186,6 +186,18 @@ void draw_quad()
     GLCheckError();
 }
 
+void draw_wire_quad()
+{
+    GLCheckError();
+    if (quad_EBO == 0)
+    {
+        initialize_quad();
+    }
+    glBindVertexArray(quad_VAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    GLCheckError();
+}
+
 void draw_transformed_quad(unsigned int program, mat3 transform, vec3 color, float alpha)
 {
     mat3 result;

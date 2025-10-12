@@ -3,18 +3,10 @@
 #include <cglm/ivec2.h>
 #include <stdio.h>
 
-enum TileSolidity
-{
-    STILE_EMPTY,
-    STILE_SOLID,
-    STILE_COUNT,
-};
-
 typedef int Tile;
 
 struct TileMap
 {
-    enum TileSolidity *solidity;
     Tile *tile;
     int width;
     int height;
@@ -37,9 +29,9 @@ int tilemap_get_default_tile_solidity();
 
 void tilemap_render_layer(struct TileMap *tilemap, int layer, vec2 pos, float size);
 
-void tilemap_render_solidmap(const enum TileSolidity *solidmap, int tm_width, int tm_height, vec2 pos, float size);
+void tilemap_render_solidmap(struct TileMap *tilemap, int tm_width, int tm_height, vec2 pos, float size);
 
-void tilemap_render_background(const struct TileMap *tilemap, vec3 pos, float size);
+void tilemap_render_background(const struct TileMap *tilemap, vec2 pos, float size);
 
 void tilemap_shift_right(struct TileMap *tilemap, int amount);
 

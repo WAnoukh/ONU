@@ -8,6 +8,13 @@
 #include "game.h"
 
 #define S_ERROR(msg) printf("%s, %d, Serialization error: %s", __FILE__, __LINE__, msg)
+#define MAJOR 0
+#define MINOR 3
+#define PATCH 0
+
+const int VMAJOR = MAJOR;
+const int VMINOR = MINOR;
+const int VPATCH = PATCH;
 
 void serialize_gamestate(const struct GameState *gamestate, FILE *file)
 {
@@ -32,16 +39,15 @@ int serialize_level(const struct Level *level, const char* path)
         return 0;
     }
 
+    fwrite(&VMAJOR, sizeof(VMAJOR), 1, file);
+    fwrite(&VMINOR, sizeof(VMINOR), 1, file);
+    fwrite(&VPATCH, sizeof(VPATCH), 1, file);
+
     int level_width = level_get_width(level);
     int level_height = level_get_height(level);
 
     fwrite(&level_width, sizeof(level_width), 1, file);
     fwrite(&level_height, sizeof(level_height), 1, file);
-
-    for(int i = 0; i < level_height * level_width; ++i)
-    {
-        fwrite(level->tilemap.solidity + i, sizeof(enum TileSolidity), 1, file);
-    }
 
     int layer_count = level->tilemap.layer_count;
     fwrite(&layer_count, sizeof(layer_count), 1, file);
@@ -97,12 +103,13 @@ int deserialize_level(struct Level *out_level, const char *path)
         return 0;
     }
 
+    int major, minor, patch; 
+    fread(&major, sizeof(major), 1, file);
+    fread(&minor, sizeof(minor), 1, file);
+    fread(&patch, sizeof(patch), 1, file);
 
     fread(&level.tilemap.width, sizeof(level.tilemap.width), 1, file);
     fread(&level.tilemap.height, sizeof(level.tilemap.height), 1, file);
-    level.tilemap.solidity = malloc(sizeof(enum TileSolidity)*level.tilemap.width*level.tilemap.height);
-
-    fread(level.tilemap.solidity, sizeof(enum TileSolidity)*level.tilemap.height*level.tilemap.width, 1, file);
 
     fread(&level.tilemap.layer_count, sizeof(level.tilemap.layer_count), 1, file);
     level.tilemap.tile = malloc(sizeof(Tile)*level.tilemap.width*level.tilemap.height*level.tilemap.layer_count);
