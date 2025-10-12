@@ -63,8 +63,7 @@ int creation_action_target = 0;
 int deletion_index = -1;
 int deletion_selection = 0;
 
-int layer_selected = 1;
-int layer_last_selected = 0;
+int layer_selected = 0;
 
 int selection_started = 0;
 vec2 selection_pos_start;
@@ -286,7 +285,7 @@ void menu_bar(struct Game *game)
     }
 }
 
-void tilemap_ig_layer(struct Game *game, char *title, int layer, int show_visibility)
+void tilemap_ig_layer(struct Game *game, char *title, int layer)
 {
     ImVec2 spacing = igGetStyle()->ItemSpacing;
 
@@ -298,16 +297,14 @@ void tilemap_ig_layer(struct Game *game, char *title, int layer, int show_visibi
 
     igSameLine(0, 0);
 
-    if(show_visibility)
+    int visible = layer_get_visibility(game, layer);
+    if (igSmallButton(visible ? "O" : "_"))
     {
-        int visible = layer_get_visibility(game, layer);
-        if (igSmallButton(visible ? "O" : "_"))
-        {
-            layer_set_visibility(game, layer, !visible);
-        }
-        igSameLine(0, spacing.x);
+        layer_set_visibility(game, layer, !visible);
     }
-    else
+    igSameLine(0, spacing.x);
+
+    /* if you want the possibility of having an unmaskable layer
     {
         layer_set_visibility(game, layer, layer_selected == layer);
 
@@ -316,6 +313,7 @@ void tilemap_ig_layer(struct Game *game, char *title, int layer, int show_visibi
         float small_button_size =  text_size.x + igGetStyle()->FramePadding.x * 2.0f + spacing.x;
         igSameLine(0, small_button_size);
     }
+    */
 
     igText(title);
 }
@@ -510,20 +508,8 @@ void editor_update(struct Game *game, GLFWwindow *window)
     if(igIsKeyPressed_Bool(ImGuiKey_Tab, false))
     {
         floating_editor_show = !floating_editor_show;
-        if(floating_editor_show)
-        {
-            layer_selected = layer_last_selected;
-        }
     }
 
-    if(!floating_editor_show)
-    {
-        layer_selected = 1;
-    }
-    else
-    {
-        layer_last_selected = layer_selected;
-    }
 
     if(camera_view_changed)
     {
@@ -534,8 +520,27 @@ void editor_update(struct Game *game, GLFWwindow *window)
     i_get_mouse_pos_normalize(mouse_pos, mouse_pos+1);
     camera_screen_to_world(&game->camera, mouse_pos, cursor_pos);
 
-    if(layer_selected != 1)
+    if(floating_editor_show)
     {
+        igPushID_Str("Layers");
+        igBegin(floating_editor, NULL, 0);
+        igSeparatorText("Layers:");
+        for (int i = 0; i < tilemap->layer_count; i++)
+        {
+            igPushID_Int(i);
+            char selectable_title [10] = "Layer ";
+            char number[3];
+            my_itoa(i, number, 10);
+            strcat(selectable_title, number);
+            tilemap_ig_layer(game, selectable_title, i);
+            igPopID();
+        }
+        igSeparatorText("Tiles:");
+        tilemap_ig_tile_selector(get_atlas_tilemap(), &tile_index, &tile_position);
+        igEnd();
+        igPopID();
+
+        //Tilemap edition
         int edition = 0;
         if(i_button_down(GLFW_MOUSE_BUTTON_1)) edition = 1;
         if(i_button_down(GLFW_MOUSE_BUTTON_2)) edition = -1;
@@ -547,14 +552,11 @@ void editor_update(struct Game *game, GLFWwindow *window)
         int is_inside = cursor_grid_ipos[0] >= 0 && cursor_grid_ipos[0] < level_width
                     && cursor_grid_ipos[1] >= 0 && cursor_grid_ipos[1] < level_height;
 
-        if(edition && layer_selected == 0)
-        {
-        }
-        if(edition && layer_selected >= 2)
+        if(edition)
         {
             if(is_inside)
             {
-                Tile *layer = tilemap_get_layer_by_index(tilemap, layer_selected - 2);
+                Tile *layer = tilemap_get_layer_by_index(tilemap, layer_selected);
                 Tile *tile_to_draw = layer + cursor_grid_ipos[0] + cursor_grid_ipos[1] * level_width;
                 if(edition > 0)
                 {
@@ -583,41 +585,9 @@ void editor_update(struct Game *game, GLFWwindow *window)
         compute_transform(transform, cursor_grid_pos, size);
         draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.8f);
     }
-
-    if(floating_editor_show)
+    else
     {
-        igPushID_Str("Layers");
-        igBegin(floating_editor, NULL, 0);
-        igSeparatorText("Layers:");
-        igPushID_Int(0);
-        tilemap_ig_layer(game, "Collisions", 0, 0);
-        igPopID();
-        igPushID_Int(1);
-        tilemap_ig_layer(game, "Entities", 1, 1);
-        igPopID();
-        for (int i = 2; i < tilemap->layer_count+2; i++)
-        {
-            igPushID_Int(i);
-            char selectable_title [10] = "Layer ";
-            char number[3];
-            my_itoa(i-2, number, 10);
-            strcat(selectable_title, number);
-            tilemap_ig_layer(game, selectable_title, i, 1);
-            igPopID();
-        }
-        if(layer_selected >= 2)
-        {
-            igSeparatorText("Tiles:");
-            tilemap_ig_tile_selector(get_atlas_tilemap(), &tile_index, &tile_position);
-        }
-        igEnd();
-        igPopID();
-    }
-
-    menu_bar(game);
-
-    if(layer_selected == 1)
-    {
+        // Entity edition
         if(igIsMouseClicked_Bool(ImGuiMouseButton_Right, false))
         {
             ivec2 cursor_grid_pos;
@@ -685,6 +655,8 @@ void editor_update(struct Game *game, GLFWwindow *window)
             draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.2f);
         }
     }
+
+    menu_bar(game);
 
     ImGuiPopupFlags flags = ImGuiPopupFlags_None;
     if(igBeginPopupContextItem("Menu", flags))

@@ -95,23 +95,19 @@ void render_level(struct Level *level, struct GameState *gamestate, int layer_ma
 
     tilemap_render_background(&level->tilemap, pos, size);
 
-    if(level->tilemap.layer_count > 0 && (layer_mask & 0b100))
+    if(level->tilemap.layer_count > 0 && (layer_mask & 0b1))
     {
         tilemap_render_layer(&level->tilemap, 0, pos, size);
     }
-    if(layer_mask & 0b1)
-    {
-        tilemap_render_solidmap(&level->tilemap, level_get_width(level), level_get_height(level), pos, size);
-    }
+    
+    //tilemap_render_solidmap(&level->tilemap, level_get_width(level), level_get_height(level), pos, size);
+    
     vec2 ent_offset = {-0.5f*size*(float)level->tilemap.width, 0.5f*size*(float)level->tilemap.height};
     vec2 ents_pos;
     glm_vec2_add(pos, ent_offset, ents_pos);
 
-    if(layer_mask & 0b10)
-    {
-        render_repeaters_range(gamestate, &level->tilemap, ents_pos, size);
-        render_entities(gamestate, ents_pos, size);
-    }
+    render_repeaters_range(gamestate, &level->tilemap, ents_pos, size);
+    render_entities(gamestate, ents_pos, size);
 
     if(level->views_height > 0 && level->views_width > 0)
     {
