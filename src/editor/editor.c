@@ -237,6 +237,7 @@ void menu_bar(struct Game *game)
             if(level_temp_shift_changed && igButton("Comfirm", (struct ImVec2){0,0}))
             {
                 level_shift(&game->level, level_temp_shift);
+                load_gamestate(game, game->level.gamestate);
                 level_temp_shift[0] = 0;
                 level_temp_shift[1] = 0;
                 level_temp_shift_changed = 0;
