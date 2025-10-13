@@ -38,6 +38,9 @@ void get_default_level(struct Level *level)
 
     struct GameState *gamestate = &level->gamestate;
     gamestate->entity_count = 0;
+    gamestate->key_block_data_count = 0;
+    gamestate->slot_data_count = 0;
+    gamestate->door_data_count = 0;
     create_slot_at(gamestate, 2, 5, ACTION_DOOR_OPEN, -1);
     create_slot_at(gamestate, 7, 1, ACTION_UP, 6);
     create_slot_at(gamestate, 7, 2, ACTION_DOWN, 6);
@@ -58,7 +61,7 @@ void get_default_level(struct Level *level)
     create_key_block_at(gamestate, 4, 1, GLFW_KEY_R);
     create_movable_at(gamestate, 7, 7, ENTITY_BOX);
     create_door_at(gamestate, 2, 0);
-    gamestate->is_door_opened = 0;
+    gamestate->is_end_reached = 0;
 }
 
 void draw_view_borders(struct Level *level, vec2 pos, float size)

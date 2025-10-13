@@ -51,6 +51,7 @@ enum EntityType
     ENTITY_REPEATER,
     ENTITY_BUTTON,
     ENTITY_ANTIBUTTON,
+    ENTITY_END,
     ENTITY_COUNT,
 };
 
@@ -74,11 +75,12 @@ struct GameState
     struct Entity entities[100];
     struct KeyBlockData key_block_data[50];
     struct SlotData slot_data[50];
+    struct DoorData door_data[50];
     int entity_count;
     int key_block_data_count;
     int slot_data_count;
-    int is_door_opened;
-    int is_door_reached;
+    int door_data_count;
+    int is_end_reached;
 };
 
 const char *get_entity_name(enum EntityType type);
@@ -142,9 +144,12 @@ static inline void create_door_at(struct GameState *gs, int x, int y)
 {
     gs->entities[gs->entity_count++] = (struct Entity){
         ENTITY_DOOR,
-        SOLIDITY_NONE,
+        SOLIDITY_STATIC,
         {x, y},
-        -1,
+        gs->door_data_count,
+    };
+    gs->door_data[gs->door_data_count++] = (struct DoorData){
+       0 
     };
 }
 
@@ -162,6 +167,16 @@ static inline void create_antibutton_at(struct GameState *gamestate, int x, int 
 {
     gamestate->entities[gamestate->entity_count++] = (struct Entity){
         ENTITY_ANTIBUTTON,
+        SOLIDITY_NONE,
+        {x, y},
+        -1,
+    };
+}
+
+static inline void create_end_at(struct GameState *gamestate, int x, int y)
+{
+    gamestate->entities[gamestate->entity_count++] = (struct Entity){
+        ENTITY_END,
         SOLIDITY_NONE,
         {x, y},
         -1,

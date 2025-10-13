@@ -168,6 +168,13 @@ void edit_entity_slot(struct GameState *gamestate, int *target, enum ActionType 
     igCombo_Str_arr("##action", (int*)type, get_action_names(), ACTION_COUNT, ACTION_COUNT);
 }
 
+void edit_entity_door(struct GameState *gamestate, int index)
+{
+    struct DoorData *door = gamestate->door_data+index;
+    igText("Is opened:");
+    igCheckbox("##opened", (bool *)(&door->is_opened));
+}
+
 int ig_position_input(const char *label, ivec2 pos)
 {
     int value_changed = 0;
@@ -229,7 +236,6 @@ void menu_bar(struct Game *game)
                 level_temp_shift_changed = 0;
             }
             igCheckbox("Show World Editor", &floating_editor_show);
-            igCheckbox("Door open", (_Bool *)(&gamestate->is_door_opened));
 
             igSeparator();
             igText("Shift Level:");
@@ -716,7 +722,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
                 strcat(str_name, ")");
                 if(igBeginMenu(str_name, true))
                 {
-                    if(ent->type == ENTITY_SLOT || ent->type == ENTITY_KEY)
+                    if(ent->type == ENTITY_SLOT || ent->type == ENTITY_KEY || ent->type == ENTITY_DOOR)
                     {
                         if(igSelectable_Bool("Edit", false, 0, (struct ImVec2){0,0}))
                         {
@@ -955,6 +961,9 @@ void editor_update(struct Game *game, GLFWwindow *window)
                     struct SlotData *slot = gamestate->slot_data+edition_entity->data_index;
                     edit_entity_slot(gamestate, &slot->action.target_entity, &slot->action.type);
                 }
+                break;
+            case ENTITY_DOOR:
+                    edit_entity_door(gamestate, edition_entity->data_index);
                 break;
             default:
                 igCloseCurrentPopup();

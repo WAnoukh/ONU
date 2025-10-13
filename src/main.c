@@ -60,9 +60,12 @@ int request_new_turn(struct Game *game, struct Action action)
     }
     if(action.type == ACTION_DOOR_OPEN)
     {
-        if(!gamestate->is_door_opened)
+        if(action.target_entity < 0) return 0;
+        struct Entity *targeted_door = gamestate->entities+action.target_entity;
+        struct DoorData *data = gamestate->door_data+targeted_door->data_index;
+        if(!data->is_opened)
         {
-            gamestate->is_door_opened = 1;
+            data->is_opened = 1;
             return 1;
         }
         else
@@ -72,9 +75,12 @@ int request_new_turn(struct Game *game, struct Action action)
     }
     if(action.type == ACTION_DOOR_CLOSE)
     {
-        if(gamestate->is_door_opened)
+        if(action.target_entity < 0) return 0;
+        struct Entity *targeted_door = gamestate->entities+action.target_entity;
+        struct DoorData *data = gamestate->door_data+targeted_door->data_index;
+        if(data->is_opened)
         {
-            gamestate->is_door_opened = 0;
+            data->is_opened = 0;
             return 1;
         }
         else
@@ -118,8 +124,49 @@ void process_buttons(struct GameState *gamestate)
 
     if(are_button_in_scene)
     {
-        gamestate->is_door_opened = are_all_button_correct;
+        for(int i = 0; i < gamestate->door_data_count; ++i)
+        {
+            gamestate->door_data[i].is_opened = are_all_button_correct;
+        }
     }
+}
+
+void check_if_player_reached_end(struct GameState *gamestate)
+{
+    int found = 0;
+    int player_reached = 0;
+    ivec2 other_pos;
+    for(int i = 0; i < gamestate->entity_count; ++i)
+    {
+        struct Entity *ent = gamestate->entities+i;
+        if(ent->type == ENTITY_PLAYER)
+        {
+            if(!found)
+            {
+                glm_ivec2_copy(ent->position, other_pos);
+                found = 1;
+            }
+            else if(found < 0 && glm_ivec2_eqv(other_pos, ent->position))
+            {
+               player_reached = 1;
+               break;
+            }
+        }
+        else if(ent->type == ENTITY_END) 
+        {
+            if(!found)
+            {
+                glm_ivec2_copy(ent->position, other_pos);
+                found = -1;
+            }
+            else if(found > 0 && glm_ivec2_eqv(other_pos, ent->position))
+            {
+                player_reached = 1;
+                break;
+            }
+        }
+    }
+    gamestate->is_end_reached = player_reached;
 }
 
 void update_key_blocks(struct Game *game)
@@ -184,8 +231,8 @@ void update_key_blocks(struct Game *game)
     }
     if(first_action && has_revelant_action_happended)
     {
-        printf(" revelant action \n");
         process_buttons(gamestate);
+        check_if_player_reached_end(gamestate);
     }
 }
 
@@ -263,7 +310,7 @@ int main()
 
         //Checkin if player reached the end door
         struct GameState *gamestate = get_current_gamestate(&game);
-        if(gamestate->is_door_reached)
+        if(gamestate->is_end_reached)
         {
             if(game.gamemode == GM_SEQUENCE)
             {

@@ -6,7 +6,8 @@
 #include "tilemap.h"
 #include "transform.h"
 
-const char *entity_names[] = {"None","Player","Box","Key","Slot","Door","Repeater","Button", "Anti-button"};
+const char *entity_names[] = {"None","Player","Box","Key",
+    "Slot","Door","Repeater","Button", "Anti-button","End"};
 const char *action_names[] = {"None","Up","Down","Left","Right","Undo","DoorOpen","DoorClose"};
 
 vec3 color_key_block_activated = {203.f, 214.f, 0.f};
@@ -20,7 +21,8 @@ vec3 entities_color[] = {
     {0.f,0.f,0.f},          //Door
     {0.9f,0.3f,0.4f},        //Repeater
     {0.1f,0.9f,0.1f},        //Button
-    {0.9f,0.1f,0.1f},        //Button
+    {0.9f,0.1f,0.1f},        //Anti-Button
+    {0.1f,0.4f,0.1f},        //End
 };
 
 const char *get_entity_name(enum EntityType type)
@@ -97,7 +99,8 @@ void render_entities(struct GameState *gamestate, vec2 pos, float size)
     for(int i = 0; i < gamestate->entity_count; ++i)
     {
         struct Entity ent = gamestate->entities[i];
-        if(ent.type != ENTITY_SLOT && ent.type != ENTITY_BUTTON && ent.type != ENTITY_ANTIBUTTON) continue;
+        if(ent.type != ENTITY_SLOT && ent.type != ENTITY_BUTTON 
+                && ent.type != ENTITY_ANTIBUTTON && ent.type != ENTITY_END) continue;
         vec3 color;
         glm_vec3_copy(entities_color[(int)ent.type], color);
         unsigned int program;
@@ -117,7 +120,8 @@ void render_entities(struct GameState *gamestate, vec2 pos, float size)
     for(int i = 0; i < gamestate->entity_count; ++i)
     {
         struct Entity ent = gamestate->entities[i];
-        if(ent.type == ENTITY_SLOT || ent.type == ENTITY_BUTTON || ent.type == ENTITY_ANTIBUTTON) continue;
+        if(ent.type == ENTITY_SLOT || ent.type == ENTITY_BUTTON 
+                || ent.type == ENTITY_ANTIBUTTON || ent.type == ENTITY_END) continue;
         vec3 color;
         glm_vec3_copy(entities_color[(int)ent.type], color);
         if(ent.type == ENTITY_KEY)
@@ -129,7 +133,8 @@ void render_entities(struct GameState *gamestate, vec2 pos, float size)
             }
         }else if(ent.type == ENTITY_DOOR)
         {
-            if(gamestate->is_door_opened)
+            struct DoorData *data = gamestate->door_data+ent.data_index;
+            if(data->is_opened)
             {
                 glm_vec3_copy(color_door_open, color);
             }
@@ -247,10 +252,13 @@ int try_push_entity(struct GameState *gamestate, struct TileMap *tilemap, struct
     glm_ivec2_add(entity->position, offset, target_pos);
 
     struct Entity *obstacle = get_entity_at(gamestate, target_pos);
-    if(entity->type == ENTITY_PLAYER && obstacle != NULL && obstacle->type == ENTITY_DOOR && gamestate->is_door_opened)
+    if(entity->type == ENTITY_PLAYER && obstacle != NULL && obstacle->type == ENTITY_DOOR)
     {
-        glm_ivec2_copy(target_pos, entity->position);
-        gamestate->is_door_reached = 1;
+        struct DoorData *data = gamestate->door_data+obstacle->data_index;
+        if(data->is_opened)
+        {
+            glm_ivec2_copy(target_pos, entity->position);
+        }
         return 1;
     }
     if(is_tilemap_solid_at(tilemap, target_pos))
