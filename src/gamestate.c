@@ -110,7 +110,7 @@ void render_entities(struct GameState *gamestate, vec2 pos, float size)
         vec2 size_vec = {size, size};
         vec2 pos_offset;
         pos_offset[0] = ((float)ent.position[0]+0.5f) * size;
-        pos_offset[1] = (-(float)ent.position[1]-0.5f) * size;
+        pos_offset[1] = ((float)ent.position[1]+0.5f) * size;
         glm_vec2_add(pos, pos_offset, pos_offset);
         compute_transform(transform, pos_offset, size_vec);
         draw_transformed_quad(program, transform, color, 1);
@@ -154,7 +154,7 @@ void render_entities(struct GameState *gamestate, vec2 pos, float size)
         vec2 size_vec = {size, size};
         vec2 pos_offset;
         pos_offset[0] = ((float)ent.position[0]+0.5f) * size;
-        pos_offset[1] = ((float)-ent.position[1]-0.5f) * size;
+        pos_offset[1] = ((float)ent.position[1]+0.5f) * size;
         glm_vec2_add(pos, pos_offset, pos_offset);
         compute_transform(transform, pos_offset, size_vec);
         draw_transformed_quad(program, transform, color, 1);

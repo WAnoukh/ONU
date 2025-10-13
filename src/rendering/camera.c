@@ -1,34 +1,35 @@
 #include "camera.h"
 #include "window/window.h"
 #include "cglm/mat3.h"
+#include <stdio.h>
 
 struct Camera camera_get_default()
 {
     struct Camera camera;
-    camera.zoom = 0.2f;
-    camera.pan[0] = 0;
-    camera.pan[1] = 0;
+    camera.zoom = 1.0f;
+    camera.pos[0] = 0;
+    camera.pos[1] = 0;
 
     return camera;
 }
 
 void camera_pan(struct Camera *camera, float x_offset, float y_offset)
 {
-    camera->pan[0] += x_offset;
-    camera->pan[1] += y_offset;
+    camera->pos[0] += x_offset;
+    camera->pos[1] += y_offset;
 }
 
 void camera_compute_view(struct Camera *camera)
 {
     float sx = camera->zoom / window_get_screen_ratio();
     float sy = camera->zoom;
-    float tx = camera->pan[0];
-    float ty = camera->pan[1];
+    float tx = -camera->pos[0];
+    float ty = camera->pos[1];
     glm_mat3_identity(camera->view);
     camera->view[0][0] = sx;
-    camera->view[1][1] = sy;
-    camera->view[2][0] = tx;
-    camera->view[2][1] = ty;
+    camera->view[1][1] = -sy;
+    camera->view[2][0] = tx*sx;
+    camera->view[2][1] = ty*sy;
     glm_mat3_inv(camera->view, camera->view_inverse);
 }
 

@@ -52,8 +52,8 @@ struct EditorCtx ectx_default()
     get_default_level(&ctx.level);
 
     ctx.camera.zoom = 0.2f;
-    ctx.camera.pan[0] = 0;
-    ctx.camera.pan[1] = 0;
+    ctx.camera.pos[0] = 0;
+    ctx.camera.pos[1] = 0;
     camera_compute_view(&ctx.camera);
 
     return ctx;

@@ -44,10 +44,10 @@ float triangle_vertices[] = {
 
 float quad_vertices[] = {
      // positions          //texture coords
-     0.5f,  0.5f,  0.0f,   1.0f, 1.0f, 
-     0.5f, -0.5f,  0.0f,   1.0f, 0.0f,
-    -0.5f, -0.5f,  0.0f,   0.0f, 0.0f,
-    -0.5f,  0.5f,  0.0f,   0.0f, 1.0f
+     0.5f,  0.5f,  0.0f,   1.0f, 0.0f, 
+     0.5f, -0.5f,  0.0f,   1.0f, 1.0f,
+    -0.5f, -0.5f,  0.0f,   0.0f, 1.0f,
+    -0.5f,  0.5f,  0.0f,   0.0f, 0.0f
 };
 
 unsigned int quad_indices[] = {

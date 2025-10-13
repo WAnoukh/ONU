@@ -527,8 +527,8 @@ void handle_editor_window(struct Level *level)
     int alt = igIsKeyDown_Nil(ImGuiKey_LeftAlt);
 
     ivec2 cursor_grid_ipos;
-    cursor_grid_ipos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2-0.5f);
-    cursor_grid_ipos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2-0.5f);
+    cursor_grid_ipos[0] = (int)roundf(cursor_pos[0]-0.5f);
+    cursor_grid_ipos[1] = (int)roundf(cursor_pos[1]-0.5f);
     int is_inside = cursor_grid_ipos[0] >= 0 && cursor_grid_ipos[0] < level_width
         && cursor_grid_ipos[1] >= 0 && cursor_grid_ipos[1] < level_height;
 
@@ -577,8 +577,8 @@ void handle_entity_edition(struct EditorCtx *ectx, vec2 mouse_pos)
     if(igIsMouseClicked_Bool(ImGuiMouseButton_Right, false))
     {
         ivec2 cursor_grid_pos;
-        cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2-0.5f);
-        cursor_grid_pos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2-0.5f);
+        cursor_grid_pos[0] = (int)roundf(cursor_pos[0]-0.5f);
+        cursor_grid_pos[1] = (int)roundf(cursor_pos[1]-0.5f);
         if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level_width
                 && cursor_grid_pos[1] >= 0 && cursor_grid_pos[1] < level_height)
         {
@@ -607,10 +607,10 @@ void handle_entity_edition(struct EditorCtx *ectx, vec2 mouse_pos)
         vec2 world_mouse_pos;
         camera_screen_to_world(&ectx->camera, selection_pos_start, world_pos_start);
         camera_screen_to_world(&ectx->camera, mouse_pos, world_mouse_pos);
-        world_pos_start[0] = world_pos_start[0]+(float)tilemap->width/2-0.5f;
-        world_pos_start[1] = -world_pos_start[1]+(float)tilemap->height/2-0.5f;
-        world_mouse_pos[0] = world_mouse_pos[0]+(float)tilemap->width/2-0.5f;
-        world_mouse_pos[1] = -world_mouse_pos[1]+(float)tilemap->height/2-0.5f;
+        world_pos_start[0] = world_pos_start[0]-0.5f;
+        world_pos_start[1] = world_pos_start[1]-0.5f;
+        world_mouse_pos[0] = world_mouse_pos[0]-0.5f;
+        world_mouse_pos[1] = world_mouse_pos[1]-0.5f;
 
         float bound_min_x = MIN(world_pos_start[0], world_mouse_pos[0]);
         float bound_max_x = MAX(world_pos_start[0], world_mouse_pos[0]);
@@ -634,8 +634,8 @@ void handle_entity_edition(struct EditorCtx *ectx, vec2 mouse_pos)
         mat3 transform;
         vec2 size = {1.1f, 1.1f};
         vec2 pos;
-        pos[0] = (float)ent->position[0]-(float)tilemap->width/2+0.5f;
-        pos[1] = (float)tilemap->height/2-(float)ent->position[1]-0.5f;
+        pos[0] = (float)ent->position[0]+0.5f;
+        pos[1] = (float)ent->position[1]+0.5f;
 
         compute_transform(transform, pos, size);
         draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.2f);
@@ -689,7 +689,10 @@ void editor_update(struct EditorCtx *ectx)
         {
             int width, height;
             glfwGetFramebufferSize(w_get_window_ctx(), &width, &height);
-            camera_pan(&ectx->camera, mouse_delta_x/(float)width, -mouse_delta_y/(float)height);
+            float pan_x, pan_y;
+            pan_x = -mouse_delta_x*2/ectx->camera.zoom*window_get_screen_ratio()/(float)width;
+            pan_y = mouse_delta_y*2/ectx->camera.zoom/(float)height;
+            camera_pan(&ectx->camera, pan_x, -pan_y);
             camera_view_changed = 1;
         }
     }

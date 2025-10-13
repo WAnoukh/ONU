@@ -35,7 +35,7 @@ void draw_view_borders(struct Level *level, vec2 pos, float size)
             vec2 size_vec = {size*(float)level->view_width, size*(float)level->view_height};
 
             pos_offset[0] = ((float)x + 0.5f) * size_vec[0];
-            pos_offset[1] = (-(float)y - 0.5f) * size_vec[1];
+            pos_offset[1] = ((float)y + 0.5f) * size_vec[1];
             glm_vec2_add(pos, pos_offset, pos_offset);
             compute_transform(transform, pos_offset, size_vec);
             draw_transformed_quad(program, transform, color, 1);
@@ -58,16 +58,12 @@ void render_level(struct Level *level, struct GameState *gamestate)
     
     //tilemap_render_solidmap(&level->tilemap, level_get_width(level), level_get_height(level), pos, size);
     
-    vec2 ent_offset = {-0.5f*size*(float)level->tilemap.width, 0.5f*size*(float)level->tilemap.height};
-    vec2 ents_pos;
-    glm_vec2_add(pos, ent_offset, ents_pos);
-
-    render_repeaters_range(gamestate, &level->tilemap, ents_pos, size);
-    render_entities(gamestate, ents_pos, size);
+    render_repeaters_range(gamestate, &level->tilemap, pos, size);
+    render_entities(gamestate, pos, size);
 
     if(level->view_height > 0 && level->view_width > 0)
     {
-       draw_view_borders(level, ents_pos, size);
+       draw_view_borders(level, pos, size);
     }
 }
 

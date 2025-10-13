@@ -284,12 +284,42 @@ void update_key_blocks(struct Game *game)
     }
 }
 
+void compute_camera(struct Game *game)
+{
+    struct Level *level = get_current_level(game);
+    struct GameState *gamestate = get_current_gamestate(game);
+    ivec2 player_pos;
+
+    for(int i = 0; i < gamestate->entity_count; ++i)
+    {
+        struct Entity *ent = gamestate->entities+i;
+        if(ent->type == ENTITY_PLAYER)
+        {
+            glm_ivec2_copy(ent->position, player_pos);
+            break;
+        }
+    }
+
+    if(level->view_height == 0 || level->view_width == 0)
+    {
+        game->camera.pos[0] = (float)player_pos[0];
+        game->camera.pos[1] = (float)player_pos[1];
+    }
+    else
+    {
+        game->camera.pos[0] = (floorf((float)(player_pos[0])/(float)level->view_width)+0.5f)*(float)level->view_width; 
+        game->camera.pos[1] = (floorf((float)(player_pos[1])/(float)level->view_height)+0.5f)*(float)level->view_height;
+    }
+    game->camera.zoom = 0.2f;
+    camera_compute_view(&game->camera);
+}
+
 void game_update(struct Game *game)
 {
     game->new_time = get_time();
     game->delta_time = (float)(game->new_time - game->last_time);
     game->last_time = game->new_time;
-    
+
     if(is_framebuffer_resized())
     {
         camera_compute_view(&game->camera);
@@ -313,5 +343,7 @@ void game_update(struct Game *game)
         load_level(game, *get_current_level(game));
     }
 
+    compute_camera(game);
+    
     render_level(get_current_level(game), &game->gamestate_current);
 }

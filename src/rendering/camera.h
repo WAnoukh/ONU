@@ -7,7 +7,7 @@ struct Camera
 {
     mat3 view;
     mat3 view_inverse;
-    vec2 pan;
+    vec2 pos;
     float zoom;
 };
 

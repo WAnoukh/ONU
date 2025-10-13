@@ -20,9 +20,7 @@ void tilemap_render_layer(struct TileMap *tilemap, int layer, vec2 pos, float si
     int width = tilemap->width;
     int height = tilemap->height;
     int x = 0;
-    int y = (int)height;
-    const float tm_width_2 = (float)width * size/2;
-    const float tm_height_2 = (float)height * size/2;
+    int y = 0;
     unsigned int program = shaders_use_default();
     for (int i = 0; i < height * width; ++i)
     {
@@ -33,8 +31,8 @@ void tilemap_render_layer(struct TileMap *tilemap, int layer, vec2 pos, float si
             vec2 size_vec = {size+0.001f, size+0.001f}; // TODO: Find a real solution for rounding error causing seams
             vec2 pos_offset;
             vec3 color;
-            pos_offset[0] = ((float)x+0.5f) * size - tm_width_2;
-            pos_offset[1] = ((float)y-0.5f) * size - tm_height_2;
+            pos_offset[0] = ((float)x+0.5f) * size;
+            pos_offset[1] = ((float)y+0.5f) * size;
             glm_vec2_add(pos, pos_offset, pos_offset);
             compute_transform(transform, pos_offset, size_vec);
             struct TextureAtlas atlas = get_atlas_tilemap();
@@ -49,7 +47,7 @@ void tilemap_render_layer(struct TileMap *tilemap, int layer, vec2 pos, float si
         if (x>=width)
         {
             x=0;
-            --y;
+            ++y;
         }
     }
 }
@@ -97,7 +95,9 @@ void tilemap_render_background(const struct TileMap *tilemap, vec2 pos, float si
     vec3 color = {0,0,0};
     mat3 transform;
     vec2 size_vec = {size*(float)tilemap->width, size*(float)tilemap->height};
-    compute_transform(transform, pos, size_vec);
+    vec2 offset_pos = {size_vec[0]/2, size_vec[1]/2};
+    glm_vec2_add(offset_pos, pos, offset_pos);
+    compute_transform(transform, offset_pos, size_vec);
     draw_transformed_quad(program, transform, color, 0.6f);
 }
 

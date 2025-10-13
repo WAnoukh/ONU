@@ -49,7 +49,7 @@ int main()
     ectx.is_playing = 0;
     ectx.game = game_init();
     ectx.game.camera = camera_get_default();
-    ectx.game.camera.zoom = 0.1f;
+    ectx.game.camera.zoom = 0.2f;
     camera_compute_view(&ectx.game.camera);
     int editor = 1;
 #endif
