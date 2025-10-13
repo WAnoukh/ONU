@@ -16,6 +16,7 @@
 #include <dirent.h>
 
 #include "editor.h"
+#include "editor_context.h"
 #include "GLFW/glfw3.h"
 #include "cglm/types.h"
 #include "cglm/vec2.h"
@@ -126,8 +127,9 @@ void editor_new_frame()
     igNewFrame();
 }
 
-void editor_render()
+void editor_render(struct EditorCtx *ectx)
 {
+    render_level(&ectx->level, &ectx->level.gamestate, 0b11111);
     igRender();
     ImGui_ImplOpenGL3_RenderDrawData(igGetDrawData());
 }
@@ -201,13 +203,15 @@ int ig_position_input(const char *label, ivec2 pos)
     return value_changed;
 }
 
-void menu_bar(struct Game *game)
+void menu_bar(struct EditorCtx *ectx)
 {
     if (igBeginMainMenuBar()) {
         if (igBeginMenu("File", true)) {
+            /*
             if (igMenuItem_Bool("New", NULL, false, true)) {
                 game_setup_default_level(game);
             }
+            */
             if (igMenuItem_Bool("Open", NULL, false, true)) {
                 opening = 1;
                 opening_failed = 0;
@@ -227,8 +231,8 @@ void menu_bar(struct Game *game)
             if(!level_menu_opened)
             {
                 level_menu_opened = 1;
-                level_temp_size[0] = level_get_width(&game->level);
-                level_temp_size[1] = level_get_height(&game->level);
+                level_temp_size[0] = level_get_width(&ectx->level);
+                level_temp_size[1] = level_get_height(&ectx->level);
                 level_temp_size_changed = 0;
                 level_temp_shift[0] = 0;
                 level_temp_shift[1] = 0;
@@ -241,8 +245,7 @@ void menu_bar(struct Game *game)
             level_temp_shift_changed |= ig_position_input("shift", level_temp_shift);
             if(level_temp_shift_changed && igButton("Comfirm", (struct ImVec2){0,0}))
             {
-                level_shift(&game->level, level_temp_shift);
-                load_gamestate(game, game->level.gamestate);
+                level_shift(&ectx->level, level_temp_shift);
                 level_temp_shift[0] = 0;
                 level_temp_shift[1] = 0;
                 level_temp_shift_changed = 0;
@@ -253,17 +256,17 @@ void menu_bar(struct Game *game)
             level_temp_size_changed |= ig_position_input("levelSize", level_temp_size);
             if(level_temp_size_changed && igButton("Comfirm", (struct ImVec2){0,0}))
             {
-                resize_level(&game->level, level_temp_size[0], level_temp_size[1]);
+                resize_level(&ectx->level, level_temp_size[0], level_temp_size[1]);
                 level_temp_size_changed = 0;
             }
 
             igSeparator();
             igText("Views sizes:");
-            ivec2 views_size = {game->level.views_width, game->level.views_height};
+            ivec2 views_size = {ectx->level.views_width, ectx->level.views_height};
             if(ig_position_input("viewsSize", views_size))
             {
-                game->level.views_width = views_size[0];
-                game->level.views_height = views_size[1];
+                ectx->level.views_width = views_size[0];
+                ectx->level.views_height = views_size[1];
             }
 
             igEndMenu();
@@ -291,9 +294,8 @@ void menu_bar(struct Game *game)
     }
 }
 
-void tilemap_ig_layer(struct Game *game, char *title, int layer)
+void ig_tilemap_layer(struct Level *level, char *title, int layer)
 {
-    ImVec2 spacing = igGetStyle()->ItemSpacing;
 
     igSetNextItemAllowOverlap();
     if (igSelectable_Bool("##selectable", layer_selected == layer, ImGuiSelectableFlags_SpanAvailWidth, (struct ImVec2){0,0}))
@@ -303,14 +305,20 @@ void tilemap_ig_layer(struct Game *game, char *title, int layer)
 
     igSameLine(0, 0);
 
+    //// If you want visibility button
+    /*
+    ImVec2 spacing = igGetStyle()->ItemSpacing;
     int visible = layer_get_visibility(game, layer);
     if (igSmallButton(visible ? "O" : "_"))
     {
         layer_set_visibility(game, layer, !visible);
     }
     igSameLine(0, spacing.x);
-
-    /* if you want the possibility of having an unmaskable layer
+    */
+    
+    //// If you want the possibility of having an unmaskable layer
+    /* 
+    ImVec2 spacing = igGetStyle()->ItemSpacing;
     {
         layer_set_visibility(game, layer, layer_selected == layer);
 
@@ -336,7 +344,7 @@ void tilemap_ig_selection(struct ImVec2 pos, float size)
     ImDrawList_AddRectFilled(draw_list, rect_min, rect_max, color, 0.0f, 0);
 }
 
-void tilemap_ig_tile_selector(struct TextureAtlas atlas, int *out_index, struct ImVec2i *out_pos)
+void ig_tilemap_tile_selector(struct TextureAtlas atlas, int *out_index, struct ImVec2i *out_pos)
 {
     unsigned int texture_id = atlas.texture_id;
     struct ImTextureRef *ref =ImTextureRef_ImTextureRef_TextureID(texture_id);
@@ -481,9 +489,9 @@ int ig_open_path_input_popup(const char *popup_id, char *input_buffer, char *out
     return result;
 }
 
-void handle_editor_window(struct Game *game)
+void handle_editor_window(struct Level *level)
 {
-    struct TileMap *tilemap = get_current_tilemap(game);
+    struct TileMap *tilemap = &level->tilemap;
     int level_width = tilemap->width, level_height = tilemap->height;
 
     igPushID_Str("Layers");
@@ -496,11 +504,11 @@ void handle_editor_window(struct Game *game)
         char number[3];
         my_itoa(i, number, 10);
         strcat(selectable_title, number);
-        tilemap_ig_layer(game, selectable_title, i);
+        ig_tilemap_layer(level, selectable_title, i);
         igPopID();
     }
     igSeparatorText("Tiles:");
-    tilemap_ig_tile_selector(get_atlas_tilemap(), &tile_index, &tile_position);
+    ig_tilemap_tile_selector(get_atlas_tilemap(), &tile_index, &tile_position);
     igEnd();
     igPopID();
 
@@ -550,12 +558,12 @@ void handle_editor_window(struct Game *game)
     draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.8f);
 }
 
-void handle_entity_edition(struct Game *game, vec2 mouse_pos)
+void handle_entity_edition(struct EditorCtx *ectx, vec2 mouse_pos)
 {
-    struct TileMap *tilemap = get_current_tilemap(game);
-    struct GameState *gamestate = get_current_gamestate(game);
+    struct Level *level = &ectx->level;
+    struct TileMap *tilemap = &level->tilemap;
+    struct GameState *gamestate = &level->gamestate;
     int level_width = tilemap->width, level_height = tilemap->height;
-
 
     // Entity edition
     if(igIsMouseClicked_Bool(ImGuiMouseButton_Right, false))
@@ -589,8 +597,8 @@ void handle_entity_edition(struct Game *game, vec2 mouse_pos)
         selection_ents_count = 0;
         vec2 world_pos_start;
         vec2 world_mouse_pos;
-        camera_screen_to_world(&game->camera, selection_pos_start, world_pos_start);
-        camera_screen_to_world(&game->camera, mouse_pos, world_mouse_pos);
+        camera_screen_to_world(&ectx->camera, selection_pos_start, world_pos_start);
+        camera_screen_to_world(&ectx->camera, mouse_pos, world_mouse_pos);
         world_pos_start[0] = world_pos_start[0]+(float)tilemap->width/2-0.5f;
         world_pos_start[1] = -world_pos_start[1]+(float)tilemap->height/2-0.5f;
         world_mouse_pos[0] = world_mouse_pos[0]+(float)tilemap->width/2-0.5f;
@@ -626,16 +634,16 @@ void handle_entity_edition(struct Game *game, vec2 mouse_pos)
     }
 }
 
-void editor_update(struct Game *game)
+void editor_update(struct EditorCtx *ectx)
 {
     //ImGuiIO *io = igGetIO_Nil();
-    struct GameState *gamestate = get_current_gamestate(game);
+    struct GameState *gamestate = &ectx->level.gamestate;
 
     int camera_view_changed = 0;
     float scroll = i_get_scroll_y();
     if(scroll != 0.f)
     {
-        camera_zoom(&game->camera, scroll * 0.2f);
+        camera_zoom(&ectx->camera, scroll * 0.2f);
         camera_view_changed = 1;
     }
 
@@ -647,7 +655,7 @@ void editor_update(struct Game *game)
         {
             int width, height;
             glfwGetFramebufferSize(w_get_window_ctx(), &width, &height);
-            camera_pan(&game->camera, mouse_delta_x/(float)width, -mouse_delta_y/(float)height);
+            camera_pan(&ectx->camera, mouse_delta_x/(float)width, -mouse_delta_y/(float)height);
             camera_view_changed = 1;
         }
     }
@@ -659,23 +667,23 @@ void editor_update(struct Game *game)
 
     vec2 mouse_pos;
     i_get_mouse_pos_normalize(mouse_pos, mouse_pos+1);
-    camera_screen_to_world(&game->camera, mouse_pos, cursor_pos);
+    camera_screen_to_world(&ectx->camera, mouse_pos, cursor_pos);
 
     if(camera_view_changed)
     {
-        camera_compute_view(&game->camera);
+        camera_compute_view(&ectx->camera);
     }
 
     if(floating_editor_show)
     {
-        handle_editor_window(game);
+        handle_editor_window(&ectx->level);
     }
     else
     {
-        handle_entity_edition(game, mouse_pos);
+        handle_entity_edition(ectx, mouse_pos);
     }
 
-    menu_bar(game);
+    menu_bar(ectx);
 
     ImGuiPopupFlags flags = ImGuiPopupFlags_None;
     if(igBeginPopupContextItem("Menu", flags))
@@ -984,8 +992,7 @@ void editor_update(struct Game *game)
     int save_result = ig_save_path_input_popup(window_saving, file_current, save_path, resources_path, file_suffix);
     if(save_result > 0)
     {
-        struct Level level_to_save = *get_current_level(game);
-        level_to_save.gamestate = *get_current_gamestate(game);
+        struct Level level_to_save = ectx->level; 
         serialize_level(&level_to_save, save_path);
         saving = 0;
     }
@@ -1002,7 +1009,12 @@ void editor_update(struct Game *game)
     if(opening_result > 0)
     {
         opening = 0;
-        deserialize_level_into_game(game, opening_path);
+        //deserialize_level_into_game(game, opening_path);
+        struct Level loaded_level;
+        if(deserialize_level(&loaded_level, opening_path))
+        {
+            ectx->level = loaded_level;
+        }
     }
     else if(opening_result < 0)
     {
@@ -1016,8 +1028,7 @@ void editor_update(struct Game *game)
     int opening_sequence_result = ig_open_path_input_popup(window_sequence_opening, sequence_current, opening_sequence_path, resources_path, sequence_suffix);
     if(opening_sequence_result > 0)
     {
-         
-        deserialize_sequence_into_game(game, opening_sequence_path);
+        //deserialize_sequence_into_game(game, opening_sequence_path);
         sequence_opening = 0;
     }
     else if(opening_sequence_result < 0)

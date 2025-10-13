@@ -1,7 +1,7 @@
-﻿#define EDITOR
+﻿#include "editor/editor_context.h"
+#define EDITOR
 
 #include "game.h"
-#include "level.h"
 #include "serialization.h"
 #include "texture.h"
 #include "window/input.h"
@@ -35,9 +35,6 @@ struct Game initialize_game()
 
 int main()
 {
-    int do_ser = 0;
-    int do_deser = 0;
-
     if (!initGl())
     {
         printf("Failed to initialize OpenGL context\n");
@@ -50,24 +47,20 @@ int main()
         printf("Editor Error : failed to initialize the editor.\n");
         exit(1);
     }
+    struct EditorCtx ectx = ectx_default(); 
+    initialize_renderer(&ectx.camera);
     int editor = 1;
 #endif
 
-    const char* level_path="resources/level/test.level";
-
     struct Game game = initialize_game();
+#ifndef EDITOR
     initialize_renderer(&game.camera);
-    load_default_images(); 
+#endif
 
-    struct Level loaded_level;
-    if(do_deser && deserialize_level(&loaded_level, level_path))
-    {
-        load_level(&game, loaded_level);
-    }
+    load_default_images(); 
 
     while (!glfwWindowShouldClose(w_get_window_ctx()))
     {
-        
 #ifdef EDITOR
         editor_new_frame();
 #endif
@@ -77,16 +70,16 @@ int main()
             printf("OpenGL error: 0x%X\n", err);
         }
 
-        //game_update(&game);
-
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        render_level(get_current_level(&game), &game.gamestate_current, game.tilemap_layer_mask);
 
 #ifdef EDITOR
-        if(editor) editor_update(&game);
-        editor_render();
+        if(editor) editor_update(&ectx);
+        else game_update(&game);
+        editor_render(&ectx);
+#else
+        game_update(&game);
 #endif
 
         glfwSwapBuffers(w_get_window_ctx());
@@ -96,10 +89,6 @@ int main()
 
     game_deinit(&game);
 
-    if(do_ser)
-    {
-        serialize_level(&game.level, level_path);
-    }
 #ifdef EDITOR
     editor_destroy();
 #endif
