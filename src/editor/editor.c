@@ -559,7 +559,7 @@ void handle_entity_edition(struct Game *game, vec2 mouse_pos)
         cursor_grid_pos[0] = (int)roundf(cursor_pos[0]+((float)level_width)/2-0.5f);
         cursor_grid_pos[1] = (int)roundf(-cursor_pos[1]+((float)level_height)/2-0.5f);
         if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level_width
-                && cursor_grid_pos[1] >= 0 && cursor_grid_pos[0] < level_height)
+                && cursor_grid_pos[1] >= 0 && cursor_grid_pos[1] < level_height)
         {
             igOpenPopup_Str("Menu", 0);
             glm_ivec2_copy(cursor_grid_pos, popup_last_clicked_pos);
@@ -619,7 +619,6 @@ void handle_entity_edition(struct Game *game, vec2 mouse_pos)
         compute_transform(transform, pos, size);
         draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.2f);
     }
-
 }
 
 void editor_update(struct Game *game, GLFWwindow *window)
