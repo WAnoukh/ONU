@@ -9,8 +9,8 @@ struct Level
 {
     struct TileMap tilemap;
     struct GameState gamestate;
-    int views_width;
-    int views_height;
+    int view_width;
+    int view_height;
 };
 
 static inline int level_get_width(const struct Level *level)

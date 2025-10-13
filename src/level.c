@@ -26,13 +26,13 @@ void draw_view_borders(struct Level *level, vec2 pos, float size)
     program = shaders_use_default(); 
     vec3 color = {0.2f, 1, 0.2f};
 
-    for(int x = 0; x < level_width/level->views_width; x++)
+    for(int x = 0; x < level_width/level->view_width; x++)
     {
-        for(int y = 0; y < level_height/level->views_height; y++)
+        for(int y = 0; y < level_height/level->view_height; y++)
         {
             mat3 transform;
             vec2 pos_offset;
-            vec2 size_vec = {size*(float)level->views_width, size*(float)level->views_height};
+            vec2 size_vec = {size*(float)level->view_width, size*(float)level->view_height};
 
             pos_offset[0] = ((float)x + 0.5f) * size_vec[0];
             pos_offset[1] = (-(float)y - 0.5f) * size_vec[1];
@@ -65,7 +65,7 @@ void render_level(struct Level *level, struct GameState *gamestate)
     render_repeaters_range(gamestate, &level->tilemap, ents_pos, size);
     render_entities(gamestate, ents_pos, size);
 
-    if(level->views_height > 0 && level->views_width > 0)
+    if(level->view_height > 0 && level->view_width > 0)
     {
        draw_view_borders(level, ents_pos, size);
     }

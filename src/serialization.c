@@ -10,7 +10,7 @@
 #define S_ERROR(msg) printf("%s, %d, Serialization error: %s", __FILE__, __LINE__, msg)
 #define MAJOR 0
 #define MINOR 4
-#define PATCH 0
+#define PATCH 1
 
 const struct Version version = 
 {
@@ -34,52 +34,6 @@ void serialize_gamestate(const struct GameState *gamestate, FILE *file)
     fwrite(gamestate->door_data, sizeof(struct DoorData)*gamestate->door_data_count, 1, file);
 }
 
-int serialize_level(const struct Level *level, const char* path)
-{
-    FILE *file=fopen(path, "wb");
-    if(file == NULL)
-    {
-        printf("Error");
-        return 0;
-    }
-
-    fwrite(&version.major, sizeof(version.major), 1, file);
-    fwrite(&version.minor, sizeof(version.minor), 1, file);
-    fwrite(&version.patch, sizeof(version.patch), 1, file);
-
-    int level_width = level_get_width(level);
-    int level_height = level_get_height(level);
-
-    fwrite(&level_width, sizeof(level_width), 1, file);
-    fwrite(&level_height, sizeof(level_height), 1, file);
-
-    int layer_count = level->tilemap.layer_count;
-    fwrite(&layer_count, sizeof(layer_count), 1, file);
-    
-    for(int i = 0; i < layer_count * level_width * level_height; ++i)
-    {
-        fwrite(level->tilemap.tile+i, sizeof(Tile), 1, file);
-    }
-
-    serialize_gamestate(&level->gamestate, file);
-
-    fclose(file);
-    return 1;
-}
-
-int deserialize_level_into_game(struct Game *game, const char *path)
-{
-    game->gamemode = GM_LEVEL;
-    struct Level level;
-    int result = deserialize_level(&level, path);
-    if(result)
-    {
-        level_deinit(&game->level);
-        load_level(game, level);
-    }
-    return result;
-}
-
 void deserialize_gamestate(struct GameState *out_gamestate, FILE *file, struct Version file_version)
 {
     out_gamestate->is_end_reached = 0;
@@ -96,7 +50,7 @@ void deserialize_gamestate(struct GameState *out_gamestate, FILE *file, struct V
     if(compare_version_value(file_version, 0, 3, 0) > 0)
     {
         fread(&out_gamestate->door_data_count, sizeof(out_gamestate->door_data_count), 1, file);
-        fread(out_gamestate->door_data, sizeof(struct SlotData) * out_gamestate->door_data_count, 1, file);
+        fread(out_gamestate->door_data, sizeof(struct DoorData) * out_gamestate->door_data_count, 1, file);
     }
     else
     {
@@ -135,6 +89,42 @@ void deserialize_gamestate(struct GameState *out_gamestate, FILE *file, struct V
     }
 }
 
+int serialize_level(const struct Level *level, const char* path)
+{
+    FILE *file=fopen(path, "wb");
+    if(file == NULL)
+    {
+        printf("Error");
+        return 0;
+    }
+
+    fwrite(&version.major, sizeof(version.major), 1, file);
+    fwrite(&version.minor, sizeof(version.minor), 1, file);
+    fwrite(&version.patch, sizeof(version.patch), 1, file);
+
+    int level_width = level_get_width(level);
+    int level_height = level_get_height(level);
+
+    fwrite(&level_width, sizeof(level_width), 1, file);
+    fwrite(&level_height, sizeof(level_height), 1, file);
+
+    int layer_count = level->tilemap.layer_count;
+    fwrite(&layer_count, sizeof(layer_count), 1, file);
+    
+    for(int i = 0; i < layer_count * level_width * level_height; ++i)
+    {
+        fwrite(level->tilemap.tile+i, sizeof(Tile), 1, file);
+    }
+
+    serialize_gamestate(&level->gamestate, file);
+
+    fwrite(&level->view_width, sizeof(level->view_width), 1, file);
+    fwrite(&level->view_height, sizeof(level->view_height), 1, file);
+
+    fclose(file);
+    return 1;
+}
+
 int deserialize_level(struct Level *out_level, const char *path)
 {
     struct Level level;  
@@ -171,10 +161,35 @@ int deserialize_level(struct Level *out_level, const char *path)
 
     deserialize_gamestate(&level.gamestate, file, file_version);
 
+    if(compare_version_value(file_version, 0, 4, 1) < 0)
+    {
+        printf("Zeroing views width\n");
+        level.view_width = 0;
+        level.view_height = 0;
+    }
+    else
+    {
+        fread(&level.view_width, sizeof(level.view_width), 1, file);
+        fread(&level.view_height, sizeof(level.view_height), 1, file);
+    }
+
     *out_level = level;
 
     fclose(file);
     return 1;
+}
+
+int deserialize_level_into_game(struct Game *game, const char *path)
+{
+    game->gamemode = GM_LEVEL;
+    struct Level level;
+    int result = deserialize_level(&level, path);
+    if(result)
+    {
+        level_deinit(&game->level);
+        load_level(game, level);
+    }
+    return result;
 }
 
 int serialize_path_sequence(struct PathSequence path_seq, const char *path)

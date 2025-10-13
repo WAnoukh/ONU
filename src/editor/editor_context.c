@@ -14,8 +14,8 @@ void get_default_level(struct Level *level)
     level_set_width(level, DEFAULT_LEVEL_SIZE);
     level_set_height(level, DEFAULT_LEVEL_SIZE);
 
-    level->views_width = 0;
-    level->views_height = 0;
+    level->view_width = 0;
+    level->view_height = 0;
 
     struct GameState *gamestate = &level->gamestate;
     gamestate->entity_count = 0;

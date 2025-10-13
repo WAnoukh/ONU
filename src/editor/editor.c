@@ -261,11 +261,11 @@ void menu_bar(struct EditorCtx *ectx)
 
             igSeparator();
             igText("Views sizes:");
-            ivec2 views_size = {ectx->level.views_width, ectx->level.views_height};
+            ivec2 views_size = {ectx->level.view_width, ectx->level.view_height};
             if(ig_position_input("viewsSize", views_size))
             {
-                ectx->level.views_width = views_size[0];
-                ectx->level.views_height = views_size[1];
+                ectx->level.view_width = views_size[0];
+                ectx->level.view_height = views_size[1];
             }
 
             igEndMenu();
