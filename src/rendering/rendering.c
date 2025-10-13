@@ -2,9 +2,9 @@
 #include <cglm/cglm.h>
 
 #include "glad/glad.h"
+#include "rendering/camera.h"
 #include "rendering/shader.h"
 #include "texture.h"
-#include "game.h"
 #include "rendering/rendering.h"
 
 #define GLCheckError() GLCheckErrorImpl(__FILE__, __LINE__)
@@ -73,13 +73,18 @@ void initialize_screen_space_view()
     screen_space_view[2][1] = -1;
 }
 
+void r_set_main_camera(struct Camera *new_main_camera)
+{
+    main_camera = new_main_camera;
+}
+
 void initialize_renderer(struct Camera *new_main_camera)
 {
     initialize_default_shader_program();
     initialize_quad();
     initialize_triangle();
     initialize_screen_space_view();
-    main_camera = new_main_camera;
+    r_set_main_camera(new_main_camera);
 }
 
 void initialize_default_shader_program()

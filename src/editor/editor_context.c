@@ -59,3 +59,10 @@ struct EditorCtx ectx_default()
     return ctx;
 }
 
+void ectx_start_level(struct EditorCtx *ectx, struct Level level)
+{
+    ectx->game.gamemode = GM_LEVEL;
+    load_level(&ectx->game, level);
+    load_gamestate(&ectx->game, level.gamestate);
+    ectx->is_playing = 1;
+}

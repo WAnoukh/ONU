@@ -1,9 +1,9 @@
+#include <GL/gl.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include "level.h"
-#include "GLFW/glfw3.h"
 #include "cglm/ivec2.h"
 #include "cglm/vec2.h"
 #include "rendering/rendering.h"
@@ -44,14 +44,14 @@ void draw_view_borders(struct Level *level, vec2 pos, float size)
     glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 }
 
-void render_level(struct Level *level, struct GameState *gamestate, int layer_mask)
+void render_level(struct Level *level, struct GameState *gamestate)
 {
     vec2 pos = {0,0};
     float size = 1;
 
     tilemap_render_background(&level->tilemap, pos, size);
 
-    if(level->tilemap.layer_count > 0 && (layer_mask & 0b1))
+    if(level->tilemap.layer_count > 0)
     {
         tilemap_render_layer(&level->tilemap, 0, pos, size);
     }

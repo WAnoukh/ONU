@@ -1,6 +1,5 @@
 #include "game.h"
 #include "GLFW/glfw3.h"
-#include "cglm/mat3.h"
 #include "window/input.h"
 #include "window/window.h"
 
@@ -229,6 +228,7 @@ void update_key_blocks(struct Game *game)
 
         if(i_key_pressed(key_data->key))
         {
+            printf("Update\n");
             any_non_universal_key_down = 1;
             any_non_universal_key_pressed =1;
             break;
@@ -278,6 +278,7 @@ void update_key_blocks(struct Game *game)
     }
     if(first_action && has_revelant_action_happended)
     {
+        printf("valuable\n");
         process_buttons(gamestate);
         check_if_player_reached_end(gamestate);
     }
@@ -295,7 +296,6 @@ void game_update(struct Game *game)
         clear_framebuffer_resized();
     }
 
-    i_process(w_get_window_ctx());
     update_key_blocks(game);
 
     //Checkin if player reached the end door
@@ -313,5 +313,5 @@ void game_update(struct Game *game)
         load_level(game, *get_current_level(game));
     }
 
-    render_level(get_current_level(game), &game->gamestate_current, game->tilemap_layer_mask);
+    render_level(get_current_level(game), &game->gamestate_current);
 }

@@ -6,6 +6,8 @@ struct Entity;
 struct TextureAtlas;
 struct Camera;
 
+void r_set_main_camera(struct Camera *new_main_camera);
+
 void initialize_renderer(struct Camera *new_main_camera);
 
 unsigned int shaders_use_default();

@@ -6,8 +6,6 @@
 
 struct Game;
 
-void i_process(GLFWwindow *window);
-
 void i_initialize(GLFWwindow *in_window);
 
 void register_key_state(int key, int action);

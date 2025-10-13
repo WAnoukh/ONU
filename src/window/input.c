@@ -231,12 +231,6 @@ void i_get_mouse_pos_normalize(float *out_x, float *out_y)
     *out_y = 1-(float)y_pos / (float)screen_height;
 }
 
-void i_process(GLFWwindow *window)
-{
-    if (i_key_down(GLFW_KEY_ESCAPE))
-        glfwSetWindowShouldClose(window, 1);
-}
-
 void i_clear_pressed()
 {
     pressed_keys_clear();

@@ -23,12 +23,9 @@ struct Game initialize_game()
     game = game_init();
 
     game_setup_default_level(&game);
-
     game.last_time = glfwGetTime();
-    game.camera.zoom = 0.2f;
-    game.camera.pan[0] = 0;
-    game.camera.pan[1] = 0;
     game.tilemap_layer_mask = -1;
+    game.camera = camera_get_default();
     camera_compute_view(&game.camera);
     return game;
 }
@@ -49,6 +46,11 @@ int main()
     }
     struct EditorCtx ectx = ectx_default(); 
     initialize_renderer(&ectx.camera);
+    ectx.is_playing = 0;
+    ectx.game = game_init();
+    ectx.game.camera = camera_get_default();
+    ectx.game.camera.zoom = 0.1f;
+    camera_compute_view(&ectx.game.camera);
     int editor = 1;
 #endif
 
@@ -61,9 +63,6 @@ int main()
 
     while (!glfwWindowShouldClose(w_get_window_ctx()))
     {
-#ifdef EDITOR
-        editor_new_frame();
-#endif
 
         GLenum err;
         while ((err = glGetError()) != GL_NO_ERROR) {
@@ -73,11 +72,9 @@ int main()
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-
 #ifdef EDITOR
         if(editor) editor_update(&ectx);
         else game_update(&game);
-        editor_render(&ectx);
 #else
         game_update(&game);
 #endif

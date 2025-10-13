@@ -2,6 +2,16 @@
 #include "window/window.h"
 #include "cglm/mat3.h"
 
+struct Camera camera_get_default()
+{
+    struct Camera camera;
+    camera.zoom = 0.2f;
+    camera.pan[0] = 0;
+    camera.pan[1] = 0;
+
+    return camera;
+}
+
 void camera_pan(struct Camera *camera, float x_offset, float y_offset)
 {
     camera->pan[0] += x_offset;

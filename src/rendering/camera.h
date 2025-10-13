@@ -11,6 +11,8 @@ struct Camera
     float zoom;
 };
 
+struct Camera camera_get_default();
+
 void camera_pan(struct Camera *camera, float x_offset, float y_offset);
 
 void camera_zoom(struct Camera *camera, float amount);

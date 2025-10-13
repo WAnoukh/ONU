@@ -1,3 +1,4 @@
+#include "rendering/rendering.h"
 #include <string.h>
 
 #ifdef _WIN32
@@ -20,7 +21,6 @@
 #include "GLFW/glfw3.h"
 #include "cglm/types.h"
 #include "cglm/vec2.h"
-#include "game.h"
 #include "level.h"
 #include "serialization.h"
 #include "texture.h"
@@ -129,7 +129,6 @@ void editor_new_frame()
 
 void editor_render(struct EditorCtx *ectx)
 {
-    render_level(&ectx->level, &ectx->level.gamestate, 0b11111);
     igRender();
     ImGui_ImplOpenGL3_RenderDrawData(igGetDrawData());
 }
@@ -286,6 +285,15 @@ void menu_bar(struct EditorCtx *ectx)
                 if(style->FontScaleMain > 4) style->FontScaleMain = 4;
                 ImGuiStyle_ScaleAllSizes(style, style->FontScaleMain/old_scale);
                 ui_scale = style->FontScaleMain;
+            }
+            igEndMenu();
+        }
+
+        if(igBeginMenu("Run", true))
+        {
+            if (igMenuItem_Bool("Run level", NULL, false, true)) 
+            {
+                ectx_start_level(ectx, ectx->level);
             }
             igEndMenu();
         }
@@ -636,6 +644,32 @@ void handle_entity_edition(struct EditorCtx *ectx, vec2 mouse_pos)
 
 void editor_update(struct EditorCtx *ectx)
 {
+    editor_new_frame();
+
+    if (igIsKeyPressed_Bool(ImGuiKey_Escape, false))
+    {
+        if(ectx->is_playing)
+        {
+            ectx->is_playing = 0;
+            r_set_main_camera(&ectx->camera);
+        }
+        else
+        {
+            glfwSetWindowShouldClose(w_get_window_ctx(), 1);
+        }
+    }
+
+    if(ectx->is_playing)
+    {
+        r_set_main_camera(&ectx->game.camera);
+        game_update(&ectx->game); 
+        editor_render(ectx);
+        return;
+    }
+
+    camera_compute_view(&ectx->camera);
+    render_level(&ectx->level, &ectx->level.gamestate);
+
     //ImGuiIO *io = igGetIO_Nil();
     struct GameState *gamestate = &ectx->level.gamestate;
 
@@ -1035,4 +1069,6 @@ void editor_update(struct EditorCtx *ectx)
     {
         sequence_opening = 0;
     }
+
+    editor_render(ectx);
 }
