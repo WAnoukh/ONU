@@ -51,10 +51,10 @@ int request_new_turn(struct Game *game, struct Action action)
     struct GameState *gamestate = get_current_gamestate(game);
     if(action.type == ACTION_UNDO)
     {
-        history_drop_last(game);
-        if(!history_is_empty(game))
+        game_history_drop_last(game);
+        if(!game_history_is_empty(game))
         {
-            load_gamestate(game, history_pop(game));
+            load_gamestate(game, game_history_pop(game));
         }
         return 1;
     }
@@ -163,7 +163,7 @@ void update_key_blocks(struct Game *game)
         {
             if(!first_action)
             {
-                history_register(game);
+                game_history_register(game);
                 first_action = 1;
             }
             struct Entity *slot = get_slot_at(gamestate, ent->position);
@@ -180,7 +180,7 @@ void update_key_blocks(struct Game *game)
     }
     if(first_action && !has_revelant_action_happended)
     {
-        history_drop_last(game);
+        game_history_drop_last(game);
     }
     if(first_action && has_revelant_action_happended)
     {
@@ -192,6 +192,8 @@ void update_key_blocks(struct Game *game)
 struct Game initialize_game()
 {
     struct Game game;
+
+    game = game_init();
 
     game_setup_default_level(&game);
 
@@ -288,6 +290,8 @@ int main()
         i_clear_pressed();
         glfwPollEvents();
     }
+
+    game_deinit(&game);
 
     if(do_ser)
     {

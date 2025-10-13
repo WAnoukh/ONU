@@ -1,11 +1,10 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include "history.h"
 #include "level.h"
 #include "level_sequence.h"
 #include "rendering/rendering.h"
-
-#define HISTORY_MAX_SIZE 100
 
 enum GameMode
 {
@@ -27,12 +26,11 @@ struct Game
     struct Level level;
     struct Sequence sequence;
     struct GameState gamestate_current;
-    struct GameState history[HISTORY_MAX_SIZE];
+    struct History history;
     enum GameMode gamemode;
     double last_time;
     double new_time;
     int sequence_index;
-    int history_size;
     float delta_time;
     int tilemap_layer_mask;
 };
@@ -82,15 +80,19 @@ static inline struct TileMap *get_current_tilemap(struct Game *game)
     return &get_current_level(game)->tilemap;
 }
 
-int history_register(struct Game *game);
+struct Game game_init();
 
-int history_is_empty(struct Game *game);
+void game_deinit(struct Game *game);
 
-struct GameState history_pop(struct Game *game);
+void game_history_register(struct Game *game);
 
-void history_drop_last(struct Game *game);
+int game_history_is_empty(struct Game *game);
 
-void history_clear(struct Game *game);
+struct GameState game_history_pop(struct Game *game);
+
+void game_history_drop_last(struct Game *game);
+
+void game_history_clear(struct Game *game);
 
 void load_level(struct Game *game, struct Level level);
 
@@ -107,4 +109,5 @@ void game_setup_default_level(struct Game *game);
 void game_set_sequence(struct Game *game, struct Sequence sequence);
 
 int game_load_default_sequence(struct Game *game);
+
 #endif // GAME_H

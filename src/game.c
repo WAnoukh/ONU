@@ -1,53 +1,50 @@
 #include "game.h"
 #include "cglm/mat3.h"
 #include "window/window.h"
-#include <stdio.h>
 
-int history_register(struct Game *game)
+
+struct Game game_init()
 {
-    if(game->history_size >= HISTORY_MAX_SIZE) {
-        printf("History full\n");
-        return 0;
-    }
-    game->history[game->history_size++] = game->gamestate_current;
-    return 1;
+    struct Game game;
+    game.history = history_init();
+    return game;
 }
 
-int history_is_empty(struct Game *game)
+void game_deinit(struct Game *game)
 {
-    return game->history_size <= 0;
+    history_deinit(&game->history);
 }
 
-struct GameState history_pop(struct Game *game)
+void game_history_register(struct Game *game)
 {
-   if(game->history_size <= 0) 
-   {
-        perror("Trying to pop an empty history\n");
-        exit(1);
-   }
-   return game->history[--game->history_size];
+    history_append(&game->history, *get_current_gamestate(game));
 }
 
-void history_drop_last(struct Game *game)
+int game_history_is_empty(struct Game *game)
 {
-   if(game->history_size <= 0) 
-   {
-        perror("Trying to pop an empty history\n");
-        exit(1);
-   }
-   --game->history_size;
+    return history_is_empty(&game->history);
 }
 
-void history_clear(struct Game *game)
+struct GameState game_history_pop(struct Game *game)
 {
-    game->history_size = 0;
+    return history_pop(&game->history);
+}
+
+void game_history_drop_last(struct Game *game)
+{
+    history_drop_last(&game->history);
+}
+
+void game_history_clear(struct Game *game)
+{
+    history_clear(&game->history);
 }
 
 void load_level(struct Game *game, struct Level level)
 {
     game->level = level;
     game->gamestate_current = level.gamestate;
-    game->history_size = 0;
+    game_history_clear(game);
 }
 
 void camera_pan(struct Camera *camera, float x_offset, float y_offset)
@@ -99,7 +96,7 @@ void game_setup_default_level(struct Game *game)
     game->gamemode = GM_LEVEL;
     get_default_level(&game->level);
     load_gamestate(game, game->level.gamestate);
-    history_clear(game);
+    game_history_clear(game);
 }
 
 void game_set_sequence(struct Game *game, struct Sequence sequence)
