@@ -14,8 +14,6 @@
 #define DEFAULT_LEVEL_SIZE 10
 #define DEFAULT_LEVEL_GRID_SIZE DEFAULT_LEVEL_SIZE * DEFAULT_LEVEL_SIZE
 
-
-
 void level_deinit(struct Level *level)
 {
     free(level->tilemap.tile);
@@ -23,16 +21,14 @@ void level_deinit(struct Level *level)
 
 void get_default_level(struct Level *level)
 {
-    //TILEMAP
     int grid_size = DEFAULT_LEVEL_GRID_SIZE;
-    //tiles
+
     level->tilemap.tile = malloc(sizeof(Tile) * grid_size);
     level->tilemap.layer_count = 1;
     for(int i =0; i < grid_size; ++i) level->tilemap.tile[i] = 4+20;
-    printf("Tiles init %d \n", level->tilemap.tile[0]);
     level_set_width(level, DEFAULT_LEVEL_SIZE);
     level_set_height(level, DEFAULT_LEVEL_SIZE);
-    //views
+
     level->views_width = 0;
     level->views_height = 0;
 

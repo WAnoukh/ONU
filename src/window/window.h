@@ -6,7 +6,7 @@ extern const int SCR_HEIGHT;
 
 typedef struct GLFWwindow GLFWwindow;
 
-int initGl(GLFWwindow **window);
+int initGl();
 
 double get_time();
 
@@ -17,5 +17,7 @@ void window_get_size(int *width, int *height);
 int is_framebuffer_resized();
 
 void clear_framebuffer_resized();
+
+GLFWwindow *w_get_window_ctx();
 
 #endif //WINDOW_H

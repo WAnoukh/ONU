@@ -6,6 +6,8 @@
 #include "cimgui.h"
 #include "window/input.h"
 
+GLFWwindow *window;
+
 const int SCR_WIDTH = 800;
 const int SCR_HEIGHT = 600;
 int is_framebuffer_resized_flag = 0;
@@ -15,6 +17,11 @@ int framebuffer_width = SCR_WIDTH, framebuffer_height = SCR_HEIGHT;
 
 float scale_x = 1;
 float scale_y = 1;
+
+GLFWwindow *w_get_window_ctx()
+{
+    return window;
+}
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -28,8 +35,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     io->DisplayFramebufferScale.y = 1.0f;
     io->DisplaySize.x = (float)width;
     io->DisplaySize.y = (float)height;
-
-    int win_w, win_h;
 }
 
 void scroll_callback(GLFWwindow* window, double x_offset, double y_offset)
@@ -81,7 +86,7 @@ void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id,
             type, severity, message);
 }
 
-int initGl(GLFWwindow **window)
+int initGl()
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -89,8 +94,8 @@ int initGl(GLFWwindow **window)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE); 
 
-    *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (*window == NULL)
+    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    if (window == NULL)
     {
         perror("Failed to create GLFW window\n");
         glfwTerminate();
@@ -99,19 +104,19 @@ int initGl(GLFWwindow **window)
     
     if (glfwRawMouseMotionSupported())
     {
-        glfwSetInputMode(*window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
     else
     {
         printf("Error initializing the window : Raw mouse not supported");
     }
 
-    glfwMakeContextCurrent(*window);
-    glfwSetFramebufferSizeCallback(*window, framebuffer_size_callback);
-    glfwSetScrollCallback(*window, scroll_callback);
-    glfwSetKeyCallback(*window, key_callback);
-    glfwSetMouseButtonCallback(*window, mouse_button_callback);
-    glfwSetCursorPosCallback(*window, mouse_move_callback);
+    glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetCursorPosCallback(window, mouse_move_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {

@@ -7,8 +7,6 @@
 #define PRESSED_KEYS_MAX 10
 #define PRESSED_BUTTONS_MAX 3
 
-GLFWwindow *window;
-
 float mouse_first_move = 1;
 float mouse_last_x, mouse_last_y;
 float mouse_offset_x=0, mouse_offset_y=0;
@@ -215,15 +213,10 @@ void i_get_mouse_move(float *x, float *y)
     *y = mouse_offset_y;
 }
 
-void i_initialize(GLFWwindow *in_window)
-{
-    window = in_window;
-}
-
 void i_get_mouse_pos(float *out_x, float *out_y)
 {
     double x_pos, y_pos;
-    glfwGetCursorPos(window, &x_pos, &y_pos);
+    glfwGetCursorPos(w_get_window_ctx(), &x_pos, &y_pos);
     *out_x = (float)x_pos;
     *out_y = 1-(float)y_pos;
 }
@@ -233,7 +226,7 @@ void i_get_mouse_pos_normalize(float *out_x, float *out_y)
     double x_pos, y_pos;
     int screen_width, screen_height;
     window_get_size(&screen_width, &screen_height);
-    glfwGetCursorPos(window, &x_pos, &y_pos);
+    glfwGetCursorPos(w_get_window_ctx(), &x_pos, &y_pos);
     *out_x = (float)x_pos / (float)screen_width;
     *out_y = 1-(float)y_pos / (float)screen_height;
 }

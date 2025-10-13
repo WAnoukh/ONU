@@ -97,7 +97,7 @@ int level_temp_size_changed = 0;
 ivec2 level_temp_shift;
 int level_temp_shift_changed = 0;
 
-int editor_initialize(GLFWwindow *window)
+int editor_initialize()
 {
 
     ctx = igCreateContext(NULL);
@@ -114,7 +114,7 @@ int editor_initialize(GLFWwindow *window)
     ImGuiStyle_ScaleAllSizes(style, ui_scale);
     style->FontScaleMain *= ui_scale;
 
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplGlfw_InitForOpenGL(w_get_window_ctx(), true);
     ImGui_ImplOpenGL3_Init("#version 130");
     return 1;
 }
@@ -203,7 +203,6 @@ int ig_position_input(const char *label, ivec2 pos)
 
 void menu_bar(struct Game *game)
 {
-    struct GameState *gamestate = get_current_gamestate(game);
     if (igBeginMainMenuBar()) {
         if (igBeginMenu("File", true)) {
             if (igMenuItem_Bool("New", NULL, false, true)) {
@@ -627,7 +626,7 @@ void handle_entity_edition(struct Game *game, vec2 mouse_pos)
     }
 }
 
-void editor_update(struct Game *game, GLFWwindow *window)
+void editor_update(struct Game *game)
 {
     //ImGuiIO *io = igGetIO_Nil();
     struct GameState *gamestate = get_current_gamestate(game);
@@ -647,7 +646,7 @@ void editor_update(struct Game *game, GLFWwindow *window)
         if (fabsf(mouse_delta_x) > 0.00001f || fabsf(mouse_delta_y) > 0.00001f)
         {
             int width, height;
-            glfwGetFramebufferSize(window, &width, &height);
+            glfwGetFramebufferSize(w_get_window_ctx(), &width, &height);
             camera_pan(&game->camera, mouse_delta_x/(float)width, -mouse_delta_y/(float)height);
             camera_view_changed = 1;
         }

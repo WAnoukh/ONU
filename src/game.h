@@ -110,4 +110,6 @@ void game_set_sequence(struct Game *game, struct Sequence sequence);
 
 int game_load_default_sequence(struct Game *game);
 
+void game_update(struct Game *game);
+
 #endif // GAME_H

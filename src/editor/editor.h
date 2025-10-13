@@ -4,7 +4,7 @@
 typedef struct GLFWwindow GLFWwindow;
 struct Game;
 
-int editor_initialize(GLFWwindow *window);
+int editor_initialize();
 
 void editor_new_frame();
 
@@ -12,6 +12,6 @@ void editor_render();
 
 void editor_destroy();
 
-void editor_update(struct Game *game, GLFWwindow *window);
+void editor_update(struct Game *game);
 
 #endif // EDITOR_H
