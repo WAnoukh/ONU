@@ -5,11 +5,11 @@ typedef struct GLFWwindow GLFWwindow;
 struct Game;
 struct EditorCtx;
 
-int editor_initialize();
+int editor_init();
 
 void editor_new_frame();
 
-void editor_destroy();
+void editor_deinit();
 
 void editor_update(struct EditorCtx *ectx);
 

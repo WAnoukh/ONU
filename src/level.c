@@ -60,6 +60,12 @@ void render_level(struct Level *level, struct GameState *gamestate)
     
     render_repeaters_range(gamestate, &level->tilemap, pos, size);
     render_entities(gamestate, pos, size);
+}
+
+void render_level_views(struct Level *level)
+{
+    vec2 pos = {0,0};
+    float size = 1;
 
     if(level->view_height > 0 && level->view_width > 0)
     {

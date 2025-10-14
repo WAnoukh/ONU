@@ -15,21 +15,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-
-struct Game initialize_game()
-{
-    struct Game game;
-
-    game = game_init();
-
-    game_setup_default_level(&game);
-    game.last_time = glfwGetTime();
-    game.tilemap_layer_mask = -1;
-    game.camera = camera_get_default();
-    camera_compute_view(&game.camera);
-    return game;
-}
-
 int main()
 {
     if (!initGl())
@@ -39,7 +24,7 @@ int main()
     }
 
 #ifdef EDITOR
-    if(!editor_initialize())
+    if(!editor_init())
     {
         printf("Editor Error : failed to initialize the editor.\n");
         exit(1);
@@ -48,13 +33,8 @@ int main()
     initialize_renderer(&ectx.camera);
     ectx.is_playing = 0;
     ectx.game = game_init();
-    ectx.game.camera = camera_get_default();
-    ectx.game.camera.zoom = 0.2f;
-    camera_compute_view(&ectx.game.camera);
-    int editor = 1;
 #endif
 
-    struct Game game = initialize_game();
 #ifndef EDITOR
     initialize_renderer(&game.camera);
 #endif
@@ -73,8 +53,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
 #ifdef EDITOR
-        if(editor) editor_update(&ectx);
-        else game_update(&game);
+        editor_update(&ectx);
 #else
         game_update(&game);
 #endif
@@ -84,10 +63,9 @@ int main()
         glfwPollEvents();
     }
 
-    game_deinit(&game);
 
 #ifdef EDITOR
-    editor_destroy();
+    editor_deinit();
 #endif
     glfwTerminate();
     return 0;

@@ -20,6 +20,7 @@ struct Game
     struct Sequence sequence;
     struct GameState gamestate_current;
     struct History history;
+    vec2 camera_target;
     enum GameMode gamemode;
     double last_time;
     double new_time;
@@ -74,6 +75,8 @@ static inline struct TileMap *get_current_tilemap(struct Game *game)
 }
 
 struct Game game_init();
+
+void game_start(struct Game* game);
 
 void game_deinit(struct Game *game);
 

@@ -43,4 +43,6 @@ void level_shift(struct Level *level, ivec2 offset);
 
 void render_level(struct Level *level, struct GameState *gamestate);
 
+void render_level_views(struct Level *level);
+
 #endif // LEVEL_H

@@ -98,7 +98,7 @@ int level_temp_size_changed = 0;
 ivec2 level_temp_shift;
 int level_temp_shift_changed = 0;
 
-int editor_initialize()
+int editor_init()
 {
 
     ctx = igCreateContext(NULL);
@@ -133,8 +133,9 @@ void editor_render(struct EditorCtx *ectx)
     ImGui_ImplOpenGL3_RenderDrawData(igGetDrawData());
 }
 
-void editor_destroy()
+void editor_deinit()
 {
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     igDestroyContext(ctx);
@@ -669,6 +670,7 @@ void editor_update(struct EditorCtx *ectx)
 
     camera_compute_view(&ectx->camera);
     render_level(&ectx->level, &ectx->level.gamestate);
+    render_level_views(&ectx->level);
 
     //ImGuiIO *io = igGetIO_Nil();
     struct GameState *gamestate = &ectx->level.gamestate;

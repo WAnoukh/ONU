@@ -1,5 +1,6 @@
 #include "game.h"
 #include "GLFW/glfw3.h"
+#include "cglm/vec2.h"
 #include "window/input.h"
 #include "window/window.h"
 
@@ -228,7 +229,6 @@ void update_key_blocks(struct Game *game)
 
         if(i_key_pressed(key_data->key))
         {
-            printf("Update\n");
             any_non_universal_key_down = 1;
             any_non_universal_key_pressed =1;
             break;
@@ -278,13 +278,13 @@ void update_key_blocks(struct Game *game)
     }
     if(first_action && has_revelant_action_happended)
     {
-        printf("valuable\n");
         process_buttons(gamestate);
         check_if_player_reached_end(gamestate);
     }
 }
 
-void compute_camera(struct Game *game)
+
+void compute_camera_target(struct Game *game)
 {
     struct Level *level = get_current_level(game);
     struct GameState *gamestate = get_current_gamestate(game);
@@ -302,16 +302,25 @@ void compute_camera(struct Game *game)
 
     if(level->view_height == 0 || level->view_width == 0)
     {
-        game->camera.pos[0] = (float)player_pos[0];
-        game->camera.pos[1] = (float)player_pos[1];
+        game->camera_target[0] = (float)player_pos[0]+0.5f;
+        game->camera_target[1] = (float)player_pos[1]+0.5f;
     }
     else
     {
-        game->camera.pos[0] = (floorf((float)(player_pos[0])/(float)level->view_width)+0.5f)*(float)level->view_width; 
-        game->camera.pos[1] = (floorf((float)(player_pos[1])/(float)level->view_height)+0.5f)*(float)level->view_height;
+        game->camera_target[0] = (floorf((float)(player_pos[0])/(float)level->view_width)+0.5f)*(float)level->view_width; 
+        game->camera_target[1] = (floorf((float)(player_pos[1])/(float)level->view_height)+0.5f)*(float)level->view_height;
     }
-    game->camera.zoom = 0.2f;
     camera_compute_view(&game->camera);
+}
+
+void game_start(struct Game* game)
+{
+    game->camera = camera_get_default();
+    game->camera.zoom = 0.2f;
+    compute_camera_target(game);
+    glm_vec2_copy(game->camera_target, game->camera.pos);
+    camera_compute_view(&game->camera);
+    game->last_time = glfwGetTime();
 }
 
 void game_update(struct Game *game)
@@ -343,7 +352,9 @@ void game_update(struct Game *game)
         load_level(game, *get_current_level(game));
     }
 
-    compute_camera(game);
+    compute_camera_target(game);
+    glm_vec2_lerp(game->camera.pos, game->camera_target, 0.05f, game->camera.pos);
+    //glm_vec2_copy(game->camera_target, game->camera.pos);
     
     render_level(get_current_level(game), &game->gamestate_current);
 }
