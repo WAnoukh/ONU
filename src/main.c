@@ -49,8 +49,6 @@ int main()
             printf("OpenGL error: 0x%X\n", err);
         }
 
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
 
 #ifdef EDITOR
         editor_update(&ectx);

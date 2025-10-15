@@ -279,6 +279,11 @@ int try_push_entity(struct GameState *gamestate, struct TileMap *tilemap, struct
     return 0;
 }
 
+void get_player_position(struct GameState *gamestate, ivec2 out_pos)
+{
+    get_player_position_in_gs(gamestate, out_pos);
+}
+
 int push_entity(struct GameState *gamestate, struct TileMap *tilemap, struct Entity *entity, ivec2 offset)
 {
     if(glm_ivec2_eq(offset, 0)) return 0;

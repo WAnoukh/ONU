@@ -4,6 +4,7 @@
 #include "gamestate.h"
 #include "tilemap.h"
 
+struct Game;
 
 struct Level 
 {
@@ -41,7 +42,9 @@ void resize_level(struct Level *level, int new_width, int new_height);
 
 void level_shift(struct Level *level, ivec2 offset);
 
-void render_level(struct Level *level, struct GameState *gamestate);
+void render_level(struct Game *game);
+
+void render_level_simple(struct Level *level, struct GameState *gamestate);
 
 void render_level_views(struct Level *level);
 

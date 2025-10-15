@@ -2,15 +2,72 @@
 
 #include "tilemap.h"
 #include "cglm/io.h"
+#include "cglm/vec2.h"
 #include "rendering/rendering.h"
 #include "texture.h"
 #include "transform.h"
+#include "window/window.h"
 
 const int DEFAULT_TILE = 0;
 
 int tilemap_get_default_tile()
 {
     return DEFAULT_TILE;
+}
+
+void tilemap_render_layer_fow(struct TileMap *tilemap, int layer, vec2 fow_center, vec2 pos, float size)
+{
+    Tile *tiles = tilemap_get_layer_by_index(tilemap, layer);
+    tiles = tilemap->tile;
+    int width = tilemap->width;
+    int height = tilemap->height;
+    int x = 0;
+    int y = 0;
+    unsigned int program = shaders_use_default();
+    for (int i = 0; i < height * width; ++i)
+    {
+        Tile tile = tiles[i];
+        if(tile)
+        {
+            vec2 tile_pos = {(float)x+0.5f, (float)y+0.5f};
+            float distance = glm_vec2_distance(fow_center, tile_pos);
+            float dist_fact = 0;
+            if(distance > 8)
+            {
+                dist_fact = distance - 8;
+            }
+
+            mat3 transform;
+            
+            float distance_size_fact = 1-dist_fact/5; 
+            if(distance_size_fact < 0) distance_size_fact = 0;
+            vec2 size_vec = {size+0.001f, size+0.001f}; // TODO: Find a real solution for rounding error causing seams
+            glm_vec2_scale(size_vec, distance_size_fact, size_vec);
+
+            float rotation = dist_fact/10;
+
+            float alpha = 1/(dist_fact/5 + 1);
+
+            vec2 pos_offset;
+            vec3 color;
+            pos_offset[0] = ((float)x+0.5f) * size;
+            pos_offset[1] = ((float)y+0.5f) * size;
+            glm_vec2_add(pos, pos_offset, pos_offset);
+            compute_complete_transform(transform, pos_offset, size_vec, rotation);
+            struct TextureAtlas atlas = get_atlas_tilemap();
+            int tile_x, tile_y;
+            atlas_index_to_coordinates(atlas, tile-1, &tile_x, &tile_y);
+            program = shaders_use_atlas(atlas, tile_x, tile_y);
+            color[0] = 1; color[1] = 1; color[2] = 1; 
+            draw_transformed_quad(program, transform, color, alpha);
+        }
+        ++x;
+        if (x>=width)
+        {
+            x=0;
+            ++y;
+        }
+    }
 }
 
 void tilemap_render_layer(struct TileMap *tilemap, int layer, vec2 pos, float size)

@@ -6,6 +6,7 @@
 #include "level.h"
 #include "cglm/ivec2.h"
 #include "cglm/vec2.h"
+#include "game.h"
 #include "rendering/rendering.h"
 #include "tilemap.h"
 #include "level.h"
@@ -44,12 +45,29 @@ void draw_view_borders(struct Level *level, vec2 pos, float size)
     glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 }
 
-void render_level(struct Level *level, struct GameState *gamestate)
+void render_level(struct Game *game)
+{
+    struct Level *level = get_current_level(game);
+    struct GameState *gamestate = get_current_gamestate(game);
+    vec2 pos = {0,0};
+    float size = 1;
+
+    if(level->tilemap.layer_count > 0)
+    {
+        tilemap_render_layer_fow(&level->tilemap, 0, game->camera.pos, pos, size);
+    }
+    
+    //tilemap_render_solidmap(&level->tilemap, level_get_width(level), level_get_height(level), pos, size);
+    
+    render_repeaters_range(gamestate, &level->tilemap, pos, size);
+    render_entities(gamestate, pos, size);
+}
+
+void render_level_simple(struct Level *level, struct GameState *gamestate)
 {
     vec2 pos = {0,0};
     float size = 1;
 
-    tilemap_render_background(&level->tilemap, pos, size);
 
     if(level->tilemap.layer_count > 0)
     {

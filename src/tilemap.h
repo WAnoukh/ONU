@@ -27,6 +27,8 @@ int tilemap_get_default_tile();
 
 int tilemap_get_default_tile_solidity();
 
+void tilemap_render_layer_fow(struct TileMap *tilemap, int layer, vec2 fow_center, vec2 pos, float size);
+
 void tilemap_render_layer(struct TileMap *tilemap, int layer, vec2 pos, float size);
 
 void tilemap_render_solidmap(struct TileMap *tilemap, int tm_width, int tm_height, vec2 pos, float size);

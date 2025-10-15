@@ -645,6 +645,9 @@ void handle_entity_edition(struct EditorCtx *ectx, vec2 mouse_pos)
 
 void editor_update(struct EditorCtx *ectx)
 {
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     editor_new_frame();
 
     if (igIsKeyPressed_Bool(ImGuiKey_Escape, false))
@@ -669,7 +672,8 @@ void editor_update(struct EditorCtx *ectx)
     }
 
     camera_compute_view(&ectx->camera);
-    render_level(&ectx->level, &ectx->level.gamestate);
+    tilemap_render_background(&ectx->level.tilemap, (vec2){0, 0}, 1);
+    render_level_simple(&ectx->level, &ectx->level.gamestate);
     render_level_views(&ectx->level);
 
     //ImGuiIO *io = igGetIO_Nil();

@@ -316,7 +316,7 @@ void compute_camera_target(struct Game *game)
 void game_start(struct Game* game)
 {
     game->camera = camera_get_default();
-    game->camera.zoom = 0.2f;
+    game->camera.zoom = 0.15f;
     compute_camera_target(game);
     glm_vec2_copy(game->camera_target, game->camera.pos);
     camera_compute_view(&game->camera);
@@ -325,6 +325,9 @@ void game_start(struct Game* game)
 
 void game_update(struct Game *game)
 {
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     game->new_time = get_time();
     game->delta_time = (float)(game->new_time - game->last_time);
     game->last_time = game->new_time;
@@ -353,8 +356,8 @@ void game_update(struct Game *game)
     }
 
     compute_camera_target(game);
-    glm_vec2_lerp(game->camera.pos, game->camera_target, 0.05f, game->camera.pos);
+    glm_vec2_lerp(game->camera.pos, game->camera_target, 0.02f, game->camera.pos);
     //glm_vec2_copy(game->camera_target, game->camera.pos);
     
-    render_level(get_current_level(game), &game->gamestate_current);
+    render_level(game);
 }

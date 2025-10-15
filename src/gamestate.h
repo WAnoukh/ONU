@@ -93,6 +93,8 @@ const char * const*get_action_names();
 
 int get_entity_index(struct GameState *gamestate, struct Entity *entity);
 
+void get_player_position(struct GameState *gamestate, ivec2 out_pos);
+
 int push_entity(struct GameState *gamestate, struct TileMap *tilemap, struct Entity *entity, ivec2 offset);
 
 void render_repeaters_range(struct GameState *gamestate, struct TileMap *tilemap, vec2 pos, float size);
