@@ -11,6 +11,7 @@ const char *entity_names[] = {"None","Player","Box","Key",
 const char *action_names[] = {"None","Up","Down","Left","Right","Undo","DoorOpen","DoorClose"};
 
 vec3 color_key_block_activated = {203.f, 214.f, 0.f};
+vec3 color_key_block_global = {.204f, .659f, .196f};
 vec3 color_door_open = {0.f,1.f,0.f};
 vec3 entities_color[] = {
     {0.f,0.f,0.f},          
@@ -130,6 +131,10 @@ void render_entities(struct GameState *gamestate, vec2 pos, float size)
             if(key_block_data->is_pressed)
             {
                 glm_vec3_copy(color_key_block_activated, color);
+            }
+            else if(key_block_data->is_global)
+            {
+                glm_vec3_copy(color_key_block_global, color);
             }
         }else if(ent.type == ENTITY_DOOR)
         {

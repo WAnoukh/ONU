@@ -48,4 +48,6 @@ void render_level_simple(struct Level *level, struct GameState *gamestate);
 
 void render_level_views(struct Level *level);
 
+void level_get_view_coord_from_coord(struct Level *level, int x, int y, int *out_view_x, int *out_view_y);
+
 #endif // LEVEL_H

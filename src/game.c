@@ -216,9 +216,41 @@ void check_if_player_reached_end(struct GameState *gamestate)
     gamestate->is_end_reached = player_reached;
 }
 
+int is_key_in_same_view_as_player(struct Level *level, struct GameState *gamestate, int key_index, int player_view_x, int player_view_y)
+{
+    for(int entity_index=0; entity_index<gamestate->entity_count; ++entity_index)
+    {
+        struct Entity *ent = gamestate->entities+entity_index;
+        if(ent->type == ENTITY_KEY && ent->data_index == key_index)
+        {
+            int key_view_x, key_view_y;
+            level_get_view_coord_from_coord(level, ent->position[0], ent->position[1], &key_view_x, &key_view_y);
+            printf("Checking jey %d %d in view %d %d\n", ent->position[0], ent->position[1], key_view_x, key_view_y);
+            printf("player is in %d %d\n", player_view_x, player_view_y);
+            if(player_view_y == key_view_y && player_view_x == key_view_x)
+            {
+                printf("Bingo !!\n");
+                //printf("key pos %d %d and player pos %d %d\n", key_view_x, key_view_y, player_view_x, player_view_y);
+                return 1;
+            }
+            return 0;
+        }
+    }
+    return 0;
+}
+
 void update_key_blocks(struct Game *game)
 {
     struct GameState *gamestate = get_current_gamestate(game);
+    struct Level *level = &game->level;
+    int has_level_views = level->view_width > 0 || level->view_height > 0;
+    int player_view_x, player_view_y;
+    if(has_level_views)
+    {
+        ivec2 player_pos;
+        get_player_position(gamestate, player_pos);
+        level_get_view_coord_from_coord(level, player_pos[0], player_pos[1], &player_view_x, &player_view_y);
+    }
     int has_revelant_action_happended = 0;
     int first_action = 0;
     int any_non_universal_key_pressed = 0;
@@ -227,8 +259,17 @@ void update_key_blocks(struct Game *game)
     {
         struct KeyBlockData *key_data = gamestate->key_block_data+i;
 
+
         if(i_key_pressed(key_data->key))
         {
+            if(has_level_views && !key_data->is_global)
+            {
+                int is_same_view = is_key_in_same_view_as_player(level, gamestate, i, player_view_x, player_view_y);
+                if(!is_same_view)
+                {
+                    continue;
+                }
+            }
             any_non_universal_key_down = 1;
             any_non_universal_key_pressed =1;
             break;
@@ -252,6 +293,21 @@ void update_key_blocks(struct Game *game)
         {
             key_data->is_pressed = i_key_down(key_data->key);
             key_pressed = i_key_pressed(key_data->key);
+        }
+        if(key_pressed )
+        {
+            if(has_level_views && !key_data->is_global)
+            {
+                printf("Checking for view !\n");
+                int is_same_view = is_key_in_same_view_as_player(level, gamestate, ent->data_index, player_view_x, player_view_y);
+                printf("same view %s\n", is_same_view ? "true": "false");
+                if(!is_same_view)
+                {
+                    printf("One non global key dismissed\n");
+                    key_pressed = 0;
+                    key_data->is_pressed = 0;
+                }
+            }
         }
         if(key_pressed)
         {

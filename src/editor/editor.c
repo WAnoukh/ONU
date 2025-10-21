@@ -57,7 +57,7 @@ ivec2 reposition_selection_delta;
 
 enum EntityType creation_type = ENTITY_NONE;
 ivec2 creation_position;
-int creation_key = GLFW_KEY_A;
+struct KeyBlockData creation_key = (struct KeyBlockData){GLFW_KEY_A, 0, 0};
 enum ActionType creation_action = ACTION_NONE;
 int creation_action_target = 0;
 
@@ -141,9 +141,9 @@ void editor_deinit()
     igDestroyContext(ctx);
 }
 
-void edit_entity_key(int *key)
+void edit_entity_key(struct KeyBlockData *key)
 {
-    char letter[] = {(char)*key, '\0'};
+    char letter[] = {(char)key->key, '\0'};
     igText("Key binding:");
     if(igInputText("##keybinding", letter, 2, ImGuiInputTextFlags_CharsUppercase, NULL, NULL))
     {
@@ -153,9 +153,11 @@ void edit_entity_key(int *key)
         }
         if(letter[0] >= GLFW_KEY_A || letter[0] <= GLFW_KEY_Z || letter[0] == '.')
         {
-            *key = (int)letter[0];
+            key->key = (int)letter[0];
         }
     }
+    igText("Is global ?");
+    igCheckbox("##global", (bool *)&key->is_global);
 }
 
 void edit_entity_slot(struct GameState *gamestate, int *target, enum ActionType *type)
@@ -946,7 +948,7 @@ void editor_update(struct EditorCtx *ectx)
                 case ENTITY_NONE:
                     break;
                 case ENTITY_KEY:
-                    create_key_block_at(gamestate, creation_position[0], creation_position[1], creation_key);
+                    create_key_block_at(gamestate, creation_position[0], creation_position[1], creation_key.key, creation_key.is_global);
                     break;
                 case ENTITY_SLOT:
                     create_slot_at(gamestate, creation_position[0], creation_position[1], creation_action, creation_action_target);
@@ -1003,7 +1005,7 @@ void editor_update(struct EditorCtx *ectx)
             case ENTITY_KEY:
                 {
                     struct KeyBlockData *key = gamestate->key_block_data+edition_entity->data_index;
-                    edit_entity_key(&key->key);
+                    edit_entity_key(key);
                 }
                 break;
             case ENTITY_SLOT:

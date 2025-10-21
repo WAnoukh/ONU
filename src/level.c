@@ -147,3 +147,9 @@ void level_shift(struct Level *level, ivec2 offset)
         glm_ivec2_add(*pos, offset, *pos);
     }
 }
+
+void level_get_view_coord_from_coord(struct Level *level, int x, int y, int *out_view_x, int *out_view_y)
+{
+    *out_view_x = x / level->view_width;
+    *out_view_y = y / level->view_height;
+}

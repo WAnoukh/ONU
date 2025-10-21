@@ -27,6 +27,7 @@ struct Action
 struct KeyBlockData
 {
     int key;
+    int is_global;
     int is_pressed;
 };
 
@@ -115,7 +116,7 @@ static inline void create_movable_at(struct GameState *gs, int x, int y, enum En
     };
 }
 
-static inline void create_key_block_at(struct GameState *gs, int x, int y, int key)
+static inline void create_key_block_at(struct GameState *gs, int x, int y, int key, int is_global)
 {
     gs->entities[gs->entity_count++] = (struct Entity){
         ENTITY_KEY,
@@ -125,6 +126,7 @@ static inline void create_key_block_at(struct GameState *gs, int x, int y, int k
     };
     gs->key_block_data[gs->key_block_data_count++] = (struct KeyBlockData){
         key,
+        is_global,
         0,
     };
 }

@@ -34,12 +34,12 @@ void get_default_level(struct Level *level)
         {8,8},
         -1,
     };
-    create_key_block_at(gamestate, 2, 7, GLFW_KEY_F);
-    create_key_block_at(gamestate, 7, 1, GLFW_KEY_W);
-    create_key_block_at(gamestate, 7, 2, GLFW_KEY_S);
-    create_key_block_at(gamestate, 6, 2, GLFW_KEY_A);
-    create_key_block_at(gamestate, 8, 2, GLFW_KEY_D);
-    create_key_block_at(gamestate, 4, 1, GLFW_KEY_R);
+    create_key_block_at(gamestate, 2, 7, GLFW_KEY_F, 0);
+    create_key_block_at(gamestate, 7, 1, GLFW_KEY_W, 0);
+    create_key_block_at(gamestate, 7, 2, GLFW_KEY_S, 0);
+    create_key_block_at(gamestate, 6, 2, GLFW_KEY_A, 0);
+    create_key_block_at(gamestate, 8, 2, GLFW_KEY_D, 0);
+    create_key_block_at(gamestate, 4, 1, GLFW_KEY_R, 0);
     create_movable_at(gamestate, 7, 7, ENTITY_BOX);
     create_door_at(gamestate, 2, 0);
     gamestate->is_end_reached = 0;

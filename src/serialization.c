@@ -10,7 +10,7 @@
 #define S_ERROR(msg) printf("%s, %d, Serialization error: %s", __FILE__, __LINE__, msg)
 #define MAJOR 0
 #define MINOR 4
-#define PATCH 1
+#define PATCH 2
 
 const struct Version version = 
 {
@@ -42,7 +42,21 @@ void deserialize_gamestate(struct GameState *out_gamestate, FILE *file, struct V
     fread(out_gamestate->entities, sizeof(struct Entity)*out_gamestate->entity_count, 1, file);
 
     fread(&out_gamestate->key_block_data_count, sizeof(out_gamestate->key_block_data_count), 1, file);
-    fread(&out_gamestate->key_block_data, sizeof(struct KeyBlockData)* out_gamestate->key_block_data_count, 1, file);
+    if(compare_version_value(file_version, 0, 4, 1) > 0)
+    {
+        fread(&out_gamestate->key_block_data, sizeof(struct KeyBlockData)* out_gamestate->key_block_data_count, 1, file);
+    }
+    else
+    {
+        printf("GameState deserialization: Adapting doors for pre v0.4.2\n");
+        for(int i = 0; i < out_gamestate->key_block_data_count; ++i)
+        {
+            struct KeyBlockData *data = out_gamestate->key_block_data+i;
+            fread(&data->key, sizeof(data->key), 1, file);
+            fread(&data->is_pressed, sizeof(data->is_pressed), 1, file);
+            data->is_global = 0;
+        }
+    }
     
     fread(&out_gamestate->slot_data_count, sizeof(out_gamestate->slot_data_count), 1, file);
     fread(out_gamestate->slot_data, sizeof(struct SlotData) * out_gamestate->slot_data_count, 1, file);
@@ -54,7 +68,7 @@ void deserialize_gamestate(struct GameState *out_gamestate, FILE *file, struct V
     }
     else
     {
-        printf("GameState deserialization: Adapting doors for pre v0.3.0\n");
+        printf("GameState deserialization: Adapting doors for pre v0.3.1\n");
         int is_main_door_opened;
         fread(&is_main_door_opened, sizeof(is_main_door_opened), 1, file);
 
