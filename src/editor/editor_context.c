@@ -1,5 +1,6 @@
 #include "editor_context.h"
 #include "GLFW/glfw3.h"
+#include <string.h>
 
 #define DEFAULT_LEVEL_SIZE 10
 #define DEFAULT_LEVEL_GRID_SIZE DEFAULT_LEVEL_SIZE * DEFAULT_LEVEL_SIZE
@@ -56,6 +57,41 @@ struct EditorCtx ectx_default()
     ctx.camera.pos[1] = 0;
     camera_compute_view(&ctx.camera);
 
+    ctx.floating_editor_show = 0;
+
+    ctx.reposition_entity = NULL;
+    ctx.reposition_selection = 0;
+
+    ctx.creation_type = ENTITY_NONE;
+    ctx.creation_key = (struct KeyBlockData){GLFW_KEY_A, 0, 0};
+    ctx.creation_action = ACTION_NONE;
+    ctx.creation_action_target = 0;
+
+    ctx.deletion_index = -1;
+    ctx.deletion_selection = 0;
+
+    ctx.layer_selected = 0;
+
+    ctx.selection_started = 0;
+
+    ctx.selection_ents_count = 0; 
+
+    ctx.edition_entity = NULL;
+
+    strcpy(ctx.file_current, "NewFile");
+    ctx.saving = 0;
+    ctx.opening = 0;
+    ctx.opening_failed = 0;
+
+    strcpy(ctx.sequence_current, "demo");
+    ctx.sequence_opening = 0;
+    ctx.sequence_opening_failed = 0;
+
+    ctx.ui_scale = 2.f;
+
+    ctx.level_menu_opened = 0;
+    ctx.level_temp_size_changed = 0;
+    ctx.level_temp_shift_changed = 0;
     return ctx;
 }
 

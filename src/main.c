@@ -24,20 +24,15 @@ int main()
     }
 
 #ifdef EDITOR
-    if(!editor_init())
+    struct EditorCtx ectx = ectx_default(); 
+    if(!editor_init(&ectx))
     {
         printf("Editor Error : failed to initialize the editor.\n");
         exit(1);
     }
-    struct EditorCtx ectx = ectx_default(); 
     initialize_renderer(&ectx.camera);
     ectx.is_playing = 0;
     ectx.game = game_init();
-#endif
-
-#ifndef EDITOR
-    initialize_renderer(&game.camera);
-#endif
 
     load_default_images(); 
 
@@ -50,21 +45,15 @@ int main()
         }
 
 
-#ifdef EDITOR
         editor_update(&ectx);
-#else
-        game_update(&game);
-#endif
 
         glfwSwapBuffers(w_get_window_ctx());
         i_clear_pressed();
         glfwPollEvents();
     }
-
-
-#ifdef EDITOR
-    editor_deinit();
-#endif
+    editor_deinit(&ectx);
     glfwTerminate();
+#endif
+
     return 0;
 }

@@ -46,63 +46,15 @@ const char *window_opening = "Opening";
 const char *window_sequence_opening = "Sequence Opening";
 const char *floating_editor = "World Editor";
 
-ImGuiContext* ctx;
-vec2 cursor_pos;
-ivec2 popup_last_clicked_pos;
-_Bool floating_editor_show = 0;
-
-struct Entity *reposition_entity = NULL;
-int reposition_selection = 0;
-ivec2 reposition_selection_delta;
-
-enum EntityType creation_type = ENTITY_NONE;
-ivec2 creation_position;
-struct KeyBlockData creation_key = (struct KeyBlockData){GLFW_KEY_A, 0, 0};
-enum ActionType creation_action = ACTION_NONE;
-int creation_action_target = 0;
-
-int deletion_index = -1;
-int deletion_selection = 0;
-
-int layer_selected = 0;
-
-int selection_started = 0;
-vec2 selection_pos_start;
-#define selection_ents_max 30
-int selection_ents[selection_ents_max];
-int selection_ents_count = 0;
-
-struct Entity *edition_entity = NULL;
-
 char resources_path[] = "resources/level/";
-
 char file_suffix[] = ".level";
-char file_current[100] = "NewFile";
-int saving = 0;
-int opening = 0;
-int opening_failed = 0;
-
 char sequence_suffix[] = ".seq";
-char sequence_current[100] = "demo";
-int sequence_opening = 0;
-int sequence_opening_failed = 0;
 
-int tile_index;
-struct ImVec2i tile_position;
-
-float ui_scale = 2.f;
-
-int level_menu_opened = 0;
-ivec2 level_temp_size;
-int level_temp_size_changed = 0;
-ivec2 level_temp_shift;
-int level_temp_shift_changed = 0;
-
-int editor_init()
+int editor_init(struct EditorCtx *ectx)
 {
 
-    ctx = igCreateContext(NULL);
-    if (ctx) {
+    ectx->ctx = igCreateContext(NULL);
+    if (ectx->ctx) {
         printf("Dear ImGui context created!\n");
     }
     else
@@ -112,8 +64,8 @@ int editor_init()
     //ImGuiIO* io = igGetIO_ContextPtr(ctx);
     ImGuiStyle* style = igGetStyle();
 
-    ImGuiStyle_ScaleAllSizes(style, ui_scale);
-    style->FontScaleMain *= ui_scale;
+    ImGuiStyle_ScaleAllSizes(style, ectx->ui_scale);
+    style->FontScaleMain *= ectx->ui_scale;
 
     ImGui_ImplGlfw_InitForOpenGL(w_get_window_ctx(), true);
     ImGui_ImplOpenGL3_Init("#version 130");
@@ -133,12 +85,12 @@ void editor_render(struct EditorCtx *ectx)
     ImGui_ImplOpenGL3_RenderDrawData(igGetDrawData());
 }
 
-void editor_deinit()
+void editor_deinit(struct EditorCtx *ectx)
 {
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
-    igDestroyContext(ctx);
+    igDestroyContext(ectx->ctx);
 }
 
 void edit_entity_key(struct KeyBlockData *key)
@@ -215,51 +167,51 @@ void menu_bar(struct EditorCtx *ectx)
             }
             */
             if (igMenuItem_Bool("Open", NULL, false, true)) {
-                opening = 1;
-                opening_failed = 0;
+                ectx->opening = 1;
+                ectx->opening_failed = 0;
             }
             if (igMenuItem_Bool("Save", NULL, false, true)) {
-                saving = 1;             
+                ectx->saving = 1;             
             }
             igSeparator();
             if (igMenuItem_Bool("Open Sequence", NULL, false, true)) {
-                sequence_opening = 1;
-                opening_failed = 0;
+                ectx->sequence_opening = 1;
+                ectx->opening_failed = 0;
             }
             igEndMenu();
         }
 
         if (igBeginMenu("Level", true)) {
-            if(!level_menu_opened)
+            if(!ectx->level_menu_opened)
             {
-                level_menu_opened = 1;
-                level_temp_size[0] = level_get_width(&ectx->level);
-                level_temp_size[1] = level_get_height(&ectx->level);
-                level_temp_size_changed = 0;
-                level_temp_shift[0] = 0;
-                level_temp_shift[1] = 0;
-                level_temp_shift_changed = 0;
+                ectx->level_menu_opened = 1;
+                ectx->level_temp_size[0] = level_get_width(&ectx->level);
+                ectx->level_temp_size[1] = level_get_height(&ectx->level);
+                ectx->level_temp_size_changed = 0;
+                ectx->level_temp_shift[0] = 0;
+                ectx->level_temp_shift[1] = 0;
+                ectx->level_temp_shift_changed = 0;
             }
-            igCheckbox("Show World Editor", &floating_editor_show);
+            igCheckbox("Show World Editor", &ectx->floating_editor_show);
 
             igSeparator();
             igText("Shift Level:");
-            level_temp_shift_changed |= ig_position_input("shift", level_temp_shift);
-            if(level_temp_shift_changed && igButton("Comfirm", (struct ImVec2){0,0}))
+            ectx->level_temp_shift_changed |= ig_position_input("shift", ectx->level_temp_shift);
+            if(ectx->level_temp_shift_changed && igButton("Comfirm", (struct ImVec2){0,0}))
             {
-                level_shift(&ectx->level, level_temp_shift);
-                level_temp_shift[0] = 0;
-                level_temp_shift[1] = 0;
-                level_temp_shift_changed = 0;
+                level_shift(&ectx->level, ectx->level_temp_shift);
+                ectx->level_temp_shift[0] = 0;
+                ectx->level_temp_shift[1] = 0;
+                ectx->level_temp_shift_changed = 0;
             }
 
             igSeparator();
             igText("Level Size:");
-            level_temp_size_changed |= ig_position_input("levelSize", level_temp_size);
-            if(level_temp_size_changed && igButton("Comfirm", (struct ImVec2){0,0}))
+            ectx->level_temp_size_changed |= ig_position_input("levelSize", ectx->level_temp_size);
+            if(ectx->level_temp_size_changed && igButton("Comfirm", (struct ImVec2){0,0}))
             {
-                resize_level(&ectx->level, level_temp_size[0], level_temp_size[1]);
-                level_temp_size_changed = 0;
+                resize_level(&ectx->level, ectx->level_temp_size[0], ectx->level_temp_size[1]);
+                ectx->level_temp_size_changed = 0;
             }
 
             igSeparator();
@@ -275,7 +227,7 @@ void menu_bar(struct EditorCtx *ectx)
         }
         else
         {
-            level_menu_opened = 0;
+            ectx->level_menu_opened = 0;
         }
 
         if(igBeginMenu("Options", true))
@@ -287,7 +239,7 @@ void menu_bar(struct EditorCtx *ectx)
                 if(style->FontScaleMain < 1) style->FontScaleMain = 1;
                 if(style->FontScaleMain > 4) style->FontScaleMain = 4;
                 ImGuiStyle_ScaleAllSizes(style, style->FontScaleMain/old_scale);
-                ui_scale = style->FontScaleMain;
+                ectx->ui_scale = style->FontScaleMain;
             }
             igEndMenu();
         }
@@ -305,13 +257,13 @@ void menu_bar(struct EditorCtx *ectx)
     }
 }
 
-void ig_tilemap_layer(struct Level *level, char *title, int layer)
+void ig_tilemap_layer(struct EditorCtx *ectx, struct Level *level, char *title, int layer)
 {
 
     igSetNextItemAllowOverlap();
-    if (igSelectable_Bool("##selectable", layer_selected == layer, ImGuiSelectableFlags_SpanAvailWidth, (struct ImVec2){0,0}))
+    if (igSelectable_Bool("##selectable", ectx->layer_selected == layer, ImGuiSelectableFlags_SpanAvailWidth, (struct ImVec2){0,0}))
     {
-        layer_selected = layer;
+        ectx->layer_selected = layer;
     }
 
     igSameLine(0, 0);
@@ -343,11 +295,11 @@ void ig_tilemap_layer(struct Level *level, char *title, int layer)
     igText(title);
 }
 
-void tilemap_ig_selection(struct ImVec2 pos, float size)
+void tilemap_ig_selection(struct EditorCtx *ectx, struct ImVec2 pos, float size)
 {
     ImDrawList* draw_list = igGetWindowDrawList();
-    struct ImVec2 rect_min = { pos.x + (float)tile_position.x * size,
-        pos.y + (float)tile_position.y * size };
+    struct ImVec2 rect_min = { pos.x + (float)ectx->tile_position.x * size,
+        pos.y + (float)ectx->tile_position.y * size };
     struct ImVec2 rect_max = { rect_min.x + size,
         rect_min.y + size };
 
@@ -355,7 +307,7 @@ void tilemap_ig_selection(struct ImVec2 pos, float size)
     ImDrawList_AddRectFilled(draw_list, rect_min, rect_max, color, 0.0f, 0);
 }
 
-void ig_tilemap_tile_selector(struct TextureAtlas atlas, int *out_index, struct ImVec2i *out_pos)
+void ig_tilemap_tile_selector(struct EditorCtx *ectx, struct TextureAtlas atlas, int *out_index, struct ImVec2i *out_pos)
 {
     unsigned int texture_id = atlas.texture_id;
     struct ImTextureRef *ref =ImTextureRef_ImTextureRef_TextureID(texture_id);
@@ -369,7 +321,7 @@ void ig_tilemap_tile_selector(struct TextureAtlas atlas, int *out_index, struct 
 
     igImage(*ref, image_size,(struct ImVec2){0,1},(struct ImVec2){1,0});
 
-    tilemap_ig_selection(pos, 32);
+    tilemap_ig_selection(ectx, pos, 32);
 
     struct ImVec2 selectable_size;
     selectable_size.x = MIN(window_size.x, image_size.x + pos.x);
@@ -400,14 +352,14 @@ void ig_tilemap_tile_selector(struct TextureAtlas atlas, int *out_index, struct 
     *out_pos = (struct ImVec2i){tile_x, tile_y};
 }
 
-void selection_draw(vec2 mouse_pos)
+void selection_draw(struct EditorCtx *ectx, vec2 mouse_pos)
 {
     unsigned int program = shaders_use_default();
     mat3 transform;
     vec2 size;
-    glm_vec2_sub(selection_pos_start, mouse_pos, size);
+    glm_vec2_sub(ectx->selection_pos_start, mouse_pos, size);
     vec2 pos;
-    glm_vec2_add(selection_pos_start, mouse_pos, pos);
+    glm_vec2_add(ectx->selection_pos_start, mouse_pos, pos);
     glm_vec2_scale(pos, 0.5f, pos);
 
 
@@ -415,7 +367,7 @@ void selection_draw(vec2 mouse_pos)
     draw_transformed_quad_screen_space(program, transform, (vec3){0.f, 1.f, 0.2f}, 0.2f);
 }
 
-int ig_save_path_input_popup(const char *popup_id, char *input_buffer, char *out_path, const char *base_path, const char *suffix)
+int ig_save_path_input_popup(struct EditorCtx *ectx, const char *popup_id, char *input_buffer, char *out_path, const char *base_path, const char *suffix)
 {
     int result = 0;
     if(igBeginPopupModal(popup_id, NULL, ImGuiWindowFlags_AlwaysAutoResize))
@@ -445,7 +397,7 @@ int ig_save_path_input_popup(const char *popup_id, char *input_buffer, char *out
         igSameLine(0,-1);
         if(igButton("Cancel", (struct ImVec2){0,0}))
         {
-            saving = 0;
+            ectx->saving = 0;
             igCloseCurrentPopup();
             result = -1;
         }
@@ -455,7 +407,7 @@ int ig_save_path_input_popup(const char *popup_id, char *input_buffer, char *out
     return result;
 }
 
-int ig_open_path_input_popup(const char *popup_id, char *input_buffer, char *out_path, const char *base_path, const char *suffix)
+int ig_open_path_input_popup(struct EditorCtx *ectx, const char *popup_id, char *input_buffer, char *out_path, const char *base_path, const char *suffix)
 {
     int result = 0;
     if(igBeginPopupModal(popup_id, NULL, ImGuiWindowFlags_AlwaysAutoResize))
@@ -472,7 +424,7 @@ int ig_open_path_input_popup(const char *popup_id, char *input_buffer, char *out
         {
             strcat(path, suffix);
         }
-        if(opening_failed)
+        if(ectx->opening_failed)
         {
             igText("/!\\/!\\ This file don't exist !");
         }
@@ -480,7 +432,7 @@ int ig_open_path_input_popup(const char *popup_id, char *input_buffer, char *out
         {
             if(access(path, F_OK)!=0)  
             {
-                opening_failed = 1;
+                ectx->opening_failed = 1;
             }
             else 
             {
@@ -500,7 +452,7 @@ int ig_open_path_input_popup(const char *popup_id, char *input_buffer, char *out
     return result;
 }
 
-void handle_editor_window(struct Level *level)
+void handle_editor_window(struct EditorCtx *ectx, struct Level *level)
 {
     struct TileMap *tilemap = &level->tilemap;
     int level_width = tilemap->width, level_height = tilemap->height;
@@ -515,11 +467,11 @@ void handle_editor_window(struct Level *level)
         char number[3];
         my_itoa(i, number, 10);
         strcat(selectable_title, number);
-        ig_tilemap_layer(level, selectable_title, i);
+        ig_tilemap_layer(ectx, level, selectable_title, i);
         igPopID();
     }
     igSeparatorText("Tiles:");
-    ig_tilemap_tile_selector(get_atlas_tilemap(), &tile_index, &tile_position);
+    ig_tilemap_tile_selector(ectx, get_atlas_tilemap(), &ectx->tile_index, &ectx->tile_position);
     igEnd();
     igPopID();
 
@@ -530,8 +482,8 @@ void handle_editor_window(struct Level *level)
     int alt = igIsKeyDown_Nil(ImGuiKey_LeftAlt);
 
     ivec2 cursor_grid_ipos;
-    cursor_grid_ipos[0] = (int)roundf(cursor_pos[0]-0.5f);
-    cursor_grid_ipos[1] = (int)roundf(cursor_pos[1]-0.5f);
+    cursor_grid_ipos[0] = (int)roundf(ectx->cursor_pos[0]-0.5f);
+    cursor_grid_ipos[1] = (int)roundf(ectx->cursor_pos[1]-0.5f);
     int is_inside = cursor_grid_ipos[0] >= 0 && cursor_grid_ipos[0] < level_width
         && cursor_grid_ipos[1] >= 0 && cursor_grid_ipos[1] < level_height;
 
@@ -539,17 +491,17 @@ void handle_editor_window(struct Level *level)
     {
         if(is_inside)
         {
-            Tile *layer = tilemap_get_layer_by_index(tilemap, layer_selected);
+            Tile *layer = tilemap_get_layer_by_index(tilemap, ectx->layer_selected);
             Tile *tile_to_draw = layer + cursor_grid_ipos[0] + cursor_grid_ipos[1] * level_width;
             if(edition > 0)
             {
                 if(alt)
                 {
-                    tile_index = *tile_to_draw - 1; 
+                    ectx->tile_index = *tile_to_draw - 1; 
                 }
                 else
                 {
-                    *tile_to_draw = tile_index + 1; 
+                    *tile_to_draw = ectx->tile_index + 1; 
                 }
             }
             else
@@ -562,8 +514,8 @@ void handle_editor_window(struct Level *level)
     mat3 transform;
     vec2 size = {0.8f, 0.8f};
     vec2 cursor_grid_pos;
-    cursor_grid_pos[0] = roundf(cursor_pos[0]-((float)level_width)/2+0.5f)+(float)(level_width)/2-0.5f;
-    cursor_grid_pos[1] = roundf(cursor_pos[1]-((float)level_height)/2+0.5f)+(float)(level_height)/2-0.5f;
+    cursor_grid_pos[0] = roundf(ectx->cursor_pos[0]-((float)level_width)/2+0.5f)+(float)(level_width)/2-0.5f;
+    cursor_grid_pos[1] = roundf(ectx->cursor_pos[1]-((float)level_height)/2+0.5f)+(float)(level_height)/2-0.5f;
 
     compute_transform(transform, cursor_grid_pos, size);
     draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.8f);
@@ -580,35 +532,35 @@ void handle_entity_edition(struct EditorCtx *ectx, vec2 mouse_pos)
     if(igIsMouseClicked_Bool(ImGuiMouseButton_Right, false))
     {
         ivec2 cursor_grid_pos;
-        cursor_grid_pos[0] = (int)roundf(cursor_pos[0]-0.5f);
-        cursor_grid_pos[1] = (int)roundf(cursor_pos[1]-0.5f);
+        cursor_grid_pos[0] = (int)roundf(ectx->cursor_pos[0]-0.5f);
+        cursor_grid_pos[1] = (int)roundf(ectx->cursor_pos[1]-0.5f);
         if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level_width
                 && cursor_grid_pos[1] >= 0 && cursor_grid_pos[1] < level_height)
         {
             igOpenPopup_Str("Menu", 0);
-            glm_ivec2_copy(cursor_grid_pos, popup_last_clicked_pos);
+            glm_ivec2_copy(cursor_grid_pos, ectx->popup_last_clicked_pos);
         }
     }
     ImGuiIO *io = igGetIO_Nil();
     if(igIsMouseDown_Nil(ImGuiMouseButton_Left) && !io->WantCaptureMouse)
     {
-        if(!selection_started)
+        if(!ectx->selection_started)
         {
-            glm_vec2_copy(mouse_pos, selection_pos_start);
-            selection_started = 1;
+            glm_vec2_copy(mouse_pos, ectx->selection_pos_start);
+            ectx->selection_started = 1;
         }
     }
     else
     {
-        selection_started = 0;
+        ectx->selection_started = 0;
     }
-    if(selection_started)
+    if(ectx->selection_started)
     {
-        selection_draw(mouse_pos);
-        selection_ents_count = 0;
+        selection_draw(ectx, mouse_pos);
+        ectx->selection_ents_count = 0;
         vec2 world_pos_start;
         vec2 world_mouse_pos;
-        camera_screen_to_world(&ectx->camera, selection_pos_start, world_pos_start);
+        camera_screen_to_world(&ectx->camera, ectx->selection_pos_start, world_pos_start);
         camera_screen_to_world(&ectx->camera, mouse_pos, world_mouse_pos);
         world_pos_start[0] = world_pos_start[0]-0.5f;
         world_pos_start[1] = world_pos_start[1]-0.5f;
@@ -626,14 +578,14 @@ void handle_entity_edition(struct EditorCtx *ectx, vec2 mouse_pos)
             int inside_y = bound_min_y < (float)ent->position[1] && (float)ent->position[1] < bound_max_y;
             if(inside_x && inside_y)
             {
-                selection_ents[selection_ents_count++] = i; 
+                ectx->selection_ents[ectx->selection_ents_count++] = i; 
             }
         }
     }
     unsigned int program = shaders_use_default();
-    for(int i = 0; i < selection_ents_count; ++i)
+    for(int i = 0; i < ectx->selection_ents_count; ++i)
     {
-        struct Entity *ent = gamestate->entities+(selection_ents[i]);
+        struct Entity *ent = gamestate->entities+(ectx->selection_ents[i]);
         mat3 transform;
         vec2 size = {1.1f, 1.1f};
         vec2 pos;
@@ -707,21 +659,21 @@ void editor_update(struct EditorCtx *ectx)
 
     if(igIsKeyPressed_Bool(ImGuiKey_Tab, false))
     {
-        floating_editor_show = !floating_editor_show;
+        ectx->floating_editor_show = !ectx->floating_editor_show;
     }
 
     vec2 mouse_pos;
     i_get_mouse_pos_normalize(mouse_pos, mouse_pos+1);
-    camera_screen_to_world(&ectx->camera, mouse_pos, cursor_pos);
+    camera_screen_to_world(&ectx->camera, mouse_pos, ectx->cursor_pos);
 
     if(camera_view_changed)
     {
         camera_compute_view(&ectx->camera);
     }
 
-    if(floating_editor_show)
+    if(ectx->floating_editor_show)
     {
-        handle_editor_window(&ectx->level);
+        handle_editor_window(ectx, &ectx->level);
     }
     else
     {
@@ -734,12 +686,12 @@ void editor_update(struct EditorCtx *ectx)
     if(igBeginPopupContextItem("Menu", flags))
     {
         int found = 0;
-        if(selection_ents_count)
+        if(ectx->selection_ents_count)
         {
             const int number_max_char = 3;
             char str_name[30] = "Selection (";
             char str_number[number_max_char];
-            my_itoa(selection_ents_count, str_number, 10);
+            my_itoa(ectx->selection_ents_count, str_number, 10);
             strcat(str_name, str_number);
             strcat(str_name, " ents)");
             igPushID_Str("Selection");
@@ -747,12 +699,12 @@ void editor_update(struct EditorCtx *ectx)
             {
                 if(igSelectable_Bool("Move", false, 0, (struct ImVec2){0,0}))
                 {
-                    reposition_selection = 1;
-                    glm_ivec2_zero(reposition_selection_delta);
+                    ectx->reposition_selection = 1;
+                    glm_ivec2_zero(ectx->reposition_selection_delta);
                 }
                 if(igSelectable_Bool("Remove", false, 0, (struct ImVec2){0,0}))
                 {
-                    deletion_selection = 1;
+                    ectx->deletion_selection = 1;
                 }
                 igEndMenu();
             }
@@ -761,7 +713,7 @@ void editor_update(struct EditorCtx *ectx)
         for(int entity_index = 0; entity_index < gamestate->entity_count; ++entity_index)
         {
             struct Entity *ent = gamestate->entities+entity_index;
-            if(glm_ivec2_eqv(popup_last_clicked_pos, ent->position))
+            if(glm_ivec2_eqv(ectx->popup_last_clicked_pos, ent->position))
             {
                 ++found;
                 const int number_max_char = 3;
@@ -778,22 +730,22 @@ void editor_update(struct EditorCtx *ectx)
                     {
                         if(igSelectable_Bool("Edit", false, 0, (struct ImVec2){0,0}))
                         {
-                            edition_entity = ent;
+                            ectx->edition_entity = ent;
                         }
                     }
                     if(igSelectable_Bool("Move", false, 0, (struct ImVec2){0,0}))
                     {
-                        reposition_entity = ent;
+                        ectx->reposition_entity = ent;
                     }
                     if(igSelectable_Bool("Remove", false, 0, (struct ImVec2){0,0}))
                     {
-                        deletion_index = get_entity_index(gamestate, ent);
+                        ectx->deletion_index = get_entity_index(gamestate, ent);
                     }
                     igEndMenu();
                 }
             }
         }
-        if(!found && !selection_ents_count)
+        if(!found && !ectx->selection_ents_count)
         {
             igText("No entity here.");
         }
@@ -804,48 +756,48 @@ void editor_update(struct EditorCtx *ectx)
             {
                 if(igSelectable_Bool(get_entity_name(i), false, 0, (struct ImVec2){0,0}))       
                 {
-                    creation_type = i;
-                    glm_ivec2_copy(popup_last_clicked_pos, creation_position);
-                    creation_action_target = -1;
+                    ectx->creation_type = i;
+                    glm_ivec2_copy(ectx->popup_last_clicked_pos, ectx->creation_position);
+                    ectx->creation_action_target = -1;
                 }
             }
             igEndMenu();
         }
         igEndPopup();
     }
-    if(reposition_entity)
+    if(ectx->reposition_entity)
     {
         igOpenPopup_Str(window_move, 0);
     }
-    else if(creation_type)
+    else if(ectx->creation_type)
     {
         igOpenPopup_Str(window_create, 0);
     }
-    else if(deletion_index >= 0)
+    else if(ectx->deletion_index >= 0)
     {
         igOpenPopup_Str(window_deletion, 0);
     }
-    else if(edition_entity)
+    else if(ectx->edition_entity)
     {
         igOpenPopup_Str(window_edition, 0);
     }
-    else if(saving)
+    else if(ectx->saving)
     {
         igOpenPopup_Str(window_saving, 0);
     }
-    else if(opening)
+    else if(ectx->opening)
     {
         igOpenPopup_Str(window_opening, 0);
     }
-    else if(sequence_opening)
+    else if(ectx->sequence_opening)
     {
         igOpenPopup_Str(window_sequence_opening, 0);
     }
-    else if(reposition_selection)
+    else if(ectx->reposition_selection)
     {
         igOpenPopup_Str(window_move_selection, 0);
     }
-    else if(deletion_selection)
+    else if(ectx->deletion_selection)
     {
         igOpenPopup_Str(window_deletion_selection, 0);
     }
@@ -861,21 +813,21 @@ void editor_update(struct EditorCtx *ectx)
         igText("Entity position:");
 
         ivec2 old_delta;
-        glm_ivec2_copy(reposition_selection_delta, old_delta);
+        glm_ivec2_copy(ectx->reposition_selection_delta, old_delta);
 
-        if(ig_position_input("entPos", reposition_selection_delta))
+        if(ig_position_input("entPos", ectx->reposition_selection_delta))
         {
             ivec2 deltas_delta;
-            glm_ivec2_sub(reposition_selection_delta, old_delta, deltas_delta);
-            for(int i = 0; i < selection_ents_count; ++i)
+            glm_ivec2_sub(ectx->reposition_selection_delta, old_delta, deltas_delta);
+            for(int i = 0; i < ectx->selection_ents_count; ++i)
             {
-                struct Entity *ent = gamestate->entities+(selection_ents[i]);
+                struct Entity *ent = gamestate->entities+(ectx->selection_ents[i]);
                 glm_ivec2_add(ent->position, deltas_delta, ent->position);
             }
         }
         if(igButton("Comfirm", (struct ImVec2){0,0}))
         {
-            reposition_selection = 0;
+            ectx->reposition_selection = 0;
             igCloseCurrentPopup();
         }
         igEndPopup();
@@ -890,18 +842,18 @@ void editor_update(struct EditorCtx *ectx)
         igSeparator();
         if(igButton("Yes", (struct ImVec2){0,0}))
         {
-            for(int i = selection_ents_count-1; i>=0; --i)
+            for(int i = ectx->selection_ents_count-1; i>=0; --i)
             {
-                remove_entity(gamestate, selection_ents[i]);
+                remove_entity(gamestate, ectx->selection_ents[i]);
             }
-            selection_ents_count = 0;
-            deletion_selection = 0;
+            ectx->selection_ents_count = 0;
+            ectx->deletion_selection = 0;
             igCloseCurrentPopup();
         }
         igSameLine(0,-1);
         if(igButton("No", (struct ImVec2){0,0}))
         {
-            deletion_selection = 0;
+            ectx->deletion_selection = 0;
             igCloseCurrentPopup();
         }
 
@@ -915,10 +867,10 @@ void editor_update(struct EditorCtx *ectx)
     {
         igText("Entity position:");
 
-        ig_position_input("entPos", reposition_entity->position);
+        ig_position_input("entPos", ectx->reposition_entity->position);
         if(igButton("Comfirm", (struct ImVec2){0,0}))
         {
-            reposition_entity = NULL; 
+            ectx->reposition_entity = NULL; 
             igCloseCurrentPopup();
         }
         igEndPopup();
@@ -929,44 +881,44 @@ void editor_update(struct EditorCtx *ectx)
     ///////////////////////
     if(igBeginPopupModal(window_create, NULL, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        igText(get_entity_name(creation_type));
+        igText(get_entity_name(ectx->creation_type));
         igSeparator();
         igText("Entity position:");
-        igInputInt2("##position", creation_position, ImGuiInputTextFlags_None);
-        if(creation_type == ENTITY_KEY)
+        igInputInt2("##position", ectx->creation_position, ImGuiInputTextFlags_None);
+        if(ectx->creation_type == ENTITY_KEY)
         {
-            edit_entity_key(&creation_key);
+            edit_entity_key(&ectx->creation_key);
         }
-        if(creation_type == ENTITY_SLOT)
+        if(ectx->creation_type == ENTITY_SLOT)
         {
-            edit_entity_slot(gamestate, &creation_action_target, &creation_action);
+            edit_entity_slot(gamestate, &ectx->creation_action_target, &ectx->creation_action);
         }
         if(igButton("Comfirm", (struct ImVec2){0,0}))
         {
-            switch(creation_type)
+            switch(ectx->creation_type)
             {
                 case ENTITY_NONE:
                     break;
                 case ENTITY_KEY:
-                    create_key_block_at(gamestate, creation_position[0], creation_position[1], creation_key.key, creation_key.is_global);
+                    create_key_block_at(gamestate, ectx->creation_position[0], ectx->creation_position[1], ectx->creation_key.key, ectx->creation_key.is_global);
                     break;
                 case ENTITY_SLOT:
-                    create_slot_at(gamestate, creation_position[0], creation_position[1], creation_action, creation_action_target);
+                    create_slot_at(gamestate, ectx->creation_position[0], ectx->creation_position[1], ectx->creation_action, ectx->creation_action_target);
                     break;
                 case ENTITY_DOOR:
-                    create_door_at(gamestate, creation_position[0], creation_position[1]);
+                    create_door_at(gamestate, ectx->creation_position[0], ectx->creation_position[1]);
                     break;
                 case ENTITY_BUTTON:
-                    create_button_at(gamestate, creation_position[0], creation_position[1]);
+                    create_button_at(gamestate, ectx->creation_position[0], ectx->creation_position[1]);
                     break;
                 case ENTITY_ANTIBUTTON:
-                    create_antibutton_at(gamestate, creation_position[0], creation_position[1]);
+                    create_antibutton_at(gamestate, ectx->creation_position[0], ectx->creation_position[1]);
                     break;
                 default:
-                    create_movable_at(gamestate, creation_position[0], creation_position[1], creation_type);
+                    create_movable_at(gamestate, ectx->creation_position[0], ectx->creation_position[1], ectx->creation_type);
                     break;
             }
-            creation_type = 0;
+            ectx->creation_type = 0;
             igCloseCurrentPopup();
         }
         igEndPopup();
@@ -981,14 +933,14 @@ void editor_update(struct EditorCtx *ectx)
         igSeparator();
         if(igButton("Yes", (struct ImVec2){0,0}))
         {
-            remove_entity(gamestate, deletion_index);
-            deletion_index = -1;
+            remove_entity(gamestate, ectx->deletion_index);
+            ectx->deletion_index = -1;
             igCloseCurrentPopup();
         }
         igSameLine(0,-1);
         if(igButton("No", (struct ImVec2){0,0}))
         {
-            deletion_index = -1;
+            ectx->deletion_index = -1;
             igCloseCurrentPopup();
         }
 
@@ -1000,22 +952,22 @@ void editor_update(struct EditorCtx *ectx)
     //////////////////////
     if(igBeginPopupModal(window_edition, NULL, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        switch(edition_entity->type)
+        switch(ectx->edition_entity->type)
         {
             case ENTITY_KEY:
                 {
-                    struct KeyBlockData *key = gamestate->key_block_data+edition_entity->data_index;
+                    struct KeyBlockData *key = gamestate->key_block_data+ectx->edition_entity->data_index;
                     edit_entity_key(key);
                 }
                 break;
             case ENTITY_SLOT:
                 {
-                    struct SlotData *slot = gamestate->slot_data+edition_entity->data_index;
+                    struct SlotData *slot = gamestate->slot_data+ectx->edition_entity->data_index;
                     edit_entity_slot(gamestate, &slot->action.target_entity, &slot->action.type);
                 }
                 break;
             case ENTITY_DOOR:
-                    edit_entity_door(gamestate, edition_entity->data_index);
+                    edit_entity_door(gamestate, ectx->edition_entity->data_index);
                 break;
             default:
                 igCloseCurrentPopup();
@@ -1024,7 +976,7 @@ void editor_update(struct EditorCtx *ectx)
 
         if(igButton("Comfirm", (struct ImVec2){0,0}))
         {
-            edition_entity = NULL;
+            ectx->edition_entity = NULL;
             igCloseCurrentPopup();
         }
         igEndPopup();
@@ -1034,26 +986,26 @@ void editor_update(struct EditorCtx *ectx)
     //  SAVING   //
     ///////////////
     char save_path[150];
-    int save_result = ig_save_path_input_popup(window_saving, file_current, save_path, resources_path, file_suffix);
+    int save_result = ig_save_path_input_popup(ectx, window_saving, ectx->file_current, save_path, resources_path, file_suffix);
     if(save_result > 0)
     {
         struct Level level_to_save = ectx->level; 
         serialize_level(&level_to_save, save_path);
-        saving = 0;
+        ectx->saving = 0;
     }
     else if(save_result < 0)
     {
-        saving = 0;
+        ectx->saving = 0;
     }
 
     ////////////////
     //  OPENING   //
     ////////////////
     char opening_path[150];
-    int opening_result = ig_open_path_input_popup(window_opening, file_current, opening_path, resources_path, file_suffix);
+    int opening_result = ig_open_path_input_popup(ectx, window_opening, ectx->file_current, opening_path, resources_path, file_suffix);
     if(opening_result > 0)
     {
-        opening = 0;
+        ectx->opening = 0;
         //deserialize_level_into_game(game, opening_path);
         struct Level loaded_level;
         if(deserialize_level(&loaded_level, opening_path))
@@ -1063,22 +1015,22 @@ void editor_update(struct EditorCtx *ectx)
     }
     else if(opening_result < 0)
     {
-        opening = 0;
+        ectx->opening = 0;
     }
 
     /////////////////////////
     //  OPENING SEQUENCE   //
     /////////////////////////
     char opening_sequence_path[150];
-    int opening_sequence_result = ig_open_path_input_popup(window_sequence_opening, sequence_current, opening_sequence_path, resources_path, sequence_suffix);
+    int opening_sequence_result = ig_open_path_input_popup(ectx, window_sequence_opening, ectx->sequence_current, opening_sequence_path, resources_path, sequence_suffix);
     if(opening_sequence_result > 0)
     {
         //deserialize_sequence_into_game(game, opening_sequence_path);
-        sequence_opening = 0;
+        ectx->sequence_opening = 0;
     }
     else if(opening_sequence_result < 0)
     {
-        sequence_opening = 0;
+        ectx->sequence_opening = 0;
     }
 
     editor_render(ectx);
