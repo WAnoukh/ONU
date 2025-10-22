@@ -18,6 +18,8 @@
 
 #include "editor.h"
 #include "editor_context.h"
+#include "interface.h"
+#include <glad/glad.h>
 #include "GLFW/glfw3.h"
 #include "cglm/types.h"
 #include "cglm/vec2.h"
@@ -25,7 +27,6 @@
 #include "serialization.h"
 #include "texture.h"
 #include "transform.h"
-#include "window/input.h"
 #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
 #define CIMGUI_USE_OPENGL3
 #define CIMGUI_USE_GLFW
@@ -50,25 +51,28 @@ char resources_path[] = "resources/level/";
 char file_suffix[] = ".level";
 char sequence_suffix[] = ".seq";
 
-int editor_init(struct EditorCtx *ectx)
-{
+void* MyAlloc(size_t sz, void* user_data) { return malloc(sz); }
+void  MyFree(void* ptr, void* user_data) { free(ptr); }
 
+int editor_init(struct EditorCtx *ectx, GLFWwindow *window)
+{
+    glfwMakeContextCurrent(window);
     ectx->ctx = igCreateContext(NULL);
-    if (ectx->ctx) {
-        printf("Dear ImGui context created!\n");
-    }
-    else
+    if(ectx->ctx)
     {
-        return 0;
+        printf("ImGui context created !\n");
     }
+    igSetCurrentContext(ectx->ctx);
+    ImGui_ImplGlfw_InitForOpenGL(glfwGetCurrentContext(), true);
+    ImGui_ImplOpenGL3_Init("#version 130");
+
     //ImGuiIO* io = igGetIO_ContextPtr(ctx);
     ImGuiStyle* style = igGetStyle();
 
     ImGuiStyle_ScaleAllSizes(style, ectx->ui_scale);
     style->FontScaleMain *= ectx->ui_scale;
 
-    ImGui_ImplGlfw_InitForOpenGL(w_get_window_ctx(), true);
-    ImGui_ImplOpenGL3_Init("#version 130");
+    igGetMousePos(&ectx->mouse_pos);
     return 1;
 }
 
@@ -87,7 +91,6 @@ void editor_render(struct EditorCtx *ectx)
 
 void editor_deinit(struct EditorCtx *ectx)
 {
-
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     igDestroyContext(ectx->ctx);
@@ -477,13 +480,13 @@ void handle_editor_window(struct EditorCtx *ectx, struct Level *level)
 
     //Tilemap edition
     int edition = 0;
-    if(i_button_down(GLFW_MOUSE_BUTTON_1)) edition = 1;
-    if(i_button_down(GLFW_MOUSE_BUTTON_2)) edition = -1;
+    if(igIsMouseDown_Nil(ImGuiMouseButton_Left)) edition = 1;
+    if(igIsMouseDown_Nil(ImGuiMouseButton_Right)) edition = -1;
     int alt = igIsKeyDown_Nil(ImGuiKey_LeftAlt);
 
     ivec2 cursor_grid_ipos;
-    cursor_grid_ipos[0] = (int)roundf(ectx->cursor_pos[0]-0.5f);
-    cursor_grid_ipos[1] = (int)roundf(ectx->cursor_pos[1]-0.5f);
+    cursor_grid_ipos[0] = (int)roundf(ectx->mouse_world_pos[0]-0.5f);
+    cursor_grid_ipos[1] = (int)roundf(ectx->mouse_world_pos[1]-0.5f);
     int is_inside = cursor_grid_ipos[0] >= 0 && cursor_grid_ipos[0] < level_width
         && cursor_grid_ipos[1] >= 0 && cursor_grid_ipos[1] < level_height;
 
@@ -514,8 +517,8 @@ void handle_editor_window(struct EditorCtx *ectx, struct Level *level)
     mat3 transform;
     vec2 size = {0.8f, 0.8f};
     vec2 cursor_grid_pos;
-    cursor_grid_pos[0] = roundf(ectx->cursor_pos[0]-((float)level_width)/2+0.5f)+(float)(level_width)/2-0.5f;
-    cursor_grid_pos[1] = roundf(ectx->cursor_pos[1]-((float)level_height)/2+0.5f)+(float)(level_height)/2-0.5f;
+    cursor_grid_pos[0] = roundf(ectx->mouse_world_pos[0]-((float)level_width)/2+0.5f)+(float)(level_width)/2-0.5f;
+    cursor_grid_pos[1] = roundf(ectx->mouse_world_pos[1]-((float)level_height)/2+0.5f)+(float)(level_height)/2-0.5f;
 
     compute_transform(transform, cursor_grid_pos, size);
     draw_transformed_quad(program, transform, (vec3){1.f, 0.f, 1.f}, 0.8f);
@@ -532,8 +535,8 @@ void handle_entity_edition(struct EditorCtx *ectx, vec2 mouse_pos)
     if(igIsMouseClicked_Bool(ImGuiMouseButton_Right, false))
     {
         ivec2 cursor_grid_pos;
-        cursor_grid_pos[0] = (int)roundf(ectx->cursor_pos[0]-0.5f);
-        cursor_grid_pos[1] = (int)roundf(ectx->cursor_pos[1]-0.5f);
+        cursor_grid_pos[0] = (int)roundf(ectx->mouse_world_pos[0]-0.5f);
+        cursor_grid_pos[1] = (int)roundf(ectx->mouse_world_pos[1]-0.5f);
         if(cursor_grid_pos[0] >= 0 && cursor_grid_pos[0] < level_width
                 && cursor_grid_pos[1] >= 0 && cursor_grid_pos[1] < level_height)
         {
@@ -597,10 +600,19 @@ void handle_entity_edition(struct EditorCtx *ectx, vec2 mouse_pos)
     }
 }
 
-void editor_update(struct EditorCtx *ectx)
+int editor_update_internal(struct EditorCtx *ectx, struct InputInfo inputinfo)
 {
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    int window_width, window_height;
+    editor_get_window_size(ectx, &window_width, &window_height);
+
+    ImVec2 new_mouse_pos;
+    igGetMousePos(&new_mouse_pos);
+    ectx->mouse_offset.x = new_mouse_pos.x-ectx->mouse_pos.x;
+    ectx->mouse_offset.y = new_mouse_pos.y-ectx->mouse_pos.y;
+    ectx->mouse_pos = new_mouse_pos; 
 
     editor_new_frame();
 
@@ -613,45 +625,43 @@ void editor_update(struct EditorCtx *ectx)
         }
         else
         {
-            glfwSetWindowShouldClose(w_get_window_ctx(), 1);
+            return 0;
         }
     }
 
     if(ectx->is_playing)
     {
         r_set_main_camera(&ectx->game.camera);
-        game_update(&ectx->game); 
+        game_update(&ectx->game, ectx->window_info, inputinfo); 
         editor_render(ectx);
-        return;
+        return 1;
     }
 
-    camera_compute_view(&ectx->camera);
+    camera_compute_view(&ectx->camera, editor_get_window_ratio(ectx));
     tilemap_render_background(&ectx->level.tilemap, (vec2){0, 0}, 1);
     render_level_simple(&ectx->level, &ectx->level.gamestate);
     render_level_views(&ectx->level);
 
-    //ImGuiIO *io = igGetIO_Nil();
     struct GameState *gamestate = &ectx->level.gamestate;
 
     int camera_view_changed = 0;
-    float scroll = i_get_scroll_y();
+    
+    struct ImGuiIO *io = igGetIO_Nil();
+    float scroll = io->MouseWheel;
     if(scroll != 0.f)
     {
         camera_zoom(&ectx->camera, scroll * 0.2f);
         camera_view_changed = 1;
     }
 
-    if (i_button_down(GLFW_MOUSE_BUTTON_3))
+    if(igIsMouseDown_Nil(ImGuiMouseButton_Middle))
     {
-        float mouse_delta_x, mouse_delta_y;
-        i_get_mouse_move(&mouse_delta_x, &mouse_delta_y);
+        float mouse_delta_x = ectx->mouse_offset.x, mouse_delta_y = ectx->mouse_offset.y;
         if (fabsf(mouse_delta_x) > 0.00001f || fabsf(mouse_delta_y) > 0.00001f)
         {
-            int width, height;
-            glfwGetFramebufferSize(w_get_window_ctx(), &width, &height);
             float pan_x, pan_y;
-            pan_x = -mouse_delta_x*2/ectx->camera.zoom*window_get_screen_ratio()/(float)width;
-            pan_y = mouse_delta_y*2/ectx->camera.zoom/(float)height;
+            pan_x = -mouse_delta_x*2/ectx->camera.zoom*editor_get_window_ratio(ectx)/(float)window_width;
+            pan_y = mouse_delta_y*2/ectx->camera.zoom/(float)window_height;
             camera_pan(&ectx->camera, pan_x, -pan_y);
             camera_view_changed = 1;
         }
@@ -662,13 +672,14 @@ void editor_update(struct EditorCtx *ectx)
         ectx->floating_editor_show = !ectx->floating_editor_show;
     }
 
-    vec2 mouse_pos;
-    i_get_mouse_pos_normalize(mouse_pos, mouse_pos+1);
-    camera_screen_to_world(&ectx->camera, mouse_pos, ectx->cursor_pos);
+    vec2 mouse_pos_normalied;
+    mouse_pos_normalied[0] = new_mouse_pos.x / (float)window_width;
+    mouse_pos_normalied[1] = 1 - new_mouse_pos.y / (float)window_height;
+    camera_screen_to_world(&ectx->camera, mouse_pos_normalied, ectx->mouse_world_pos);
 
     if(camera_view_changed)
     {
-        camera_compute_view(&ectx->camera);
+        camera_compute_view(&ectx->camera, editor_get_window_ratio(ectx));
     }
 
     if(ectx->floating_editor_show)
@@ -677,7 +688,7 @@ void editor_update(struct EditorCtx *ectx)
     }
     else
     {
-        handle_entity_edition(ectx, mouse_pos);
+        handle_entity_edition(ectx, mouse_pos_normalied);
     }
 
     menu_bar(ectx);
@@ -1034,4 +1045,50 @@ void editor_update(struct EditorCtx *ectx)
     }
 
     editor_render(ectx);
+    return 1;
+}
+
+float editor_get_window_ratio(struct EditorCtx *ectx)
+{
+    return ectx->window_info.ratio;
+}
+
+void editor_get_window_size(struct EditorCtx *ectx, int *w, int *h)
+{
+    *w = ectx->window_info.width;
+    *h = ectx->window_info.height;
+}
+
+//Interface definition
+struct EditorCtx ectx;
+
+void editor_start(GLFWwindow *window)
+{
+    ectx = ectx_default();
+    if(!editor_init(&ectx, window))
+    {
+        printf("Editor Error : failed to initialize the editor.\n");
+        exit(1);
+    } 
+    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+    initialize_renderer(&ectx.camera);
+    ectx.is_playing = 0;
+    ectx.game = game_init();
+
+    load_default_images(); 
+}
+
+void editor_stop()
+{
+    editor_deinit(&ectx);
+}
+
+int editor_update(struct WindowInfo windowinfo, struct InputInfo inputinfo)
+{
+    if (igGetCurrentContext() == NULL)
+    {
+        printf("test\n");
+    }
+    ectx.window_info = windowinfo;
+    return editor_update_internal(&ectx, inputinfo);
 }

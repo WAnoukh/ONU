@@ -17,7 +17,7 @@ void camera_pan(struct Camera *camera, float x_offset, float y_offset);
 
 void camera_zoom(struct Camera *camera, float amount);
 
-void camera_compute_view(struct Camera *camera);
+void camera_compute_view(struct Camera *camera, float window_ratio);
 
 void camera_screen_to_world(struct Camera *camera, const vec2 screen_pos, vec2 out_world);
 

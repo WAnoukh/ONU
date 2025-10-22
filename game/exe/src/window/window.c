@@ -2,15 +2,13 @@
 #include <stdio.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
-#include "cimgui.h"
 #include "window/input.h"
 
 GLFWwindow *window;
 
 const int SCR_WIDTH = 800;
 const int SCR_HEIGHT = 600;
-int is_framebuffer_resized_flag = 0;
+int is_framebuffer_resized_flag = 1;
 
 float framebuffer_ratio = (float)SCR_WIDTH/(float)SCR_HEIGHT;
 int framebuffer_width = SCR_WIDTH, framebuffer_height = SCR_HEIGHT;
@@ -30,17 +28,10 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     framebuffer_width = width;
     framebuffer_height = height;
     is_framebuffer_resized_flag = 1;
-    ImGuiIO* io = igGetIO_Nil();
-    io->DisplayFramebufferScale.x = 1.0f;
-    io->DisplayFramebufferScale.y = 1.0f;
-    io->DisplaySize.x = (float)width;
-    io->DisplaySize.y = (float)height;
 }
 
 void scroll_callback(GLFWwindow* window, double x_offset, double y_offset)
 {
-    ImGuiIO *io = igGetIO_Nil();
-    if(io->WantCaptureMouse) return;
     register_scroll_state((float)x_offset, (float)y_offset);
 }
 
@@ -56,15 +47,11 @@ void clear_framebuffer_resized()
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int opt)
 {
-    ImGuiIO *io = igGetIO_Nil();
-    if(io->WantCaptureMouse && action != GLFW_RELEASE) return;
     register_key_state(key, action);
 }
 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mode)
 {
-    ImGuiIO *io = igGetIO_Nil();
-    if(io->WantCaptureMouse && action != GLFW_RELEASE) return;
     register_mouse_state(button, action); 
 }
 

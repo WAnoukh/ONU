@@ -1,8 +1,8 @@
 #include "game.h"
 #include "GLFW/glfw3.h"
 #include "cglm/vec2.h"
-#include "window/input.h"
-#include "window/window.h"
+#include "interface.h"
+#include "input_info.h"
 
 ivec2 directions[] = {{0, -1},{0, 1},{-1, 0},{1, 0}};
 
@@ -239,7 +239,7 @@ int is_key_in_same_view_as_player(struct Level *level, struct GameState *gamesta
     return 0;
 }
 
-void update_key_blocks(struct Game *game)
+void update_key_blocks(struct Game *game, struct InputInfo inputinfo)
 {
     struct GameState *gamestate = get_current_gamestate(game);
     struct Level *level = &game->level;
@@ -260,7 +260,7 @@ void update_key_blocks(struct Game *game)
         struct KeyBlockData *key_data = gamestate->key_block_data+i;
 
 
-        if(i_key_pressed(key_data->key))
+        if(is_key_pressed(inputinfo, key_data->key))
         {
             if(has_level_views && !key_data->is_global)
             {
@@ -274,7 +274,7 @@ void update_key_blocks(struct Game *game)
             any_non_universal_key_pressed =1;
             break;
         }
-        any_non_universal_key_down |= i_key_down(key_data->key);
+        any_non_universal_key_down |= is_key_down(inputinfo, key_data->key);
     }
 
     for(int i = 0; i < gamestate->entity_count; ++i)
@@ -291,8 +291,8 @@ void update_key_blocks(struct Game *game)
         }
         else
         {
-            key_data->is_pressed = i_key_down(key_data->key);
-            key_pressed = i_key_pressed(key_data->key);
+            key_data->is_pressed = is_key_down(inputinfo, key_data->key);
+            key_pressed = is_key_pressed(inputinfo, key_data->key);
         }
         if(key_pressed )
         {
@@ -366,7 +366,6 @@ void compute_camera_target(struct Game *game)
         game->camera_target[0] = (floorf((float)(player_pos[0])/(float)level->view_width)+0.5f)*(float)level->view_width; 
         game->camera_target[1] = (floorf((float)(player_pos[1])/(float)level->view_height)+0.5f)*(float)level->view_height;
     }
-    camera_compute_view(&game->camera);
 }
 
 void game_start(struct Game* game)
@@ -375,26 +374,25 @@ void game_start(struct Game* game)
     game->camera.zoom = 0.15f;
     compute_camera_target(game);
     glm_vec2_copy(game->camera_target, game->camera.pos);
-    camera_compute_view(&game->camera);
+    //camera_compute_view(&game->camera);
     game->last_time = glfwGetTime();
 }
 
-void game_update(struct Game *game)
+void game_update(struct Game *game, struct WindowInfo window_info, struct InputInfo inputinfo)
 {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    game->new_time = get_time();
+    game->new_time = window_info.time;
     game->delta_time = (float)(game->new_time - game->last_time);
     game->last_time = game->new_time;
 
-    if(is_framebuffer_resized())
+    if(window_info.is_framebuffer_resized)
     {
-        camera_compute_view(&game->camera);
-        clear_framebuffer_resized();
+        camera_compute_view(&game->camera, window_info.ratio);
     }
 
-    update_key_blocks(game);
+    update_key_blocks(game, inputinfo);
 
     //Checkin if player reached the end door
     struct GameState *gamestate = get_current_gamestate(game);
@@ -412,6 +410,7 @@ void game_update(struct Game *game)
     }
 
     compute_camera_target(game);
+    camera_compute_view(&game->camera, window_info.ratio);
     glm_vec2_lerp(game->camera.pos, game->camera_target, 0.02f, game->camera.pos);
     //glm_vec2_copy(game->camera_target, game->camera.pos);
     

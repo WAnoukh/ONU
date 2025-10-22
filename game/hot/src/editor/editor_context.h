@@ -2,6 +2,7 @@
 #define EDITOR_CONTEXT_H
 
 #include "game.h"
+#include "interface.h"
 #include "level.h"
 #include "rendering/camera.h"
 
@@ -17,13 +18,18 @@ struct ImGuiContext;
 
 struct EditorCtx
 {
+    struct WindowInfo window_info;
+    struct ImGuiContext* ctx;
+
     struct Game game;
     struct Level level;
     struct Camera camera;
     int is_playing;
 
-    struct ImGuiContext* ctx;
-    vec2 cursor_pos;
+    ImVec2 mouse_pos;
+    ImVec2 mouse_offset;
+    vec2 mouse_world_pos;
+
     ivec2 popup_last_clicked_pos;
     _Bool floating_editor_show;
 

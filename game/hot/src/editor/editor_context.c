@@ -55,7 +55,6 @@ struct EditorCtx ectx_default()
     ctx.camera.zoom = 0.2f;
     ctx.camera.pos[0] = 0;
     ctx.camera.pos[1] = 0;
-    camera_compute_view(&ctx.camera);
 
     ctx.floating_editor_show = 0;
 

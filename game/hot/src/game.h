@@ -7,6 +7,9 @@
 #include "rendering/camera.h"
 #include "rendering/rendering.h"
 
+struct WindowInfo;
+struct InputInfo;
+
 enum GameMode
 {
     GM_LEVEL,
@@ -98,6 +101,6 @@ void game_set_sequence(struct Game *game, struct Sequence sequence);
 
 int game_load_default_sequence(struct Game *game);
 
-void game_update(struct Game *game);
+void game_update(struct Game *game, struct WindowInfo window_info, struct InputInfo inputinfo);
 
 #endif // GAME_H

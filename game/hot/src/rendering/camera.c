@@ -1,5 +1,4 @@
 #include "camera.h"
-#include "window/window.h"
 #include "cglm/mat3.h"
 #include <stdio.h>
 
@@ -19,9 +18,9 @@ void camera_pan(struct Camera *camera, float x_offset, float y_offset)
     camera->pos[1] += y_offset;
 }
 
-void camera_compute_view(struct Camera *camera)
+void camera_compute_view(struct Camera *camera, float window_ratio)
 {
-    float sx = camera->zoom / window_get_screen_ratio();
+    float sx = camera->zoom / window_ratio; 
     float sy = camera->zoom;
     float tx = -camera->pos[0];
     float ty = camera->pos[1];

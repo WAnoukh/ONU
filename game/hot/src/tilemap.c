@@ -6,7 +6,6 @@
 #include "rendering/rendering.h"
 #include "texture.h"
 #include "transform.h"
-#include "window/window.h"
 
 const int DEFAULT_TILE = 0;
 
