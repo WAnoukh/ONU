@@ -1,6 +1,7 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
+#include "memory/arena.h"
 #define KEY_COUNT 256
 
 struct EditorCtx;
@@ -22,6 +23,13 @@ struct InputInfo
     int keys_pressed[KEY_COUNT];
     int keys_released[KEY_COUNT];
     int keys_down[KEY_COUNT];
+};
+
+struct EditorMemory
+{
+    struct Arena level;
+    struct Arena frame;
+    struct Arena editor;
 };
 
 #endif // INTERFACE_H
