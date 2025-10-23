@@ -77,7 +77,7 @@ struct EditorCtx
     int level_temp_shift_changed;
 };
 
-struct EditorCtx ectx_default();
+struct EditorCtx ectx_default(struct EditorMemory *mem);
 
 void ectx_start_level(struct EditorCtx *ectx, struct Level level);
 

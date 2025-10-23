@@ -50,14 +50,6 @@ void load_level(struct Game *game, struct Level level)
     game_history_clear(game);
 }
 
-void game_setup_default_level(struct Game *game)
-{
-    game->gamemode = GM_LEVEL;
-    get_default_level(&game->level);
-    load_gamestate(game, game->level.gamestate);
-    game_history_clear(game);
-}
-
 void game_set_sequence(struct Game *game, struct Sequence sequence)
 {
     game->gamemode = GM_SEQUENCE;

@@ -95,8 +95,6 @@ void game_history_clear(struct Game *game);
 
 void load_level(struct Game *game, struct Level level);
 
-void game_setup_default_level(struct Game *game);
-
 void game_set_sequence(struct Game *game, struct Sequence sequence);
 
 int game_load_default_sequence(struct Game *game);

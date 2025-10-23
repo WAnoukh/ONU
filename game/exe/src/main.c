@@ -1,4 +1,5 @@
-﻿#define EDITOR
+﻿#include "reloading.h"
+#define EDITOR
 
 #include "interface.h"
 #include "window/input.h"
@@ -7,11 +8,7 @@
 #include <stdio.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <windows.h>
 
-typedef void (*editor_start_fn)(GLFWwindow *window);
-typedef int (*editor_update_fn)(struct WindowInfo windowinfo, struct InputInfo inputinfo);
-typedef void (*editor_stop_fn)(void);
 
 struct WindowInfo window_info = {
     0,
@@ -27,38 +24,46 @@ int main()
         printf("Failed to initialize OpenGL context\n");
         return 1;
     }
-#ifdef EDITOR
-    HMODULE dll = LoadLibraryA("libeditor_hot.dll");
-    if (!dll) 
-    {
-        printf("Dll loading failed !\n");
-        return -1;
-    }
 
-    editor_update_fn editor_update = (editor_update_fn)GetProcAddress(dll, "editor_update");
-    if(!editor_update)
+    FILETIME write_time;
+
+#ifdef EDITOR
+    struct HotDll hot;
+    char *dll_path = "build/bin/libeditor_hot.dll";
+    char *dll_temp_path = "build/bin/libeditor_hot_temp.dll";
+    file_get_write_time(dll_path, &write_time);
+    if(!load_dll_as_temp(&hot, dll_path, dll_temp_path))
     {
-        printf("Failed to get dll function: editor_update");
-        return -1;
-    }
-    editor_start_fn editor_start = (editor_start_fn)GetProcAddress(dll, "editor_start");
-    if(!editor_start)
-    {
-        printf("Failed to get dll function: editor_start");
-        return -1;
-    }
-    editor_stop_fn editor_stop = (editor_stop_fn)GetProcAddress(dll, "editor_stop");
-    if(!editor_stop)
-    {
-        printf("Failed to get dll function: editor_stop");
+        printf("Initial dll loading failed.\n");
         return -1;
     }
 
     glfwMakeContextCurrent(NULL);
-    editor_start(w_get_window_ctx());
+
+    struct EditorMemory mem;
+    mem.level = arena_init(64 * 1024 * 1024);
+    mem.frame = arena_init(32 * 1024 * 1024);
+    mem.editor = arena_init(32 * 1024 * 1024);
+
+
+    hot.editor_start(&mem, w_get_window_ctx());
 
     while (!glfwWindowShouldClose(w_get_window_ctx()))
     {
+        FILETIME new_file_time;
+        if(file_get_write_time(dll_path, &new_file_time) && file_time_changed(&write_time, &new_file_time))
+        {
+            printf("dll changed !\n");
+
+            write_time = new_file_time;
+            file_get_write_time(dll_path, &write_time);
+            if(!load_dll_as_temp(&hot, dll_path, dll_temp_path))
+            {
+                printf("hot dll loading failed.\n");
+                return -1;
+            }
+        }
+
         if(is_framebuffer_resized())
         {
             window_get_size(&window_info.width, &window_info.height);
@@ -72,7 +77,7 @@ int main()
             printf("OpenGL error: 0x%X\n", err);
         }
 
-        if(!editor_update(window_info, i_get_info()))
+        if(!hot.editor_update(&mem, window_info, i_get_info()))
         {
             glfwSetWindowShouldClose(w_get_window_ctx(), 1);
         }
@@ -83,7 +88,7 @@ int main()
         window_info.is_framebuffer_resized = 0;
     }
     
-    editor_stop();
+    hot.editor_stop(&mem);
 
     glfwTerminate();
 #endif

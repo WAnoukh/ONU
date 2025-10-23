@@ -36,8 +36,6 @@ static inline void level_set_height(struct Level *level, int height)
 
 void level_deinit(struct Level *level);
 
-void get_default_level(struct Level *level);
-
 void resize_level(struct Level *level, int new_width, int new_height);
 
 void level_shift(struct Level *level, ivec2 offset);

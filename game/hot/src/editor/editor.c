@@ -51,9 +51,6 @@ char resources_path[] = "resources/level/";
 char file_suffix[] = ".level";
 char sequence_suffix[] = ".seq";
 
-void* MyAlloc(size_t sz, void* user_data) { return malloc(sz); }
-void  MyFree(void* ptr, void* user_data) { free(ptr); }
-
 int editor_init(struct EditorCtx *ectx, GLFWwindow *window)
 {
     glfwMakeContextCurrent(window);
@@ -600,7 +597,7 @@ void handle_entity_edition(struct EditorCtx *ectx, vec2 mouse_pos)
     }
 }
 
-int editor_update_internal(struct EditorCtx *ectx, struct InputInfo inputinfo)
+int editor_update_internal(struct EditorMemory *mem, struct EditorCtx *ectx, struct InputInfo inputinfo)
 {
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -1019,7 +1016,8 @@ int editor_update_internal(struct EditorCtx *ectx, struct InputInfo inputinfo)
         ectx->opening = 0;
         //deserialize_level_into_game(game, opening_path);
         struct Level loaded_level;
-        if(deserialize_level(&loaded_level, opening_path))
+        arena_reset(&mem->level);
+        if(deserialize_level(&mem->level, &loaded_level, opening_path))
         {
             ectx->level = loaded_level;
         }
@@ -1057,38 +1055,4 @@ void editor_get_window_size(struct EditorCtx *ectx, int *w, int *h)
 {
     *w = ectx->window_info.width;
     *h = ectx->window_info.height;
-}
-
-//Interface definition
-struct EditorCtx ectx;
-
-void editor_start(GLFWwindow *window)
-{
-    ectx = ectx_default();
-    if(!editor_init(&ectx, window))
-    {
-        printf("Editor Error : failed to initialize the editor.\n");
-        exit(1);
-    } 
-    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-    initialize_renderer(&ectx.camera);
-    ectx.is_playing = 0;
-    ectx.game = game_init();
-
-    load_default_images(); 
-}
-
-void editor_stop()
-{
-    editor_deinit(&ectx);
-}
-
-int editor_update(struct WindowInfo windowinfo, struct InputInfo inputinfo)
-{
-    if (igGetCurrentContext() == NULL)
-    {
-        printf("test\n");
-    }
-    ectx.window_info = windowinfo;
-    return editor_update_internal(&ectx, inputinfo);
 }

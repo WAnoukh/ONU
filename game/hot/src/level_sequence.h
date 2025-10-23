@@ -1,6 +1,8 @@
 #ifndef LEVEL_SEQUENCE_H
 #define LEVEL_SEQUENCE_H
 
+struct Arena;
+
 struct PathSequence 
 {
     char **pathes;
@@ -13,7 +15,7 @@ struct Sequence
     int levels_count;
 };
 
-int sequence_load_path_sequence(struct PathSequence path_seq, struct Sequence *out_sequence);
+int sequence_load_path_sequence(struct Arena *arena, struct PathSequence path_seq, struct Sequence *out_sequence);
 
 void path_sequence_deinit(struct PathSequence *path_seq);
 

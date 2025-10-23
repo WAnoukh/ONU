@@ -15,7 +15,7 @@ vec3 color_key_block_global = {.204f, .659f, .196f};
 vec3 color_door_open = {0.f,1.f,0.f};
 vec3 entities_color[] = {
     {0.f,0.f,0.f},          
-    {0.5f,0.1f,0.3f},       //Player
+    {0.9f,0.1f,0.3f},       //Player
     {0.82f,0.56f,0.16f},    //Box
     {0.1f,0.6f,0.6f},       //Key
     {0.9f,0.9f,0.9f},       //Slot

@@ -5,11 +5,11 @@
 #define DEFAULT_LEVEL_SIZE 10
 #define DEFAULT_LEVEL_GRID_SIZE DEFAULT_LEVEL_SIZE * DEFAULT_LEVEL_SIZE
 
-void get_default_level(struct Level *level)
+void get_default_level(struct Arena *arena, struct Level *level)
 {
     int grid_size = DEFAULT_LEVEL_GRID_SIZE;
 
-    level->tilemap.tile = malloc(sizeof(Tile) * grid_size);
+    level->tilemap.tile = arena_allocate_align(arena, sizeof(Tile) * grid_size, alignof(Tile));
     level->tilemap.layer_count = 1;
     for(int i =0; i < grid_size; ++i) level->tilemap.tile[i] = 4+20;
     level_set_width(level, DEFAULT_LEVEL_SIZE);
@@ -46,11 +46,11 @@ void get_default_level(struct Level *level)
     gamestate->is_end_reached = 0;
 }
 
-struct EditorCtx ectx_default()
+struct EditorCtx ectx_default(struct EditorMemory *mem)
 {
     struct EditorCtx ctx;
 
-    get_default_level(&ctx.level);
+    get_default_level(&mem->level, &ctx.level);
 
     ctx.camera.zoom = 0.2f;
     ctx.camera.pos[0] = 0;

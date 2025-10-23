@@ -4,6 +4,7 @@
 #include "serialization.h"
 #include "level.h"
 #include "level_sequence.h"
+#include "memory/arena.h"
 #include "tilemap.h"
 #include "game.h"
 
@@ -139,7 +140,7 @@ int serialize_level(const struct Level *level, const char* path)
     return 1;
 }
 
-int deserialize_level(struct Level *out_level, const char *path)
+int deserialize_level(struct Arena *arena, struct Level *out_level, const char *path)
 {
     struct Level level;  
 
@@ -169,7 +170,7 @@ int deserialize_level(struct Level *out_level, const char *path)
     fread(&level.tilemap.height, sizeof(level.tilemap.height), 1, file);
 
     fread(&level.tilemap.layer_count, sizeof(level.tilemap.layer_count), 1, file);
-    level.tilemap.tile = malloc(sizeof(Tile)*level.tilemap.width*level.tilemap.height*level.tilemap.layer_count);
+    level.tilemap.tile = arena_allocate_align(arena, sizeof(Tile)*level.tilemap.width*level.tilemap.height*level.tilemap.layer_count, alignof(Tile));
 
     fread(level.tilemap.tile, sizeof(Tile)*level.tilemap.height*level.tilemap.width*level.tilemap.layer_count, 1, file);
 
@@ -193,11 +194,11 @@ int deserialize_level(struct Level *out_level, const char *path)
     return 1;
 }
 
-int deserialize_level_into_game(struct Game *game, const char *path)
+int deserialize_level_into_game(struct Arena *arena, struct Game *game, const char *path)
 {
     game->gamemode = GM_LEVEL;
     struct Level level;
-    int result = deserialize_level(&level, path);
+    int result = deserialize_level(arena, &level, path);
     if(result)
     {
         level_deinit(&game->level);
@@ -227,7 +228,7 @@ int serialize_path_sequence(struct PathSequence path_seq, const char *path)
     return 1;
 }
 
-int deserialize_path_sequence(struct PathSequence *out_path_seq, const char *path)
+int deserialize_path_sequence(struct Arena *arena, struct PathSequence *out_path_seq, const char *path)
 {
     struct PathSequence path_seq;  
 
@@ -249,7 +250,7 @@ int deserialize_path_sequence(struct PathSequence *out_path_seq, const char *pat
         if((cur_char == '\n' || cur_char == EOF) && buffer_index)
         {
             buffer[buffer_index] = '\0';
-            pathes[pathes_index] = malloc(sizeof(char)*buffer_index);
+            pathes[pathes_index] = arena_allocate_align(arena, sizeof(char)*buffer_index, alignof(char));
             strcpy(pathes[pathes_index], buffer);
             ++pathes_index;
             buffer_index = 0;
@@ -271,15 +272,15 @@ int deserialize_path_sequence(struct PathSequence *out_path_seq, const char *pat
     return 1;
 }
 
-int deserialize_sequence_into_game(struct Game *game, char *path)
+int deserialize_sequence_into_game(struct Arena *arena, struct Game *game, char *path)
 {
     struct PathSequence path_seq;
-    if(!deserialize_path_sequence(&path_seq, path))
+    if(!deserialize_path_sequence(arena, &path_seq, path))
     {   
         return 0;
     }
     struct Sequence sequence;
-    if(!sequence_load_path_sequence(path_seq, &sequence))
+    if(!sequence_load_path_sequence(arena, path_seq, &sequence))
     {
         return 0;
     }
