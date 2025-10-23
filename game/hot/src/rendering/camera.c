@@ -1,6 +1,5 @@
 #include "camera.h"
 #include "cglm/mat3.h"
-#include <stdio.h>
 
 struct Camera camera_get_default()
 {

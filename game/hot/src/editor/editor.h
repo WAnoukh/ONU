@@ -10,7 +10,9 @@ struct EditorMemory;
 
 void editor_new_frame();
 
-int editor_init(struct EditorCtx *ectx, GLFWwindow *window);
+void editor_imgui_init(struct EditorCtx *ectx, GLFWwindow *window);
+
+void editor_init(struct EditorCtx *ectx, GLFWwindow *window);
 
 void editor_deinit(struct EditorCtx *ectx);
 

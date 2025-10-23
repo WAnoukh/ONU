@@ -7,21 +7,28 @@
 #include "GLFW/glfw3.h"
 
 
+void editor_restart(struct EditorMemory *mem, GLFWwindow *window)
+{
+    struct EditorCtx *ectx = mem->editor_root;
+    editor_imgui_init(ectx, window);
+    render_set_info(ectx->renderinginfo);
+    texture_set_info(ectx->textureinfo);
+    //load_default_images(); 
+    //initialize_renderer();
+}
+
 void editor_start(struct EditorMemory *mem, GLFWwindow *window)
 {
     struct EditorCtx *ectx = arena_allocate(&mem->editor, sizeof(struct EditorCtx));
+    mem->editor_root = ectx;
     *ectx = ectx_default(mem);
-    if(!editor_init(ectx, window))
-    {
-        printf("Editor Error : failed to initialize the editor.\n");
-        exit(1);
-    } 
+    ectx->renderinginfo = arena_allocate(&mem->editor, sizeof(struct RenderingInfo));
+    ectx->textureinfo = arena_allocate(&mem->editor, sizeof(struct TextureInfo));
+    editor_restart(mem, window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-    initialize_renderer(&ectx->camera);
-    ectx->is_playing = 0;
-    ectx->game = game_init();
-
     load_default_images(); 
+    initialize_renderer();
+    editor_init(ectx, window);
 }
 
 void editor_stop(struct EditorMemory *mem)
@@ -32,7 +39,7 @@ void editor_stop(struct EditorMemory *mem)
 
 int editor_update(struct EditorMemory *mem, struct WindowInfo windowinfo, struct InputInfo inputinfo)
 {
-    struct EditorCtx *ectx = (struct EditorCtx *)mem->editor.start;
+    struct EditorCtx *ectx = mem->editor_root;
     ectx->window_info = windowinfo;
     return editor_update_internal(mem, ectx, inputinfo);
 }

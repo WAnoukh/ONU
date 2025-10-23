@@ -12,6 +12,8 @@ struct WindowInfo;
 struct InputInfo;
 typedef struct GLFWwindow GLFWwindow;
 
+HOT_API void editor_restart(struct EditorMemory *mem, GLFWwindow *window);
+
 HOT_API void editor_start(struct EditorMemory *mem, GLFWwindow *window);
 
 HOT_API void editor_cold_start(struct EditorMemory *mem, GLFWwindow *window);

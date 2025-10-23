@@ -51,7 +51,7 @@ char resources_path[] = "resources/level/";
 char file_suffix[] = ".level";
 char sequence_suffix[] = ".seq";
 
-int editor_init(struct EditorCtx *ectx, GLFWwindow *window)
+void editor_imgui_init(struct EditorCtx *ectx, GLFWwindow *window)
 {
     glfwMakeContextCurrent(window);
     ectx->ctx = igCreateContext(NULL);
@@ -61,8 +61,12 @@ int editor_init(struct EditorCtx *ectx, GLFWwindow *window)
     }
     igSetCurrentContext(ectx->ctx);
     ImGui_ImplGlfw_InitForOpenGL(glfwGetCurrentContext(), true);
-    ImGui_ImplOpenGL3_Init("#version 130");
 
+    ImGui_ImplOpenGL3_Init("#version 130");
+}
+
+void editor_init(struct EditorCtx *ectx, GLFWwindow *window)
+{
     //ImGuiIO* io = igGetIO_ContextPtr(ctx);
     ImGuiStyle* style = igGetStyle();
 
@@ -70,7 +74,10 @@ int editor_init(struct EditorCtx *ectx, GLFWwindow *window)
     style->FontScaleMain *= ectx->ui_scale;
 
     igGetMousePos(&ectx->mouse_pos);
-    return 1;
+
+    initialize_renderer();
+    ectx->is_playing = 0;
+    ectx->game = game_init();
 }
 
 void editor_new_frame()
@@ -381,6 +388,7 @@ int ig_save_path_input_popup(struct EditorCtx *ectx, const char *popup_id, char 
         unsigned long long path_len = strlen(path);
         unsigned long long suffix_len = strlen(suffix);
         if(strcmp(path + path_len - suffix_len, suffix) != 0) 
+
         {
             strcat(path, suffix);
         }
@@ -632,6 +640,10 @@ int editor_update_internal(struct EditorMemory *mem, struct EditorCtx *ectx, str
         game_update(&ectx->game, ectx->window_info, inputinfo); 
         editor_render(ectx);
         return 1;
+    }
+    else
+    {
+        r_set_main_camera(&ectx->camera);
     }
 
     camera_compute_view(&ectx->camera, editor_get_window_ratio(ectx));

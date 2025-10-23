@@ -16,7 +16,7 @@ void arena_deinit(struct Arena *arena);
 
 void *arena_allocate(struct Arena *arena, uint64_t size);
 
-void *arena_allocate_align(struct Arena *arena, uint64_t size, int align);
+void *arena_allocate_align(struct Arena *arena, uint64_t size, uint64_t align);
 
 void arena_reset(struct Arena *arena);
 

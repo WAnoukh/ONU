@@ -17,6 +17,8 @@ struct WindowInfo window_info = {
     0
 };
 
+int dllversion = 0;
+
 int main()
 {
     if (!initGl())
@@ -51,19 +53,29 @@ int main()
     while (!glfwWindowShouldClose(w_get_window_ctx()))
     {
         FILETIME new_file_time;
-        if(file_get_write_time(dll_path, &new_file_time) && file_time_changed(&write_time, &new_file_time))
+        if(!hot.dll || (file_get_write_time(dll_path, &new_file_time) && file_time_changed(&write_time, &new_file_time)))
         {
-            printf("dll changed !\n");
+            printf("new dll ! trying to load it !");
+            if(hot.dll)
+            {
+                hot.editor_stop(&mem);
+            }
 
-            write_time = new_file_time;
             file_get_write_time(dll_path, &write_time);
             if(!load_dll_as_temp(&hot, dll_path, dll_temp_path))
             {
                 printf("hot dll loading failed.\n");
-                return -1;
+                continue;
+            }
+            else
+            {
+                write_time = new_file_time;
+                printf("dll changed ! v%d\n",dllversion);
+                hot.editor_restart(&mem, w_get_window_ctx());
+                dllversion++;
             }
         }
-
+        
         if(is_framebuffer_resized())
         {
             window_get_size(&window_info.width, &window_info.height);

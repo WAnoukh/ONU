@@ -30,6 +30,7 @@ struct EditorMemory
     struct Arena level;
     struct Arena frame;
     struct Arena editor;
+    struct EditorCtx *editor_root;
 };
 
 #endif // INTERFACE_H

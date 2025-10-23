@@ -4,11 +4,6 @@
 
 int load_dll(struct HotDll *hot, char *path)
 {
-    if(hot->dll)
-    {
-        FreeLibrary(hot->dll);
-    }
-
     hot->dll = LoadLibraryA(path);
     if (!hot->dll) 
     {
@@ -28,12 +23,12 @@ int load_dll(struct HotDll *hot, char *path)
         printf("Failed to get dll function: editor_start");
         return 0;
     }
-    /*hot->editor_restart = (editor_start_fn)GetProcAddress(hot->dll, "editor_restart");
+    hot->editor_restart = (editor_start_fn)GetProcAddress(hot->dll, "editor_restart");
     if(!hot->editor_restart)
     {
         printf("Failed to get dll function: editor_restart");
         return 0;
-    }*/
+    }
     hot->editor_stop = (editor_stop_fn)GetProcAddress(hot->dll, "editor_stop");
     if(!hot->editor_stop)
     {
@@ -45,6 +40,12 @@ int load_dll(struct HotDll *hot, char *path)
 
 int load_dll_as_temp(struct HotDll *hot, char *dll_path, char *dll_temp_path)
 {
+    if(hot->dll)
+    {
+        FreeLibrary(hot->dll);
+        hot->dll = NULL;
+    }
+
     CopyFileA(dll_path, dll_temp_path, FALSE);
     if(!load_dll(hot, dll_temp_path))
     {

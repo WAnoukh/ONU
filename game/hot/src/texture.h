@@ -1,12 +1,25 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 
+typedef unsigned int GLuint;
+
 struct TextureAtlas
 {
     unsigned int texture_id;
     int width;
     int height;
 };
+
+struct TextureInfo
+{
+    GLuint texture_slot;
+    GLuint texture_key;
+
+    struct TextureAtlas atlas_font;
+    struct TextureAtlas atlas_tilemap;
+};
+
+void texture_set_info(struct TextureInfo *info);
 
 unsigned int get_texture_slot();
 

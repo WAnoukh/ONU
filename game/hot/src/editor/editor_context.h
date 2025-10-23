@@ -13,6 +13,7 @@
 #include "cimgui_impl.h"
 
 struct ImGuiContext;
+struct RenderingInfo;
 
 #define selection_ents_max 30
 
@@ -20,6 +21,8 @@ struct EditorCtx
 {
     struct WindowInfo window_info;
     struct ImGuiContext* ctx;
+    struct RenderingInfo *renderinginfo;
+    struct TextureInfo *textureinfo;
 
     struct Game game;
     struct Level level;
