@@ -36,6 +36,8 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
+const char *editor_exiting = "Exiting Editor";
+
 const char *window_create = "Create entity";
 const char *window_move = "Move entity";
 const char *window_move_selection = "Move selection";
@@ -630,8 +632,31 @@ int editor_update_internal(struct EditorMemory *mem, struct EditorCtx *ectx, str
         }
         else
         {
+            ectx->exiting_confirmation = 1;
+        }
+    }
+
+    if(ectx->exiting_confirmation)
+    {
+        igOpenPopup_Str(editor_exiting, 0);
+    }
+
+    if(igBeginPopupModal(editor_exiting, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        igText("Do you want to exit the Editor ?");
+
+        if(igButton("Comfirm", (struct ImVec2){0,0}))
+        {
             return 0;
         }
+        igSameLine(0,-1);
+        if(igButton("Cancel", (struct ImVec2){0,0}))
+        {
+            ectx->exiting_confirmation = 0;
+            igCloseCurrentPopup();
+        }
+
+        igEndPopup();
     }
 
     if(ectx->is_playing)

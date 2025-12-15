@@ -36,6 +36,8 @@ struct EditorCtx
     ivec2 popup_last_clicked_pos;
     _Bool floating_editor_show;
 
+    int exiting_confirmation;
+
     struct Entity *reposition_entity;
     int reposition_selection;
     ivec2 reposition_selection_delta;
@@ -57,7 +59,6 @@ struct EditorCtx
     int selection_ents_count;
 
     struct Entity *edition_entity;
-
 
     char file_current[100];
     int saving;

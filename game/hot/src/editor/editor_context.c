@@ -75,6 +75,8 @@ struct EditorCtx ectx_default(struct EditorMemory *mem)
 
     ctx.selection_ents_count = 0; 
 
+    ctx.exiting_confirmation = 0;
+
     ctx.edition_entity = NULL;
 
     strcpy(ctx.file_current, "NewFile");
