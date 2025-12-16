@@ -1,4 +1,5 @@
 #include "editor_interface.h"
+#include "console/log.h"
 #include "editor/editor.h"
 #include "editor/editor_context.h"
 #include "interface.h"
@@ -14,7 +15,7 @@ void editor_restart(struct EditorMemory *mem, GLFWwindow *window)
     render_set_info(ectx->renderinginfo);
     texture_set_info(ectx->textureinfo);
     console_set_current(&ectx->console);
-    console_log("Game reloaded.", LOG_INFO);
+    LOG_INFO("DLL's has been reloaded.");
 
     ImGuiStyle* style = igGetStyle();
 

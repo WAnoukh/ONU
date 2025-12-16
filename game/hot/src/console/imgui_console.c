@@ -19,7 +19,7 @@ int console_input_callback(ImGuiInputTextCallbackData *data)
     return 0;
 }
 
-char log_level_string[LOG_COUNT][LOG_LEVEL_STRING_MAX_LENGTH] =
+char log_level_string[LOGL_COUNT][LOG_LEVEL_STRING_MAX_LENGTH] =
 {
     "[ERROR]",
     "[WARNING]",
@@ -87,7 +87,7 @@ void igConsole()
         ImGuiInputTextFlags_CallbackHistory,
         console_input_callback, NULL))
     {
-        console_log(console_input, LOG_INFO);
+        console_log(console_input, LOGL_INFO);
         console_input[0] = '\0';
         reclaim_focus = 1;
     }

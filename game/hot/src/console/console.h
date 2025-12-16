@@ -11,11 +11,11 @@
 
 enum LogLevel
 {
-    LOG_ERROR,
-    LOG_WARNING,
-    LOG_INFO,
-    LOG_VERBOSE,
-    LOG_COUNT,
+    LOGL_ERROR,
+    LOGL_WARNING,
+    LOGL_INFO,
+    LOGL_VERBOSE,
+    LOGL_COUNT,
 };
 
 struct Log 
