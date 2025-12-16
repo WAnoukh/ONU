@@ -1,5 +1,6 @@
 #include "editor_context.h"
 #include "GLFW/glfw3.h"
+#include "console/log.h"
 #include <string.h>
 
 #define DEFAULT_LEVEL_SIZE 10
@@ -98,11 +99,24 @@ struct EditorCtx ectx_default(struct EditorMemory *mem)
     return ctx;
 }
 
+void ectx_game_start(struct EditorCtx *ectx)
+{
+    game_start(&ectx->game);
+    ectx->is_playing = 1;
+    LOG_INFO("Editor: Game started.");
+}
+
+void ectx_game_stop(struct EditorCtx *ectx)
+{
+    ectx->is_playing = 0;
+    r_set_main_camera(&ectx->camera);
+    LOG_INFO("Editor: Game stopped.");
+}
+
 void ectx_start_level(struct EditorCtx *ectx, struct Level level)
 {
     ectx->game.gamemode = GM_LEVEL;
     load_level(&ectx->game, level);
     load_gamestate(&ectx->game, level.gamestate);
-    game_start(&ectx->game);
-    ectx->is_playing = 1;
+    ectx_game_start(ectx);
 }

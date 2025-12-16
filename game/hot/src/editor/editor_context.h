@@ -85,6 +85,10 @@ struct EditorCtx
 
 struct EditorCtx ectx_default(struct EditorMemory *mem);
 
+void ectx_game_start(struct EditorCtx *ectx);
+
+void ectx_game_stop(struct EditorCtx *ectx);
+
 void ectx_start_level(struct EditorCtx *ectx, struct Level level);
 
 #endif // EDITOR_CONTEXT_H

@@ -622,8 +622,7 @@ int editor_update_internal(struct EditorMemory *mem, struct EditorCtx *ectx, str
     {
         if(ectx->is_playing)
         {
-            ectx->is_playing = 0;
-            r_set_main_camera(&ectx->camera);
+            ectx_game_stop(ectx);
         }
         else
         {
@@ -653,6 +652,8 @@ int editor_update_internal(struct EditorMemory *mem, struct EditorCtx *ectx, str
 
         igEndPopup();
     }
+
+    igConsole();
 
     if(ectx->is_playing)
     {
@@ -1073,9 +1074,6 @@ int editor_update_internal(struct EditorMemory *mem, struct EditorCtx *ectx, str
     {
         ectx->sequence_opening = 0;
     }
-
-
-    igConsole();
 
     editor_render(ectx);
     return 1;
