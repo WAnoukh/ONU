@@ -43,10 +43,9 @@ int main()
     glfwMakeContextCurrent(NULL);
 
     struct EditorMemory mem;
-    mem.level = arena_init(64 * 1024 * 1024);
-    mem.frame = arena_init(32 * 1024 * 1024);
-    mem.editor = arena_init(32 * 1024 * 1024);
-
+    mem.level  = arena_init(64  * 1024 * 1024);
+    mem.frame  = arena_init(32  * 1024 * 1024);
+    mem.editor = arena_init(32  * 1024 * 1024);
 
     hot.editor_start(&mem, w_get_window_ctx());
 
