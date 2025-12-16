@@ -31,9 +31,10 @@ void tilemap_render_layer_fow(struct TileMap *tilemap, int layer, vec2 fow_cente
             vec2 tile_pos = {(float)x+0.5f, (float)y+0.5f};
             float distance = glm_vec2_distance(fow_center, tile_pos);
             float dist_fact = 0;
-            if(distance > 8)
+            float fade_distance_start = 8;
+            if(distance > fade_distance_start)
             {
-                dist_fact = distance - 8;
+                dist_fact = distance - fade_distance_start;
             }
 
             mat3 transform;
