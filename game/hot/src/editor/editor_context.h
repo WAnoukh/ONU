@@ -1,6 +1,7 @@
 #ifndef EDITOR_CONTEXT_H
 #define EDITOR_CONTEXT_H
 
+#include "console/console.h"
 #include "game.h"
 #include "interface.h"
 #include "level.h"
@@ -24,6 +25,7 @@ struct EditorCtx
     struct RenderingInfo *renderinginfo;
     struct TextureInfo *textureinfo;
 
+    struct Console console;
     struct Game game;
     struct Level level;
     struct Camera camera;

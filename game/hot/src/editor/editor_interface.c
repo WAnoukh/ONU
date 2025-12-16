@@ -13,6 +13,14 @@ void editor_restart(struct EditorMemory *mem, GLFWwindow *window)
     editor_imgui_init(ectx, window);
     render_set_info(ectx->renderinginfo);
     texture_set_info(ectx->textureinfo);
+    console_set_current(&ectx->console);
+    console_log("Game reloaded.", LOG_INFO);
+
+    ImGuiStyle* style = igGetStyle();
+
+    ImGuiStyle_ScaleAllSizes(style, ectx->ui_scale);
+    style->FontScaleMain *= ectx->ui_scale;
+
     //load_default_images(); 
     //initialize_renderer();
 }

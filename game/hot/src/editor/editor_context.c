@@ -50,6 +50,8 @@ struct EditorCtx ectx_default(struct EditorMemory *mem)
 {
     struct EditorCtx ctx;
 
+    ctx.console = console_init();
+
     get_default_level(&mem->level, &ctx.level);
 
     ctx.camera.zoom = 0.2f;

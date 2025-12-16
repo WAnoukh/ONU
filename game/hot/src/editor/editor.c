@@ -1,3 +1,4 @@
+#include "console/imgui_console.h"
 #include "rendering/rendering.h"
 #include <string.h>
 
@@ -69,12 +70,6 @@ void editor_imgui_init(struct EditorCtx *ectx, GLFWwindow *window)
 
 void editor_init(struct EditorCtx *ectx, GLFWwindow *window)
 {
-    //ImGuiIO* io = igGetIO_ContextPtr(ctx);
-    ImGuiStyle* style = igGetStyle();
-
-    ImGuiStyle_ScaleAllSizes(style, ectx->ui_scale);
-    style->FontScaleMain *= ectx->ui_scale;
-
     igGetMousePos(&ectx->mouse_pos);
 
     initialize_renderer();
@@ -1078,6 +1073,9 @@ int editor_update_internal(struct EditorMemory *mem, struct EditorCtx *ectx, str
     {
         ectx->sequence_opening = 0;
     }
+
+
+    igConsole();
 
     editor_render(ectx);
     return 1;
