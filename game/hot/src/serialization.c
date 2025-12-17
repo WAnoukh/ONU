@@ -2,13 +2,13 @@
 #include <stdio.h>
 
 #include "serialization.h"
+#include "console/log.h"
 #include "level.h"
 #include "level_sequence.h"
 #include "memory/arena.h"
 #include "tilemap.h"
 #include "game.h"
 
-#define S_ERROR(msg) printf("%s, %d, Serialization error: %s", __FILE__, __LINE__, msg)
 #define MAJOR 0
 #define MINOR 4
 #define PATCH 2
@@ -42,14 +42,19 @@ void deserialize_gamestate(struct GameState *out_gamestate, FILE *file, struct V
     fread(&out_gamestate->entity_count, sizeof(int), 1, file);
     fread(out_gamestate->entities, sizeof(struct Entity)*out_gamestate->entity_count, 1, file);
 
+    LOG_VERBOSE("entity_count=%d", out_gamestate->entity_count);
+
     fread(&out_gamestate->key_block_data_count, sizeof(out_gamestate->key_block_data_count), 1, file);
+
+    LOG_VERBOSE("key_block_data_count=%d", out_gamestate->key_block_data_count);
+
     if(compare_version_value(file_version, 0, 4, 1) > 0)
     {
         fread(&out_gamestate->key_block_data, sizeof(struct KeyBlockData)* out_gamestate->key_block_data_count, 1, file);
     }
     else
     {
-        printf("GameState deserialization: Adapting doors for pre v0.4.2\n");
+        LOG_WARNING("GameState deserialization: Adapting doors for pre v0.4.2\n");
         for(int i = 0; i < out_gamestate->key_block_data_count; ++i)
         {
             struct KeyBlockData *data = out_gamestate->key_block_data+i;
@@ -69,7 +74,7 @@ void deserialize_gamestate(struct GameState *out_gamestate, FILE *file, struct V
     }
     else
     {
-        printf("GameState deserialization: Adapting doors for pre v0.3.1\n");
+        LOG_WARNING("GameState deserialization: Adapting doors for pre v0.3.1\n");
         int is_main_door_opened;
         fread(&is_main_door_opened, sizeof(is_main_door_opened), 1, file);
 
@@ -140,14 +145,24 @@ int serialize_level(const struct Level *level, const char* path)
     return 1;
 }
 
+void debug_deserialize_level(const char *path)
+{
+    struct Arena arena = arena_init(30 * 1024 * 1024);
+    struct Level level;
+    deserialize_level(&arena, &level, path);
+    arena_deinit(&arena);
+}
+
 int deserialize_level(struct Arena *arena, struct Level *out_level, const char *path)
 {
     struct Level level;  
 
+    LOG_INFO("Deserializing level at \"%s\"", path);
+
     FILE *file=fopen(path, "r");
     if(file == NULL)
     {
-        S_ERROR("unable to read the file.\n");
+        LOG_ERROR("Unable to read the file.");
         return 0;
     }
 
@@ -161,16 +176,21 @@ int deserialize_level(struct Arena *arena, struct Level *out_level, const char *
         patch
     };
 
+    LOG_VERBOSE("The file is for version V%d.%d.%d.", major, minor, patch);
+
     if(compare_version(file_version, version) < 0)
     {
-        printf("Reading a old version !\n");
+        LOG_WARNING("Reading a old version !\n");
     }
 
     fread(&level.tilemap.width, sizeof(level.tilemap.width), 1, file);
     fread(&level.tilemap.height, sizeof(level.tilemap.height), 1, file);
 
+
     fread(&level.tilemap.layer_count, sizeof(level.tilemap.layer_count), 1, file);
     level.tilemap.tile = arena_allocate_align(arena, sizeof(Tile)*level.tilemap.width*level.tilemap.height*level.tilemap.layer_count, alignof(Tile));
+
+    LOG_VERBOSE("The level is %dx%d large with %d layers.", level.tilemap.width, level.tilemap.height, level.tilemap.layer_count);
 
     fread(level.tilemap.tile, sizeof(Tile)*level.tilemap.height*level.tilemap.width*level.tilemap.layer_count, 1, file);
 
@@ -178,14 +198,17 @@ int deserialize_level(struct Arena *arena, struct Level *out_level, const char *
 
     if(compare_version_value(file_version, 0, 4, 1) < 0)
     {
-        printf("Zeroing views width\n");
+        LOG_WARNING("Zeroing views width for pre 0.4.1 compatibility.");
         level.view_width = 0;
         level.view_height = 0;
     }
     else
     {
-        fread(&level.view_width, sizeof(level.view_width), 1, file);
-        fread(&level.view_height, sizeof(level.view_height), 1, file);
+        //fread(&level.view_width, sizeof(level.view_width), 1, file);
+        //fread(&level.view_height, sizeof(level.view_height), 1, file);
+        level.view_width = 0;
+        level.view_height = 0;
+        LOG_VERBOSE("View: w=%d h=%d", level.view_width, level.view_height);
     }
 
     *out_level = level;
@@ -235,7 +258,7 @@ int deserialize_path_sequence(struct Arena *arena, struct PathSequence *out_path
     FILE *file=fopen(path, "r");
     if(file == NULL)
     {
-        S_ERROR("unable to read the file.\n");
+        LOG_ERROR("Unable to read the file.\n");
         return 0;
     }
 

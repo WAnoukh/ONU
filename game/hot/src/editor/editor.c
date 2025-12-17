@@ -1,4 +1,5 @@
 #include "console/imgui_console.h"
+#include "console/log.h"
 #include "rendering/rendering.h"
 #include <string.h>
 
@@ -1047,13 +1048,7 @@ int editor_update_internal(struct EditorMemory *mem, struct EditorCtx *ectx, str
     if(opening_result > 0)
     {
         ectx->opening = 0;
-        //deserialize_level_into_game(game, opening_path);
-        struct Level loaded_level;
-        arena_reset(&mem->level);
-        if(deserialize_level(&mem->level, &loaded_level, opening_path))
-        {
-            ectx->level = loaded_level;
-        }
+        editor_load_level_from_file(ectx, opening_path);
     }
     else if(opening_result < 0)
     {
@@ -1067,7 +1062,6 @@ int editor_update_internal(struct EditorMemory *mem, struct EditorCtx *ectx, str
     int opening_sequence_result = ig_open_path_input_popup(ectx, window_sequence_opening, ectx->sequence_current, opening_sequence_path, resources_path, sequence_suffix);
     if(opening_sequence_result > 0)
     {
-        //deserialize_sequence_into_game(game, opening_sequence_path);
         ectx->sequence_opening = 0;
     }
     else if(opening_sequence_result < 0)
@@ -1088,4 +1082,17 @@ void editor_get_window_size(struct EditorCtx *ectx, int *w, int *h)
 {
     *w = ectx->window_info.width;
     *h = ectx->window_info.height;
+}
+
+
+void editor_load_level_from_file(struct EditorCtx *ectx, const char *path)
+{
+    LOG_INFO("Loading level form \"%s\".", path);
+    struct EditorMemory *mem = ectx->mem;
+    struct Level loaded_level;
+    arena_reset(&mem->level);
+    if(deserialize_level(&mem->level, &loaded_level, path))
+    {
+        ectx->level = loaded_level;
+    }
 }

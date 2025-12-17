@@ -24,4 +24,6 @@ float editor_get_window_ratio(struct EditorCtx *ectx);
 
 void editor_get_window_size(struct EditorCtx *ectx, int *w, int *h);
 
+void editor_load_level_from_file(struct EditorCtx *ectx, const char *path);
+
 #endif // EDITOR_H

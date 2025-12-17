@@ -1,5 +1,6 @@
 #include "imgui_console.h"
 #include "console/console.h"
+#include <assert.h>
 #include <string.h>
 #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
 #define CIMGUI_USE_OPENGL3
@@ -52,7 +53,10 @@ void console_line_get_string(char *buffer, size_t size, struct ConsoleLine line)
 void igConsoleContent()
 {
     struct Console *console = console_current();
+    assert(console);
+
     struct ConsoleLine *log_ring_buffer = console_lines_ring_buffer(console); 
+    assert(log_ring_buffer);
 
     int log_count = console_lines_count(console);
     int log_index = console_lines_head(console);

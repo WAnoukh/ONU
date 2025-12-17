@@ -20,6 +20,8 @@ struct RenderingInfo;
 
 struct EditorCtx
 {
+    struct EditorMemory *mem;
+
     struct WindowInfo window_info;
     struct ImGuiContext* ctx;
     struct RenderingInfo *renderinginfo;

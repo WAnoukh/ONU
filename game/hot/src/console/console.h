@@ -36,21 +36,27 @@ struct ConsoleLine
     uint8_t              sec;
 };
 
+struct CommandContext
+{
+    struct EditorCtx *ectx;
+};
+
 struct Console
 {
     struct ConsoleLine     lines[CONSOLE_MAX_LOG];
     struct CommandRegistry registry;
+    struct CommandContext  command_ctx;
     int                    lines_count;
     int                    lines_head;
 };
 
 struct Console console_init();
 
-void console_register_base_commands();
-
 void console_set_current(struct Console *console);
 
 struct Console *console_current();
+
+void console_set_command_context(struct EditorCtx *ectx);
 
 int console_lines_count(struct Console *console);
 

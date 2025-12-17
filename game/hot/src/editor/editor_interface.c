@@ -1,4 +1,5 @@
 #include "editor_interface.h"
+#include "console/command/commands.h"
 #include "console/log.h"
 #include "editor/editor.h"
 #include "editor/editor_context.h"
@@ -11,10 +12,12 @@
 void editor_restart(struct EditorMemory *mem, GLFWwindow *window)
 {
     struct EditorCtx *ectx = mem->editor_root;
+    ectx->mem = mem;
     editor_imgui_init(ectx, window);
     render_set_info(ectx->renderinginfo);
     texture_set_info(ectx->textureinfo);
     console_set_current(&ectx->console);
+    console_set_command_context(ectx);
     LOG_INFO("DLL's has been reloaded.");
 
     ImGuiStyle* style = igGetStyle();
@@ -34,7 +37,7 @@ void editor_start(struct EditorMemory *mem, GLFWwindow *window)
     ectx->renderinginfo = arena_allocate(&mem->editor, sizeof(struct RenderingInfo));
     ectx->textureinfo = arena_allocate(&mem->editor, sizeof(struct TextureInfo));
     editor_restart(mem, window);
-    console_register_base_commands();
+    command_register_base();
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     load_default_images(); 
     initialize_renderer();

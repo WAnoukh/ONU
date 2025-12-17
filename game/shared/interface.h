@@ -10,26 +10,26 @@ typedef struct ImGuiContext ImGuiContext;
 
 struct WindowInfo
 {
-    int width;
-    int height;
-    float ratio;
-    int is_framebuffer_resized; 
+    int    width;
+    int    height;
+    float  ratio;
+    int    is_framebuffer_resized; 
     double time;
 };
 
 struct InputInfo
 {
     float delta_time;
-    int keys_pressed[KEY_COUNT];
-    int keys_released[KEY_COUNT];
-    int keys_down[KEY_COUNT];
+    int   keys_pressed[KEY_COUNT];
+    int   keys_released[KEY_COUNT];
+    int   keys_down[KEY_COUNT];
 };
 
 struct EditorMemory
 {
-    struct Arena level;
-    struct Arena frame;
-    struct Arena editor;
+    struct Arena      level;
+    struct Arena      frame;
+    struct Arena      editor;
     struct EditorCtx *editor_root;
 };
 

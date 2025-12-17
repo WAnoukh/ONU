@@ -7,7 +7,9 @@
 #define COMMAND_NAME_LENGTH 128
 #define COMMAND_MAX_COUNT   64
 
-typedef void (*CommandFn)(StringView args, BString *out);
+struct CommandContext;
+
+typedef void (*CommandFn)(struct CommandContext *cctx, StringView args, BString *out);
 
 struct CommandEntry
 {

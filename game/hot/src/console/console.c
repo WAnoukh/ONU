@@ -2,6 +2,7 @@
 #include "console/command/console_input_parser.h"
 #include "string/BString.h"
 #include "string/StringView.h"
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -18,28 +19,22 @@ struct Console *console_current()
     return console_current_ptr;
 }
 
-void command_echo(StringView args, BString *out)
-{
-    if(args.length == 0)
-    {
-        bstr_cat_cstr(out, "Argument expected.");
-        return;
-    }
-    bstr_cat_view(out, args);
-}
-
-void console_register_base_commands()
-{
-    console_register_command(VIEW_FROM_CONST_STR("echo"), command_echo);
-}
-
 struct Console console_init()
 {
     struct Console console;
     console.lines_count = 0;
     console.lines_head = 0;
     console.registry.entries_count = 0;
+    console.command_ctx.ectx = NULL;
     return console;
+}
+
+void console_set_command_context(struct EditorCtx *ectx)
+{
+    struct Console *console = console_current();
+    assert(console);
+
+    console->command_ctx.ectx = ectx;
 }
 
 int console_lines_count(struct Console *console)
@@ -91,6 +86,7 @@ void console_line_copy_from_view(struct ConsoleLine *line, StringView view)
 void console_log(StringView msg, enum LogLevel level)
 {
     struct Console *console = console_current();
+    assert(console);
 
     struct ConsoleLine log = console_line_create_timestamped(); 
     console_line_copy_from_view(&log, msg);
@@ -102,6 +98,7 @@ void console_log(StringView msg, enum LogLevel level)
 void console_call_command(StringView input)
 {
     struct Console *console = console_current();
+    assert(console);
 
     struct ConsoleLine cmd = console_line_create_timestamped(); 
     BString out = (BString){.data = 
@@ -122,7 +119,7 @@ void console_call_command(StringView input)
     {
         bstr_cat_cstr(&out, "Command unknown.");
     }
-    else func(parsed_cmd.command_args, &out);
+    else func(&console->command_ctx, parsed_cmd.command_args, &out);
     
     bstr_null_terminate(&out);
     console_insert_line(console, cmd);
@@ -131,6 +128,7 @@ void console_call_command(StringView input)
 void console_register_command(StringView command_name, CommandFn fn)
 {
     struct Console *console = console_current();
+    assert(console);
 
     console_register_command_internal(&console->registry, command_name, fn);
 }
