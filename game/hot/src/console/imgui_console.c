@@ -89,7 +89,7 @@ void igConsole()
         ImGuiInputTextFlags_CallbackHistory,
         console_input_callback, NULL))
     {
-        console_command(view_from_cstr(console_input));
+        console_call_command(view_from_cstr(console_input));
         console_input[0] = '\0';
         reclaim_focus = 1;
     }

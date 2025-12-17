@@ -34,6 +34,7 @@ void editor_start(struct EditorMemory *mem, GLFWwindow *window)
     ectx->renderinginfo = arena_allocate(&mem->editor, sizeof(struct RenderingInfo));
     ectx->textureinfo = arena_allocate(&mem->editor, sizeof(struct TextureInfo));
     editor_restart(mem, window);
+    console_register_base_commands();
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     load_default_images(); 
     initialize_renderer();

@@ -1,5 +1,9 @@
 #include "console.h"
+#include "console/command/console_input_parser.h"
+#include "string/BString.h"
 #include "string/StringView.h"
+#include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 struct Console *console_current_ptr = NULL;
@@ -12,6 +16,30 @@ void console_set_current(struct Console *console)
 struct Console *console_current()
 {
     return console_current_ptr;
+}
+
+void command_echo(StringView args, BString *out)
+{
+    if(args.length == 0)
+    {
+        bstr_cat_cstr(out, "Argument expected.");
+        return;
+    }
+    bstr_cat_view(out, args);
+}
+
+void console_register_base_commands()
+{
+    console_register_command(VIEW_FROM_CONST_STR("echo"), command_echo);
+}
+
+struct Console console_init()
+{
+    struct Console console;
+    console.lines_count = 0;
+    console.lines_head = 0;
+    console.registry.entries_count = 0;
+    return console;
 }
 
 int console_lines_count(struct Console *console)
@@ -60,23 +88,49 @@ void console_line_copy_from_view(struct ConsoleLine *line, StringView view)
     line->text[i] = '\0';
 }
 
-void console_log(StringView view, enum LogLevel level)
+void console_log(StringView msg, enum LogLevel level)
 {
     struct Console *console = console_current();
 
     struct ConsoleLine log = console_line_create_timestamped(); 
-    console_line_copy_from_view(&log, view);
+    console_line_copy_from_view(&log, msg);
     log.level = level;  
     log.type = CLINE_LOG;
     console_insert_line(console, log);
 }
 
-void console_command(StringView view)
+void console_call_command(StringView input)
 {
     struct Console *console = console_current();
 
     struct ConsoleLine cmd = console_line_create_timestamped(); 
-    console_line_copy_from_view(&cmd, view);
+    BString out = (BString){.data = 
+        cmd.text, 
+        .capacity=CONSOLE_LINE_LENGTH, 
+        .length=0
+    };
+    bstr_cat_view(&out, input);
     cmd.type = CLINE_COMMAND;
+
+    struct ConsoleParsedCommand parsed_cmd = console_parse_input(input);
+
+    CommandFn func = console_get_command_func_ptr(&console->registry, parsed_cmd.command_name);
+
+    bstr_cat_cstr(&out, "\n");
+
+    if(!func)
+    {
+        bstr_cat_cstr(&out, "Command unknown.");
+    }
+    else func(parsed_cmd.command_args, &out);
+    
+    bstr_null_terminate(&out);
     console_insert_line(console, cmd);
+}
+
+void console_register_command(StringView command_name, CommandFn fn)
+{
+    struct Console *console = console_current();
+
+    console_register_command_internal(&console->registry, command_name, fn);
 }

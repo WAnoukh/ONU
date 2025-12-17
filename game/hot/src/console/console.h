@@ -1,6 +1,7 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
+#include "console/command/command_registry.h"
 #include "string/StringView.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -37,18 +38,15 @@ struct ConsoleLine
 
 struct Console
 {
-    struct ConsoleLine lines[CONSOLE_MAX_LOG];
-    int        lines_count;
-    int        lines_head;
+    struct ConsoleLine     lines[CONSOLE_MAX_LOG];
+    struct CommandRegistry registry;
+    int                    lines_count;
+    int                    lines_head;
 };
 
-static inline struct Console console_init()
-{
-    struct Console console;
-    console.lines_count = 0;
-    console.lines_head = 0;
-    return console;
-}
+struct Console console_init();
+
+void console_register_base_commands();
 
 void console_set_current(struct Console *console);
 
@@ -60,8 +58,10 @@ int console_lines_head(struct Console *console);
 
 struct ConsoleLine *console_lines_ring_buffer(struct Console *console);
 
-void console_log(StringView view, enum LogLevel level);
+void console_log(StringView msg, enum LogLevel level);
 
-void console_command(StringView view);
+void console_call_command(StringView input);
+
+void console_register_command(StringView command_name, CommandFn fn);
 
 #endif // CONSOLE_H
