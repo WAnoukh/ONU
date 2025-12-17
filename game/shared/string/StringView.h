@@ -7,8 +7,8 @@
 
 typedef struct
 {
-    const char *const data;
-    const size_t length;
+    const char *data;
+    size_t      length;
 } StringView;
 
 StringView view_from_cstr(const char *cstr);
@@ -16,4 +16,7 @@ StringView view_from_cstr(const char *cstr);
 const char *view_raw(StringView view);
 
 size_t view_length(StringView view);
+
+void view_copy_to_cstr(StringView view, char *to_cstr);
+
 #endif // STRINGVIEW_H
