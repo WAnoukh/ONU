@@ -1,0 +1,1 @@
+build-debug.bat && pushd build\debug\bin && exe.exe && popd

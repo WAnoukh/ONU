@@ -1,0 +1,102 @@
+#ifndef GAME_H
+#define GAME_H
+
+#include "history.h"
+#include "level.h"
+#include "level_sequence.h"
+#include "rendering/camera.h"
+#include "rendering/rendering.h"
+
+struct WindowInfo;
+struct InputInfo;
+struct FrameContext;
+
+enum GameMode
+{
+    GM_LEVEL,
+    GM_SEQUENCE,
+};
+
+struct Game
+{
+    struct Camera camera;
+    struct Level level;
+    struct Sequence sequence;
+    struct GameState gamestate_current;
+    struct History history;
+    vec2 camera_target;
+    enum GameMode gamemode;
+    int sequence_index;
+    int tilemap_layer_mask;
+};
+
+static inline void layer_set_visibility(struct Game *game, int layer, int visibility)
+{
+    if(visibility)
+    {
+        game->tilemap_layer_mask |= 0b1 << layer;
+    }
+    else
+    {
+        game->tilemap_layer_mask &= ~(0b1 << layer);
+    }
+}
+
+static inline int layer_get_visibility(struct Game *game, int layer)
+{
+    return game->tilemap_layer_mask & 0b1 << layer;
+}
+
+static inline struct GameState *get_current_gamestate(struct Game *game)
+{
+    return &game->gamestate_current;
+}
+
+static inline void load_gamestate(struct Game *game, struct GameState gamestate)
+{
+    game->gamestate_current = gamestate;
+}
+
+static inline struct Level *get_current_level(struct Game *game)
+{
+    switch(game->gamemode)
+    {
+        case GM_LEVEL:
+            return &game->level;
+        case GM_SEQUENCE:
+            return game->sequence.levels+game->sequence_index;
+        default:
+            return NULL;
+    }
+}
+
+static inline struct TileMap *get_current_tilemap(struct Game *game)
+{
+    return &get_current_level(game)->tilemap;
+}
+
+struct Game game_init();
+
+void game_start(struct Game* game);
+
+void game_deinit(struct Game *game);
+
+void game_history_register(struct Game *game);
+
+int game_history_is_empty(struct Game *game);
+
+struct GameState game_history_pop(struct Game *game);
+
+void game_history_drop_last(struct Game *game);
+
+void game_history_clear(struct Game *game);
+
+void load_level(struct Game *game, struct Level level);
+
+void game_set_sequence(struct Game *game, struct Sequence sequence);
+
+int game_load_default_sequence(struct Game *game);
+
+void game_update(struct Game *game, struct FrameContext* frame);
+
+#endif // GAME_H
